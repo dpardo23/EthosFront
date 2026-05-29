@@ -2,15 +2,15 @@ import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store';
-import type { User, UserRole } from '@/shared/types';
+import type { Profile, ProfileRole } from '@/shared/types';
 import { ROLE_REDIRECT_PATHS } from '@/shared/services/authService';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 type JwtPayload = {
-  userId?: string; 
+  profileId?: string; 
   email?: string;
-  username?: string;
-  userType?: string; 
+  profileHandle?: string;
+  profileType?: string; 
   exp?: number;
 };
 
@@ -32,8 +32,8 @@ function decodeJwtPayload(token: string): JwtPayload | null {
   }
 }
 
-function mapUserTypeToRole(userType?: string): UserRole {
-  const type = userType?.toUpperCase();
+function mapProfileTypeToRole(profileType?: string): ProfileRole {
+  const type = profileType?.toUpperCase();
   if (type === 'RECLUTADOR' || type === 'RECRUITER') return 'recruiter';
   if (type === 'ADMINISTRADOR' || type === 'ADMIN') return 'admin';
   return 'professional';
@@ -44,20 +44,20 @@ function sanitizeSlug(value: string): string {
   return base || `usuario-${Date.now()}`;
 }
 
-function buildUserFromToken(payload: JwtPayload): User {
-  if (!payload.userId) {
+function buildProfileFromToken(payload: JwtPayload): Profile {
+  if (!payload.profileId) {
     throw new Error('El token recibido no contiene un identificador válido (UUID).');
   }
 
   const email = payload.email || '';
-  const displayName = payload.username || (email.includes('@') ? email.split('@')[0] : 'oauth-user');
-  const role = mapUserTypeToRole(payload.userType);
+  const displayName = payload.profileHandle || (email.includes('@') ? email.split('@')[0] : 'oauth-profile');
+  const role = mapProfileTypeToRole(payload.profileType);
 
   return {
-    id: payload.userId, 
+    id: payload.profileId, 
     email,
     name: displayName,
-    username: displayName.toLowerCase().replace(/\s+/g, ''),
+    profileHandle: displayName.toLowerCase().replace(/\s+/g, ''),
     avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(displayName)}`,
     role,
     slug: sanitizeSlug(displayName),
@@ -70,19 +70,19 @@ function buildUserFromToken(payload: JwtPayload): User {
   };
 }
 
-function buildUserFromSupabase(sbUser: { id: string; email?: string | null; user_metadata?: Record<string, string> }): User {
-  const email = sbUser.email || '';
-  const fullName = sbUser.user_metadata?.full_name || sbUser.user_metadata?.name || '';
+function buildProfileFromSupabase(sbProfile: { id: string; email?: string | null; user_metadata?: Record<string, string> }): Profile {
+  const email = sbProfile.email || '';
+  const fullName = sbProfile.user_metadata?.full_name || sbProfile.user_metadata?.name || '';
   const displayName = fullName || (email.includes('@') ? email.split('@')[0] : 'usuario');
-  const avatarUrl = sbUser.user_metadata?.avatar_url || sbUser.user_metadata?.picture || '';
+  const avatarUrl = sbProfile.user_metadata?.avatar_url || sbProfile.user_metadata?.picture || '';
 
   return {
-    id: sbUser.id,
+    id: sbProfile.id,
     email,
     name: displayName,
-    username: displayName.toLowerCase().replace(/\s+/g, ''),
+    profileHandle: displayName.toLowerCase().replace(/\s+/g, ''),
     avatar: avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(displayName)}`,
-    role: 'professional' as UserRole,
+    role: 'professional' as ProfileRole,
     slug: sanitizeSlug(displayName),
     profession: 'Profesional',
     bio: '',
@@ -117,10 +117,10 @@ export default function OAuth2CallbackPage() {
         return;
       }
       try {
-        const user = buildUserFromToken(payload);
-        completeOAuthLogin({ user, token, tokenType: 'Bearer' });
-        toast.success('Sesión iniciada correctamente', { description: `Bienvenido, ${user.name}` });
-        navigate(ROLE_REDIRECT_PATHS[user.role], { replace: true });
+        const profile = buildProfileFromToken(payload);
+        completeOAuthLogin({ profile, token, tokenType: 'Bearer' });
+        toast.success('Sesión iniciada correctamente', { description: `Bienvenido, ${profile.name}` });
+        navigate(ROLE_REDIRECT_PATHS[profile.role], { replace: true });
       } catch (err) {
         toast.error('Error de autenticación', { description: err instanceof Error ? err.message : 'Token corrupto' });
         useAuthStore.getState().logout();
@@ -137,10 +137,10 @@ export default function OAuth2CallbackPage() {
           navigate('/login', { replace: true });
           return;
         }
-        const user = buildUserFromSupabase(session.user);
-        completeOAuthLogin({ user, token: session.access_token, tokenType: 'Bearer' });
-        toast.success('Sesión iniciada correctamente', { description: `Bienvenido, ${user.name}` });
-        navigate(ROLE_REDIRECT_PATHS[user.role], { replace: true });
+        const profile = buildProfileFromSupabase(session.user);
+        completeOAuthLogin({ profile, token: session.access_token, tokenType: 'Bearer' });
+        toast.success('Sesión iniciada correctamente', { description: `Bienvenido, ${profile.name}` });
+        navigate(ROLE_REDIRECT_PATHS[profile.role], { replace: true });
       });
       return;
     }

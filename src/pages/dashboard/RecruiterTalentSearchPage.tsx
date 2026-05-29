@@ -72,7 +72,7 @@ const locationOptions = [
   ...Array.from(
     new Set(
       recruiterTalentProfiles
-        .map((profile) => profile.user.location)
+        .map((profile) => profile.profile.location)
         .filter((loc): loc is string => !!loc) // Filtra valores undefined o vacíos
     )
   ).map((location) => ({
@@ -93,12 +93,12 @@ function getCandidateMatches(candidate: (typeof recruiterTalentProfiles)[number]
   const normalizedQuery = normalizeText(query);
   const candidateText = normalizeText(
     [
-      candidate.user.name,
-      candidate.user.profession,
-      candidate.user.headline,
+      candidate.profile.name,
+      candidate.profile.profession,
+      candidate.profile.headline,
       candidate.summary,
       candidate.expectedRole,
-      candidate.user.location,
+      candidate.profile.location,
     ]
       .filter(Boolean)
       .join(' ')
@@ -126,7 +126,7 @@ function getCandidateMatches(candidate: (typeof recruiterTalentProfiles)[number]
 }
 
 export default function RecruiterTalentSearchPage() {
-  const { user } = useAuthStore();
+  const { profile } = useAuthStore();
   const [searchDraft, setSearchDraft] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [scope, setScope] = useState<SkillScope>('all');
@@ -166,7 +166,7 @@ export default function RecruiterTalentSearchPage() {
         return false;
       }
 
-      if (location && candidate.user.location !== location) {
+      if (location && candidate.profile.location !== location) {
         return false;
       }
 
@@ -548,7 +548,7 @@ export default function RecruiterTalentSearchPage() {
 
                   return (
                     <motion.article
-                      key={candidate.user.id}
+                      key={candidate.profile.id}
                       initial={{ opacity: 0, y: 14 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.04 }}
@@ -557,19 +557,19 @@ export default function RecruiterTalentSearchPage() {
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex min-w-0 gap-3 sm:gap-4">
                             <Avatar
-                              src={candidate.user.avatar}
-                              alt={candidate.user.name}
-                              fallback={candidate.user.name}
+                              src={candidate.profile.avatar}
+                              alt={candidate.profile.name}
+                              fallback={candidate.profile.name}
                               size="xl"
                               className="shrink-0 rounded-xl md:rounded-[1.5rem]"
                             />
                             <div className="min-w-0">
                               <h3 className="text-base font-semibold text-black sm:text-lg dark:text-white">
-                                {candidate.user.name}
+                                {candidate.profile.name}
                               </h3>
                               <p className="text-sm font-medium text-violet-600 dark:text-violet-400">{candidate.expectedRole}</p>
                               <p className="mt-2 line-clamp-2 text-sm leading-6 text-gray-600 dark:text-gray-400">
-                                {candidate.user.headline}
+                                {candidate.profile.headline}
                               </p>
                             </div>
                           </div>
@@ -585,7 +585,7 @@ export default function RecruiterTalentSearchPage() {
                         <div className="mt-4 flex flex-wrap gap-2 text-xs sm:mt-5">
                           <Badge variant="outline" className="border-gray-200 text-gray-600 dark:border-white/20 dark:text-gray-400">{candidate.experienceYears}+ anos</Badge>
                           <Badge variant="outline" className="border-gray-200 text-gray-600 dark:border-white/20 dark:text-gray-400">{candidate.workMode}</Badge>
-                          <Badge variant="outline" className="border-gray-200 text-gray-600 dark:border-white/20 dark:text-gray-400">{candidate.user.location}</Badge>
+                          <Badge variant="outline" className="border-gray-200 text-gray-600 dark:border-white/20 dark:text-gray-400">{candidate.profile.location}</Badge>
                         </div>
 
                         <div className="mt-4 rounded-xl bg-gray-50 p-3 sm:mt-5 sm:p-4 dark:bg-black/50">
@@ -627,9 +627,9 @@ export default function RecruiterTalentSearchPage() {
                         <div className="mt-4 flex flex-col gap-3 border-t border-gray-100 pt-4 sm:mt-6 sm:flex-row sm:items-center sm:justify-between dark:border-white/10">
                           <div className="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                             <MapPin className="h-4 w-4" />
-                            {candidate.user.location}
+                            {candidate.profile.location}
                           </div>
-                          <Link to={`/p/${candidate.user.slug}`}>
+                          <Link to={`/p/${candidate.profile.slug}`}>
                             <Button className="w-full rounded-xl bg-violet-600 text-white hover:bg-violet-700 sm:w-auto md:rounded-2xl">Ver perfil</Button>
                           </Link>
                         </div>

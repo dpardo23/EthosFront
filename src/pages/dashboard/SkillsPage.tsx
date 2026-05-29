@@ -99,7 +99,7 @@ export default function SkillsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user: profile } = useAuthStore();
+  const { profile: profile } = useAuthStore();
   const { addToast } = useUiStore();
   const {
     hardSkills,

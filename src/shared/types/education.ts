@@ -1,6 +1,6 @@
 export interface AcademicRecord {
   academicRecordId?: string;
-  userId?: string;
+  profileId?: string;
   institutionName: string;
   degree: string;
   fieldOfStudy?: string;

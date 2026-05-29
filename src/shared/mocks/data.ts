@@ -1,5 +1,5 @@
 import type {
-  User,
+  Profile,
   GlobalSkillTag,
   HardSkill,
   SoftSkill,
@@ -16,20 +16,20 @@ import type {
   PlatformMetrics,
   ActivityLog,
   TimeSeriesData,
-  UserPreferences,
+  ProfilePreferences,
   Notification,
 } from '../types';
 
 // =============================================
-// USERS
+// PROFILES
 // =============================================
-export const mockUsers: User[] = [
+export const mockProfiles: Profile[] = [
   {
     id: '1',
     email: 'carlos.dev@email.com',
     name: 'Carlos Mendoza',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-    username: 'carlosmendoza',
+    profileHandle: 'carlosmendoza',
     role: 'professional',
     slug: 'carlos-mendoza',
     profession: 'Senior Full Stack Developer',
@@ -45,7 +45,7 @@ export const mockUsers: User[] = [
     email: 'ana.recruiter@company.com',
     name: 'Ana García',
     avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face',
-    username: 'anagarcia',
+    profileHandle: 'anagarcia',
     role: 'recruiter',
     slug: 'ana-garcia',
     profession: 'Tech Recruiter',
@@ -61,7 +61,7 @@ export const mockUsers: User[] = [
     email: 'admin@ethoshub.com',
     name: 'Admin EthosHub',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-    username: 'admin',
+    profileHandle: 'admin',
     role: 'admin',
     slug: 'admin',
     profession: 'Platform Administrator',
@@ -77,7 +77,7 @@ export const mockUsers: User[] = [
     email: 'maria.designer@email.com',
     name: 'María López',
     avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-    username: 'marialopez',
+    profileHandle: 'marialopez',
     role: 'professional',
     slug: 'maria-lopez',
     profession: 'UX/UI Designer',
@@ -93,7 +93,7 @@ export const mockUsers: User[] = [
     email: 'pedro.backend@email.com',
     name: 'Pedro Ramírez',
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
-    username: 'pedroramirez',
+    profileHandle: 'pedroramirez',
     role: 'professional',
     slug: 'pedro-ramirez',
     profession: 'Backend Engineer',
@@ -141,29 +141,29 @@ export const mockGlobalSkillTags: GlobalSkillTag[] = [
 ];
 
 export const mockEndorsements: Endorsement[] = [
-  { id: 'e1', skillId: 'hs1', endorserId: '2', endorserName: 'Ana García', endorserAvatar: mockUsers[1].avatar || '', createdAt: '2024-01-10T10:00:00Z' },
-  { id: 'e2', skillId: 'hs1', endorserId: '4', endorserName: 'María López', endorserAvatar: mockUsers[3].avatar || '', createdAt: '2024-01-12T14:30:00Z' },
-  { id: 'e3', skillId: 'hs1', endorserId: '5', endorserName: 'Pedro Ramírez', endorserAvatar: mockUsers[4].avatar || '', createdAt: '2024-01-15T09:00:00Z' },
-  { id: 'e4', skillId: 'hs2', endorserId: '2', endorserName: 'Ana García', endorserAvatar: mockUsers[1].avatar || '', createdAt: '2024-01-11T11:00:00Z' },
-  { id: 'e5', skillId: 'hs2', endorserId: '5', endorserName: 'Pedro Ramírez', endorserAvatar: mockUsers[4].avatar || '', createdAt: '2024-01-13T16:00:00Z' },
-  { id: 'e6', skillId: 'hs3', endorserId: '4', endorserName: 'María López', endorserAvatar: mockUsers[3].avatar || '', createdAt: '2024-01-14T12:00:00Z' },
+  { id: 'e1', skillId: 'hs1', endorserId: '2', endorserName: 'Ana García', endorserAvatar: mockProfiles[1].avatar || '', createdAt: '2024-01-10T10:00:00Z' },
+  { id: 'e2', skillId: 'hs1', endorserId: '4', endorserName: 'María López', endorserAvatar: mockProfiles[3].avatar || '', createdAt: '2024-01-12T14:30:00Z' },
+  { id: 'e3', skillId: 'hs1', endorserId: '5', endorserName: 'Pedro Ramírez', endorserAvatar: mockProfiles[4].avatar || '', createdAt: '2024-01-15T09:00:00Z' },
+  { id: 'e4', skillId: 'hs2', endorserId: '2', endorserName: 'Ana García', endorserAvatar: mockProfiles[1].avatar || '', createdAt: '2024-01-11T11:00:00Z' },
+  { id: 'e5', skillId: 'hs2', endorserId: '5', endorserName: 'Pedro Ramírez', endorserAvatar: mockProfiles[4].avatar || '', createdAt: '2024-01-13T16:00:00Z' },
+  { id: 'e6', skillId: 'hs3', endorserId: '4', endorserName: 'María López', endorserAvatar: mockProfiles[3].avatar || '', createdAt: '2024-01-14T12:00:00Z' },
 ];
 
 export const mockHardSkills: HardSkill[] = [
-  { id: 'hs1', userId: '1', skillTag: mockGlobalSkillTags[0], level: 'Senior', isTop: true, endorsements: mockEndorsements.filter(e => e.skillId === 'hs1'), createdAt: '2023-06-01T10:00:00Z' },
-  { id: 'hs2', userId: '1', skillTag: mockGlobalSkillTags[1], level: 'Senior', isTop: true, endorsements: mockEndorsements.filter(e => e.skillId === 'hs2'), createdAt: '2023-06-01T10:00:00Z' },
-  { id: 'hs3', userId: '1', skillTag: mockGlobalSkillTags[6], level: 'Senior', isTop: true, endorsements: mockEndorsements.filter(e => e.skillId === 'hs3'), createdAt: '2023-06-01T10:00:00Z' },
-  { id: 'hs4', userId: '1', skillTag: mockGlobalSkillTags[12], level: 'Mid', isTop: false, endorsements: [], createdAt: '2023-06-02T10:00:00Z' },
-  { id: 'hs5', userId: '1', skillTag: mockGlobalSkillTags[17], level: 'Mid', isTop: false, endorsements: [], createdAt: '2023-06-03T10:00:00Z' },
-  { id: 'hs6', userId: '1', skillTag: mockGlobalSkillTags[16], level: 'Mid', isTop: false, endorsements: [], createdAt: '2023-06-04T10:00:00Z' },
-  { id: 'hs7', userId: '1', skillTag: mockGlobalSkillTags[21], level: 'Senior', isTop: false, endorsements: [], createdAt: '2023-06-05T10:00:00Z' },
-  { id: 'hs8', userId: '1', skillTag: mockGlobalSkillTags[5], level: 'Senior', isTop: false, endorsements: [], createdAt: '2023-06-06T10:00:00Z' },
+  { id: 'hs1', profileId: '1', skillTag: mockGlobalSkillTags[0], level: 'Senior', isTop: true, endorsements: mockEndorsements.filter(e => e.skillId === 'hs1'), createdAt: '2023-06-01T10:00:00Z' },
+  { id: 'hs2', profileId: '1', skillTag: mockGlobalSkillTags[1], level: 'Senior', isTop: true, endorsements: mockEndorsements.filter(e => e.skillId === 'hs2'), createdAt: '2023-06-01T10:00:00Z' },
+  { id: 'hs3', profileId: '1', skillTag: mockGlobalSkillTags[6], level: 'Senior', isTop: true, endorsements: mockEndorsements.filter(e => e.skillId === 'hs3'), createdAt: '2023-06-01T10:00:00Z' },
+  { id: 'hs4', profileId: '1', skillTag: mockGlobalSkillTags[12], level: 'Mid', isTop: false, endorsements: [], createdAt: '2023-06-02T10:00:00Z' },
+  { id: 'hs5', profileId: '1', skillTag: mockGlobalSkillTags[17], level: 'Mid', isTop: false, endorsements: [], createdAt: '2023-06-03T10:00:00Z' },
+  { id: 'hs6', profileId: '1', skillTag: mockGlobalSkillTags[16], level: 'Mid', isTop: false, endorsements: [], createdAt: '2023-06-04T10:00:00Z' },
+  { id: 'hs7', profileId: '1', skillTag: mockGlobalSkillTags[21], level: 'Senior', isTop: false, endorsements: [], createdAt: '2023-06-05T10:00:00Z' },
+  { id: 'hs8', profileId: '1', skillTag: mockGlobalSkillTags[5], level: 'Senior', isTop: false, endorsements: [], createdAt: '2023-06-06T10:00:00Z' },
 ];
 
 export const mockSoftSkills: SoftSkill[] = [
-  { id: 'ss1', userId: '1', title: 'Liderazgo técnico', description: 'Lideré un equipo de 5 desarrolladores en la migración exitosa de un monolito a microservicios, reduciendo el tiempo de despliegue en un 70%.', createdAt: '2023-06-01T10:00:00Z' },
-  { id: 'ss2', userId: '1', title: 'Comunicación efectiva', description: 'Facilité sesiones de refinamiento y retrospectivas, mejorando la colaboración entre equipos de desarrollo y producto.', createdAt: '2023-06-02T10:00:00Z' },
-  { id: 'ss3', userId: '1', title: 'Resolución de problemas', description: 'Identifiqué y resolví un cuello de botella en producción que afectaba a 10,000 usuarios diarios.', createdAt: '2023-06-03T10:00:00Z' },
+  { id: 'ss1', profileId: '1', title: 'Liderazgo técnico', description: 'Lideré un equipo de 5 desarrolladores en la migración exitosa de un monolito a microservicios, reduciendo el tiempo de despliegue en un 70%.', createdAt: '2023-06-01T10:00:00Z' },
+  { id: 'ss2', profileId: '1', title: 'Comunicación efectiva', description: 'Facilité sesiones de refinamiento y retrospectivas, mejorando la colaboración entre equipos de desarrollo y producto.', createdAt: '2023-06-02T10:00:00Z' },
+  { id: 'ss3', profileId: '1', title: 'Resolución de problemas', description: 'Identifiqué y resolví un cuello de botella en producción que afectaba a 10,000 usuarios diarios.', createdAt: '2023-06-03T10:00:00Z' },
 ];
 
 // =============================================
@@ -172,7 +172,7 @@ export const mockSoftSkills: SoftSkill[] = [
 export const mockProjects: Project[] = [
   {
     id: 'p1',
-    userId: '1',
+    profileId: '1',
     title: 'E-Commerce Platform',
     description: 'Plataforma de comercio electrónico completa con carrito de compras, pasarela de pagos y panel de administración. Desarrollada con arquitectura de microservicios para alta escalabilidad.',
     category: 'Web',
@@ -198,7 +198,7 @@ export const mockProjects: Project[] = [
   },
   {
     id: 'p2',
-    userId: '1',
+    profileId: '1',
     title: 'Task Management App',
     description: 'Aplicación de gestión de tareas con funcionalidades de colaboración en tiempo real, notificaciones push y sincronización offline.',
     category: 'Mobile',
@@ -220,7 +220,7 @@ export const mockProjects: Project[] = [
   },
   {
     id: 'p3',
-    userId: '1',
+    profileId: '1',
     title: 'Analytics Dashboard',
     description: 'Dashboard de analíticas en tiempo real para monitoreo de métricas de negocio con visualizaciones interactivas.',
     category: 'Data',
@@ -243,7 +243,7 @@ export const mockProjects: Project[] = [
   },
   {
     id: 'p4',
-    userId: '1',
+    profileId: '1',
     title: 'API Gateway Service',
     description: 'Servicio de API Gateway con autenticación JWT, rate limiting y logging centralizado.',
     category: 'API',
@@ -271,7 +271,7 @@ export const mockProjects: Project[] = [
 export const mockConnections: OAuthConnection[] = [
   {
     id: 'c1',
-    userId: '1',
+    profileId: '1',
     provider: 'github',
     status: 'connected',
     lastSynced: '2024-01-15T10:30:00Z',
@@ -280,7 +280,7 @@ export const mockConnections: OAuthConnection[] = [
   },
   {
     id: 'c2',
-    userId: '1',
+    profileId: '1',
     provider: 'linkedin',
     status: 'expired',
     lastSynced: '2023-12-01T14:00:00Z',
@@ -336,7 +336,7 @@ export const mockRecommendations: Recommendation[] = [
 // =============================================
 export const mockVisibilitySettings: VisibilitySettings[] = [
   {
-    userId: '1',
+    profileId: '1',
     slug: 'carlos-mendoza',
     isPublicProfileEnabled: true,
     isPasswordProtected: false,
@@ -359,7 +359,7 @@ export const mockVisibilitySettings: VisibilitySettings[] = [
     },
   },
   {
-    userId: '4',
+    profileId: '4',
     slug: 'maria-lopez',
     isPublicProfileEnabled: true,
     isPasswordProtected: true,
@@ -393,24 +393,24 @@ export const mockModerationHistory: ModerationAction[] = [
 // ANALYTICS
 // =============================================
 export const mockPlatformMetrics: PlatformMetrics = {
-  totalUsers: 15420,
-  activeUsers: 8234,
-  inactiveUsers: 7186,
+  totalProfiles: 15420,
+  activeProfiles: 8234,
+  inactiveProfiles: 7186,
   totalPortfolios: 12350,
   publishedPortfolios: 9876,
   totalVisits: 456789,
   totalInteractions: 34567,
-  userGrowth: 12.5,
+  profileGrowth: 12.5,
   visitGrowth: 23.8,
 };
 
 export const mockActivityLogs: ActivityLog[] = [
-  { id: 'al1', type: 'user_registered', description: 'Nuevo usuario registrado', userId: '6', userName: 'Juan Pérez', createdAt: '2024-01-15T10:30:00Z' },
-  { id: 'al2', type: 'portfolio_published', description: 'Portafolio publicado', userId: '4', userName: 'María López', createdAt: '2024-01-15T09:45:00Z' },
+  { id: 'al1', type: 'profile_registered', description: 'Nuevo usuario registrado', profileId: '6', profileHandle: 'Juan Pérez', createdAt: '2024-01-15T10:30:00Z' },
+  { id: 'al2', type: 'portfolio_published', description: 'Portafolio publicado', profileId: '4', profileHandle: 'María López', createdAt: '2024-01-15T09:45:00Z' },
   { id: 'al3', type: 'visit', description: 'Visita a portafolio de Carlos Mendoza', createdAt: '2024-01-15T09:30:00Z' },
-  { id: 'al4', type: 'interaction', description: 'Nueva validación de skill', userId: '2', userName: 'Ana García', createdAt: '2024-01-15T09:15:00Z' },
-  { id: 'al5', type: 'portfolio_created', description: 'Nuevo portafolio creado', userId: '7', userName: 'Roberto Silva', createdAt: '2024-01-15T08:00:00Z' },
-  { id: 'al6', type: 'user_registered', description: 'Nuevo usuario registrado', userId: '8', userName: 'Elena Castro', createdAt: '2024-01-14T17:30:00Z' },
+  { id: 'al4', type: 'interaction', description: 'Nueva validación de skill', profileId: '2', profileHandle: 'Ana García', createdAt: '2024-01-15T09:15:00Z' },
+  { id: 'al5', type: 'portfolio_created', description: 'Nuevo portafolio creado', profileId: '7', profileHandle: 'Roberto Silva', createdAt: '2024-01-15T08:00:00Z' },
+  { id: 'al6', type: 'profile_registered', description: 'Nuevo usuario registrado', profileId: '8', profileHandle: 'Elena Castro', createdAt: '2024-01-14T17:30:00Z' },
   { id: 'al7', type: 'visit', description: 'Visita a portafolio de María López', createdAt: '2024-01-14T16:00:00Z' },
   { id: 'al8', type: 'interaction', description: 'Descarga de archivo de proyecto', createdAt: '2024-01-14T15:30:00Z' },
 ];
@@ -433,8 +433,8 @@ export const mockTimeSeriesData: TimeSeriesData[] = (() => {
 // =============================================
 // PREFERENCES
 // =============================================
-export const mockUserPreferences: UserPreferences = {
-  userId: '1',
+export const mockProfilePreferences: ProfilePreferences = {
+  profileId: '1',
   language: 'es',
   theme: 'light',
   showGithubHeatmap: true,
@@ -462,10 +462,10 @@ export const mockUserPreferences: UserPreferences = {
 // NOTIFICATIONS
 // =============================================
 export const mockNotifications: Notification[] = [
-  { id: 'n1', userId: '1', type: 'endorsement', title: 'Nueva validación', message: 'Ana García validó tu skill de React', isRead: false, createdAt: '2024-01-15T10:00:00Z' },
-  { id: 'n2', userId: '1', type: 'visit', title: 'Nueva visita', message: 'Tu portafolio recibió 5 nuevas visitas hoy', isRead: false, createdAt: '2024-01-15T09:00:00Z' },
-  { id: 'n3', userId: '1', type: 'recommendation', title: 'Nueva recomendación', message: 'Laura Sánchez te dejó una recomendación', isRead: true, createdAt: '2024-01-14T16:30:00Z' },
-  { id: 'n4', userId: '1', type: 'system', title: 'Actualización del sistema', message: 'Nuevas funcionalidades disponibles en tu dashboard', isRead: true, createdAt: '2024-01-13T10:00:00Z' },
+  { id: 'n1', profileId: '1', type: 'endorsement', title: 'Nueva validación', message: 'Ana García validó tu skill de React', isRead: false, createdAt: '2024-01-15T10:00:00Z' },
+  { id: 'n2', profileId: '1', type: 'visit', title: 'Nueva visita', message: 'Tu portafolio recibió 5 nuevas visitas hoy', isRead: false, createdAt: '2024-01-15T09:00:00Z' },
+  { id: 'n3', profileId: '1', type: 'recommendation', title: 'Nueva recomendación', message: 'Laura Sánchez te dejó una recomendación', isRead: true, createdAt: '2024-01-14T16:30:00Z' },
+  { id: 'n4', profileId: '1', type: 'system', title: 'Actualización del sistema', message: 'Nuevas funcionalidades disponibles en tu dashboard', isRead: true, createdAt: '2024-01-13T10:00:00Z' },
 ];
 
 // =============================================

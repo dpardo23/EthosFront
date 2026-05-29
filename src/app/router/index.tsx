@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import { DashboardLayout, AdminLayout, AuthLayout, PublicPortfolioLayout } from '../layouts';
 import { ProtectedRoute } from './ProtectedRoute';
+import RouteErrorBoundary from './RouteErrorBoundary';
 import { Skeleton } from '@/shared/ui';
 
 // Lazy loaded pages
@@ -21,7 +22,7 @@ const PreferencesPage = lazy(() => import('@/pages/dashboard/PreferencesPage'));
 const PortfolioPage = lazy(() => import('@/pages/dashboard/PortfolioPage'));
 const CVStudioPage = lazy(() => import('@/pages/dashboard/CVStudioPage'));
 const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage'));
-const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage'));
+const AdminProfilesPage = lazy(() => import('@/pages/admin/AdminProfilesPage'));
 const AdminModerationPage = lazy(() => import('@/pages/admin/AdminModerationPage'));
 const AdminSkillsPage = lazy(() => import('@/pages/admin/AdminSkillsPage'));
 const AdminPortfoliosPage = lazy(() => import('@/pages/admin/AdminPortfoliosPage'));
@@ -50,6 +51,7 @@ function PageLoader() {
 export const router = createBrowserRouter([
   {
     element: <AuthLayout />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       {
         path: 'login',
@@ -91,6 +93,7 @@ export const router = createBrowserRouter([
         <DashboardLayout />
       </ProtectedRoute>
     ),
+    errorElement: <RouteErrorBoundary />,
     children: [
       {
         path: 'dashboard',
@@ -212,6 +215,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/talent',
+    errorElement: <RouteErrorBoundary />,
     element: (
       <Suspense fallback={<PageLoader />}>
         <TalentDiscoveryPage />
@@ -224,6 +228,7 @@ export const router = createBrowserRouter([
         <AdminLayout />
       </ProtectedRoute>
     ),
+    errorElement: <RouteErrorBoundary />,
     children: [
       {
         path: 'admin/dashboard',
@@ -234,10 +239,10 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: 'admin/users',
+        path: 'admin/profiles',
         element: (
           <Suspense fallback={<PageLoader />}>
-            <AdminUsersPage />
+            <AdminProfilesPage />
           </Suspense>
         ),
       },
@@ -277,6 +282,7 @@ export const router = createBrowserRouter([
   },
   {
     element: <PublicPortfolioLayout />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       {
         path: '/',
@@ -330,6 +336,7 @@ export const router = createBrowserRouter([
   },
   {
     path: 'access-denied',
+    errorElement: <RouteErrorBoundary />,
     element: (
       <Suspense fallback={<PageLoader />}>
         <AccessDeniedPage />
@@ -338,6 +345,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '*',
+    errorElement: <RouteErrorBoundary />,
     element: (
       <Suspense fallback={<PageLoader />}>
         <NotFoundPage />

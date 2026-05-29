@@ -5,7 +5,7 @@ import type {
   SkillCategory,
   SkillLevel,
   SoftSkill,
-  User,
+  Profile,
 } from '../types';
 
 export type TalentAvailability = 'Disponible' | 'Entrevistas' | 'Explorando';
@@ -21,7 +21,7 @@ type TalentHardSkill = {
 };
 
 export interface RecruiterTalentProfile {
-  user: User;
+  profile: Profile;
   experienceYears: number;
   expectedRole: string;
   availability: TalentAvailability;
@@ -34,13 +34,13 @@ export interface RecruiterTalentProfile {
 
 export const recruiterTalentProfiles: RecruiterTalentProfile[] = [
   {
-    user: {
+    profile: {
       id: '6',
       email: 'laura.martinez@ethoshub.dev',
       name: 'Laura Martinez',
       avatar:
         'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&h=300&fit=crop&crop=face',
-      username: 'lauramartinez',
+      profileHandle: 'lauramartinez',
       role: 'professional',
       slug: 'laura-martinez',
       profession: 'Senior Frontend Engineer',
@@ -68,13 +68,13 @@ export const recruiterTalentProfiles: RecruiterTalentProfile[] = [
     portfolioHighlights: ['Design system enterprise', 'Migracion React 18'],
   },
   {
-    user: {
+    profile: {
       id: '7',
       email: 'diego.herrera@ethoshub.dev',
       name: 'Diego Herrera',
       avatar:
         'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&h=300&fit=crop&crop=face',
-      username: 'diegoherrera',
+      profileHandle: 'diegoherrera',
       role: 'professional',
       slug: 'diego-herrera',
       profession: 'Senior Full Stack Developer',
@@ -102,13 +102,13 @@ export const recruiterTalentProfiles: RecruiterTalentProfile[] = [
     portfolioHighlights: ['Marketplace multi-tenant', 'Suite de onboarding para SaaS'],
   },
   {
-    user: {
+    profile: {
       id: '8',
       email: 'sofia.navarro@ethoshub.dev',
       name: 'Sofia Navarro',
       avatar:
         'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=300&h=300&fit=crop&crop=face',
-      username: 'sofianavarro',
+      profileHandle: 'sofianavarro',
       role: 'professional',
       slug: 'sofia-navarro',
       profession: 'Senior Java Backend Engineer',
@@ -136,13 +136,13 @@ export const recruiterTalentProfiles: RecruiterTalentProfile[] = [
     portfolioHighlights: ['Core bancario modular', 'Motor de pagos en tiempo real'],
   },
   {
-    user: {
+    profile: {
       id: '9',
       email: 'andres.paredes@ethoshub.dev',
       name: 'Andres Paredes',
       avatar:
         'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300&h=300&fit=crop&crop=face',
-      username: 'andresparedes',
+      profileHandle: 'andresparedes',
       role: 'professional',
       slug: 'andres-paredes',
       profession: 'Software Engineer',
@@ -170,13 +170,13 @@ export const recruiterTalentProfiles: RecruiterTalentProfile[] = [
     portfolioHighlights: ['Integraciones B2B para ERP', 'Backoffice de operaciones'],
   },
   {
-    user: {
+    profile: {
       id: '10',
       email: 'camila.torres@ethoshub.dev',
       name: 'Camila Torres',
       avatar:
         'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&h=300&fit=crop&crop=face',
-      username: 'camilatorres',
+      profileHandle: 'camilatorres',
       role: 'professional',
       slug: 'camila-torres',
       profession: 'QA Automation Engineer',
@@ -204,13 +204,13 @@ export const recruiterTalentProfiles: RecruiterTalentProfile[] = [
     portfolioHighlights: ['Framework E2E reusable', 'QA dashboard para releases'],
   },
   {
-    user: {
+    profile: {
       id: '11',
       email: 'mateo.castro@ethoshub.dev',
       name: 'Mateo Castro',
       avatar:
         'https://images.unsplash.com/photo-1504593811423-6dd665756598?w=300&h=300&fit=crop&crop=face',
-      username: 'mateocastro',
+      profileHandle: 'mateocastro',
       role: 'professional',
       slug: 'mateo-castro',
       profession: 'Senior DevOps Engineer',
@@ -238,13 +238,13 @@ export const recruiterTalentProfiles: RecruiterTalentProfile[] = [
     portfolioHighlights: ['Plataforma de despliegue continuo', 'Observabilidad centralizada'],
   },
   {
-    user: {
+    profile: {
       id: '12',
       email: 'daniela.vega@ethoshub.dev',
       name: 'Daniela Vega',
       avatar:
         'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&h=300&fit=crop&crop=face',
-      username: 'danielavega',
+      profileHandle: 'danielavega',
       role: 'professional',
       slug: 'daniela-vega',
       profession: 'Senior Data Engineer',
@@ -272,13 +272,13 @@ export const recruiterTalentProfiles: RecruiterTalentProfile[] = [
     portfolioHighlights: ['Lakehouse para analytics', 'Pipeline de riesgo crediticio'],
   },
   {
-    user: {
+    profile: {
       id: '13',
       email: 'nicolas.pena@ethoshub.dev',
       name: 'Nicolas Pena',
       avatar:
         'https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=300&h=300&fit=crop&crop=face',
-      username: 'nicolaspena',
+      profileHandle: 'nicolaspena',
       role: 'professional',
       slug: 'nicolas-pena',
       profession: 'Mobile Frontend Engineer',
@@ -306,13 +306,13 @@ export const recruiterTalentProfiles: RecruiterTalentProfile[] = [
     portfolioHighlights: ['App fintech mobile-first', 'Checkout in-app optimizado'],
   },
   {
-    user: {
+    profile: {
       id: '14',
       email: 'paula.rojas@ethoshub.dev',
       name: 'Paula Rojas',
       avatar:
         'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop&crop=face',
-      username: 'paularojas',
+      profileHandle: 'paularojas',
       role: 'professional',
       slug: 'paula-rojas',
       profession: 'Frontend Developer',
@@ -340,13 +340,13 @@ export const recruiterTalentProfiles: RecruiterTalentProfile[] = [
     portfolioHighlights: ['Portal de autoservicio', 'Biblioteca de componentes accesibles'],
   },
   {
-    user: {
+    profile: {
       id: '15',
       email: 'javier.salas@ethoshub.dev',
       name: 'Javier Salas',
       avatar:
         'https://images.unsplash.com/photo-1506277886164-e25aa3f4ef7f?w=300&h=300&fit=crop&crop=face',
-      username: 'javiersalas',
+      profileHandle: 'javiersalas',
       role: 'professional',
       slug: 'javier-salas',
       profession: 'Senior Full Stack Engineer',
@@ -374,13 +374,13 @@ export const recruiterTalentProfiles: RecruiterTalentProfile[] = [
     portfolioHighlights: ['BFF para ecommerce', 'Plataforma interna de growth'],
   },
   {
-    user: {
+    profile: {
       id: '16',
       email: 'fernanda.molina@ethoshub.dev',
       name: 'Fernanda Molina',
       avatar:
         'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?w=300&h=300&fit=crop&crop=face',
-      username: 'fernandamolina',
+      profileHandle: 'fernandamolina',
       role: 'professional',
       slug: 'fernanda-molina',
       profession: 'Frontend Lead',
@@ -408,13 +408,13 @@ export const recruiterTalentProfiles: RecruiterTalentProfile[] = [
     portfolioHighlights: ['Design platform multi-producto', 'Refactor de portal corporativo'],
   },
   {
-    user: {
+    profile: {
       id: '17',
       email: 'ricardo.leon@ethoshub.dev',
       name: 'Ricardo Leon',
       avatar:
         'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=300&h=300&fit=crop&crop=face',
-      username: 'ricardoleon',
+      profileHandle: 'ricardoleon',
       role: 'professional',
       slug: 'ricardo-leon',
       profession: 'Backend Architect',
@@ -443,7 +443,7 @@ export const recruiterTalentProfiles: RecruiterTalentProfile[] = [
   },
 ];
 
-function createEndorsements(skillId: string, count: number, userId: string) {
+function createEndorsements(skillId: string, count: number, profileId: string) {
   return Array.from({ length: count }, (_, index) => ({
     id: `${skillId}-endorsement-${index + 1}`,
     skillId,
@@ -452,27 +452,27 @@ function createEndorsements(skillId: string, count: number, userId: string) {
     endorserAvatar:
       'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face',
     createdAt: `2024-03-${String((index % 9) + 1).padStart(2, '0')}T10:00:00Z`,
-    userId,
-  })).map(({ userId: _userId, ...endorsement }) => endorsement);
+    profileId,
+  })).map(({ profileId: _profileId, ...endorsement }) => endorsement);
 }
 
-export const recruiterTalentUsers: User[] = recruiterTalentProfiles.map((profile) => profile.user);
+export const recruiterTalentProfileList: Profile[] = recruiterTalentProfiles.map((profile) => profile.profile);
 
 export const recruiterTalentHardSkills: HardSkill[] = recruiterTalentProfiles.flatMap((profile) =>
   profile.hardSkills.map((skill, index) => {
-    const id = `${profile.user.id}-hs-${index + 1}`;
+    const id = `${profile.profile.id}-hs-${index + 1}`;
     return {
       id,
-      userId: profile.user.id,
+      profileId: profile.profile.id,
       skillTag: {
-        id: `${profile.user.slug}-${index + 1}`,
+        id: `${profile.profile.slug}-${index + 1}`,
         name: skill.name,
         category: skill.category,
         isNormalized: true,
       },
       level: skill.level,
       isTop: Boolean(skill.isTop),
-      endorsements: createEndorsements(id, skill.endorsements, profile.user.id),
+      endorsements: createEndorsements(id, skill.endorsements, profile.profile.id),
       createdAt: `2024-03-${String(index + 1).padStart(2, '0')}T10:00:00Z`,
     };
   })
@@ -480,8 +480,8 @@ export const recruiterTalentHardSkills: HardSkill[] = recruiterTalentProfiles.fl
 
 export const recruiterTalentSoftSkills: SoftSkill[] = recruiterTalentProfiles.flatMap((profile) =>
   profile.softSkills.map((skill, index) => ({
-    id: `${profile.user.id}-ss-${index + 1}`,
-    userId: profile.user.id,
+    id: `${profile.profile.id}-ss-${index + 1}`,
+    profileId: profile.profile.id,
     title: skill,
     description: `${skill} aplicada a proyectos reales y colaboracion con equipos multidisciplinarios.`,
     createdAt: `2024-03-${String(index + 1).padStart(2, '0')}T12:00:00Z`,
@@ -497,9 +497,9 @@ function inferProjectCategory(profile: RecruiterTalentProfile): ProjectCategory 
 }
 
 export const recruiterTalentProjects: Project[] = recruiterTalentProfiles.map((profile, index) => ({
-  id: `rt-project-${profile.user.id}`,
-  userId: profile.user.id,
-  title: profile.portfolioHighlights[0] ?? `Proyecto destacado de ${profile.user.name}`,
+  id: `rt-project-${profile.profile.id}`,
+  profileId: profile.profile.id,
+  title: profile.portfolioHighlights[0] ?? `Proyecto destacado de ${profile.profile.name}`,
   description: `${profile.summary} Proyecto demo preparado para la vitrina publica del talento.`,
   category: inferProjectCategory(profile),
   status: 'completed',

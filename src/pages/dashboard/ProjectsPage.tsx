@@ -24,7 +24,7 @@ import {
   X,
   ArrowRight,
   Tag,
-  User,
+  User as ProfileIcon,
   Clock,
   BarChart3,
   FileText,
@@ -104,7 +104,7 @@ const SORT_OPTIONS: { value: ProjectSortOrder; label: string }[] = [
 const INITIAL_MOCK_PROJECTS: Project[] = [
   {
     id:          'mock-1',
-    userId:      'mock-profile',
+    profileId:      'mock-profile',
     title:       'NexusAI Platform',
     category:    'Web',
     status:      'completed',
@@ -147,7 +147,7 @@ const INITIAL_MOCK_PROJECTS: Project[] = [
   },
   {
     id:         'mock-2',
-    userId:     'mock-profile',
+    profileId:     'mock-profile',
     title:      'InfraEdge Orchestrator',
     category:   'DevOps',
     status:     'in_progress',
@@ -233,7 +233,7 @@ const sortProjects = (list: Project[], order: ProjectSortOrder) =>
 
 export default function ProjectsPage() {
   const { t } = useTranslation();
-  const { user: profile } = useAuthStore();
+  const { profile: profile } = useAuthStore();
   const { addToast } = useUiStore();
   const { projects, loading, fetchProjects, deleteProject } = useProjectsStore();
 
@@ -768,7 +768,7 @@ function ProjectDetailModal({
                 {/* Meta grid */}
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                   {project.technicalInfo.role && (
-                    <InfoTile icon={User} label="Rol" value={project.technicalInfo.role} />
+                    <InfoTile icon={ProfileIcon} label="Rol" value={project.technicalInfo.role} />
                   )}
                   {(project.technicalInfo.startDate || project.technicalInfo.endDate) && (
                     <InfoTile

@@ -18,14 +18,14 @@ interface ProjectsStore {
   loading: boolean;
   error: string | null;
 
-  fetchProjects: (userId: string) => Promise<void>;
+  fetchProjects: (profileId: string) => Promise<void>;
   fetchProject: (projectId: string) => Promise<Project | null>;
-  fetchPublicProjects: (userId: string) => Promise<void>;
+  fetchPublicProjects: (profileId: string) => Promise<void>;
 
   /** CA-8 + CA-9: Genera ID único, vincula al usuario y registra fechas automáticamente. */
-  createProject: (userId: string, data: Partial<Project>) => Promise<Project>;
+  createProject: (profileId: string, data: Partial<Project>) => Promise<Project>;
 
-  updateProject: (projectId: string, data: Partial<Project>, userId?: string) => Promise<void>;
+  updateProject: (projectId: string, data: Partial<Project>, profileId?: string) => Promise<void>;
   deleteProject: (projectId: string) => Promise<void>;
   clearCurrentProject: () => void;
 }
@@ -40,10 +40,10 @@ export const useProjectsStore = create<ProjectsStore>((set) => ({
   // READ
   // ──────────────────────────────────────────────
 
-  fetchProjects: async (userId: string) => {
+  fetchProjects: async (profileId: string) => {
     set({ loading: true, error: null });
     try {
-      const projects = await projectsService.getProjects(userId);
+      const projects = await projectsService.getProjects(profileId);
       set({ projects, loading: false });
     } catch {
       set({ error: 'Error al cargar proyectos', loading: false });
@@ -62,10 +62,10 @@ export const useProjectsStore = create<ProjectsStore>((set) => ({
     }
   },
 
-  fetchPublicProjects: async (userId: string) => {
+  fetchPublicProjects: async (profileId: string) => {
     set({ loading: true, error: null });
     try {
-      const projects = await projectsService.getPublicProjects(userId);
+      const projects = await projectsService.getPublicProjects(profileId);
       set({ projects, loading: false });
     } catch {
       set({ error: 'Error al cargar proyectos', loading: false });
@@ -86,10 +86,10 @@ export const useProjectsStore = create<ProjectsStore>((set) => ({
    *
    * @returns El proyecto recién creado para permitir la redirección post-creación.
    */
-  createProject: async (userId: string, data: Partial<Project>): Promise<Project> => {
+  createProject: async (profileId: string, data: Partial<Project>): Promise<Project> => {
     set({ loading: true, error: null });
     try {
-      const newProject = await projectsService.createProject(userId, data);
+      const newProject = await projectsService.createProject(profileId, data);
       set((state) => ({
         projects: [...state.projects, newProject],
         loading: false,
@@ -106,7 +106,7 @@ export const useProjectsStore = create<ProjectsStore>((set) => ({
   // UPDATE
   // ──────────────────────────────────────────────
 
-    updateProject: async (projectId: string, data: Partial<Project>, userId?: string) => {
+    updateProject: async (projectId: string, data: Partial<Project>, profileId?: string) => {
     // Optimistic update: apply changes immediately so UI reflects edits even if API is unavailable
     const optimistic = { ...data, updatedAt: new Date().toISOString() };
     set((state) => ({
@@ -121,7 +121,7 @@ export const useProjectsStore = create<ProjectsStore>((set) => ({
       error: null,
     }));
     try {
-      const updatedProject = await projectsService.updateProject(projectId, data, userId || '');
+      const updatedProject = await projectsService.updateProject(projectId, data, profileId || '');
       set((state) => ({
         projects: state.projects.map((p) => p.id === projectId ? updatedProject : p),
         currentProject:

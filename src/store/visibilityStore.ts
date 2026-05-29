@@ -4,24 +4,24 @@ import type {
   SectionVisibility,
   PortfolioSection,
   ModerationAction,
-  User,
+  Profile,
 } from '@/shared/types';
 import { visibilityService } from '@/shared/services';
 
 interface VisibilityStore {
   settings: VisibilitySettings | null;
-  publicPortfolio: { user: User; settings: VisibilitySettings } | null;
-  publicPortfolios: { user: User; settings: VisibilitySettings }[];
+  publicPortfolio: { profile: Profile; settings: VisibilitySettings } | null;
+  publicPortfolios: { profile: Profile; settings: VisibilitySettings }[];
   moderationHistory: ModerationAction[];
   slugAvailability: { available: boolean; reason?: string } | null;
   loading: boolean;
   error: string | null;
-  fetchSettings: (userId: string) => Promise<void>;
+  fetchSettings: (profileId: string) => Promise<void>;
   checkSlugAvailability: (slug: string) => Promise<void>;
-  updateSlug: (userId: string, slug: string) => Promise<void>;
-  updateSectionVisibility: (userId: string, section: PortfolioSection, visibility: SectionVisibility) => Promise<void>;
-  updateSeoSettings: (userId: string, seo: { title: string; description: string }) => Promise<void>;
-  updatePasswordProtection: (userId: string, enabled: boolean, password?: string) => Promise<void>;
+  updateSlug: (profileId: string, slug: string) => Promise<void>;
+  updateSectionVisibility: (profileId: string, section: PortfolioSection, visibility: SectionVisibility) => Promise<void>;
+  updateSeoSettings: (profileId: string, seo: { title: string; description: string }) => Promise<void>;
+  updatePasswordProtection: (profileId: string, enabled: boolean, password?: string) => Promise<void>;
   fetchPublicPortfolio: (slug: string) => Promise<void>;
   verifyPassword: (slug: string, password: string) => Promise<boolean>;
   fetchPublicPortfolios: () => Promise<void>;
@@ -38,10 +38,10 @@ export const useVisibilityStore = create<VisibilityStore>((set) => ({
   loading: false,
   error: null,
 
-  fetchSettings: async (userId: string) => {
+  fetchSettings: async (profileId: string) => {
     set({ loading: true, error: null });
     try {
-      const settings = await visibilityService.getSettings(userId);
+      const settings = await visibilityService.getSettings(profileId);
       set({ settings, loading: false });
     } catch {
       set({ error: 'Error al cargar configuración', loading: false });
@@ -57,10 +57,10 @@ export const useVisibilityStore = create<VisibilityStore>((set) => ({
     }
   },
 
-  updateSlug: async (userId: string, slug: string) => {
+  updateSlug: async (profileId: string, slug: string) => {
     set({ loading: true, error: null });
     try {
-      await visibilityService.updateSlug(userId, slug);
+      await visibilityService.updateSlug(profileId, slug);
       set((state) => ({
         settings: state.settings ? { ...state.settings, slug } : null,
         loading: false,
@@ -70,10 +70,10 @@ export const useVisibilityStore = create<VisibilityStore>((set) => ({
     }
   },
 
-  updateSectionVisibility: async (userId: string, section: PortfolioSection, visibility: SectionVisibility) => {
+  updateSectionVisibility: async (profileId: string, section: PortfolioSection, visibility: SectionVisibility) => {
     set({ loading: true, error: null });
     try {
-      await visibilityService.updateSectionVisibility(userId, section, visibility);
+      await visibilityService.updateSectionVisibility(profileId, section, visibility);
       set((state) => ({
         settings: state.settings
           ? {
@@ -88,10 +88,10 @@ export const useVisibilityStore = create<VisibilityStore>((set) => ({
     }
   },
 
-  updateSeoSettings: async (userId: string, seo: { title: string; description: string }) => {
+  updateSeoSettings: async (profileId: string, seo: { title: string; description: string }) => {
     set({ loading: true, error: null });
     try {
-      await visibilityService.updateSeoSettings(userId, seo);
+      await visibilityService.updateSeoSettings(profileId, seo);
       set((state) => ({
         settings: state.settings ? { ...state.settings, seo } : null,
         loading: false,
@@ -101,10 +101,10 @@ export const useVisibilityStore = create<VisibilityStore>((set) => ({
     }
   },
 
-  updatePasswordProtection: async (userId: string, enabled: boolean, password?: string) => {
+  updatePasswordProtection: async (profileId: string, enabled: boolean, password?: string) => {
     set({ loading: true, error: null });
     try {
-      await visibilityService.updatePasswordProtection(userId, enabled, password);
+      await visibilityService.updatePasswordProtection(profileId, enabled, password);
       set((state) => ({
         settings: state.settings
           ? { ...state.settings, isPasswordProtected: enabled, password }

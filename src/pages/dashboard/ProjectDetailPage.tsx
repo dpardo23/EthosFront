@@ -10,7 +10,7 @@ import {
   ArrowLeft,
   Calendar,
   Tag,
-  User,
+  User as ProfileIcon,
   Eye,
   EyeOff,
   Star,
@@ -156,7 +156,7 @@ export default function ProjectDetailPage() {
     if (!currentProject || from === to) return;
     const next = reorderMedia(mediaItems, from, to);
     setMediaItems(next);
-    void updateProject(currentProject.id, { media: next }, currentProject.userId);
+    void updateProject(currentProject.id, { media: next }, currentProject.profileId);
   };
 
   const getEmbedUrl = (url: string, type: string) => {
@@ -351,7 +351,7 @@ export default function ProjectDetailPage() {
 
               <div className="grid gap-3 sm:grid-cols-2">
                 {currentProject.technicalInfo.role && (
-                  <InfoTile icon={User} label="Rol" value={currentProject.technicalInfo.role} />
+                  <InfoTile icon={ProfileIcon} label="Rol" value={currentProject.technicalInfo.role} />
                 )}
                 {(currentProject.technicalInfo.startDate ||
                   currentProject.technicalInfo.endDate) && (

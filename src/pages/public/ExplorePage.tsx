@@ -2,13 +2,13 @@ import { ArrowUpRight, Briefcase, MapPin, Search, Shield, Sparkles, Users } from
 import { Link } from 'react-router-dom';
 import { Badge, Button } from '@/shared/ui';
 import { useAuthStore } from '@/store/authStore';
-import { mockUsers } from '@/shared/mocks/data';
+import { mockProfiles } from '@/shared/mocks/data';
 
-const featuredProfiles = mockUsers
-  .filter((user) => user.role === 'professional')
+const featuredProfiles = mockProfiles
+  .filter((profile) => profile.role === 'professional')
   .slice(0, 3)
-  .map((user, index) => ({
-    ...user,
+  .map((profile, index) => ({
+    ...profile,
     headline:
       index === 0
         ? 'Construyendo productos web escalables con foco en performance y claridad.'

@@ -120,7 +120,7 @@ export default function LoginPage() {
           duration: 4000,
         });
 
-        if (result.user.role === 'professional' && shouldStartSkillOnboarding(result.user.email)) {
+        if (result.profile.role === 'professional' && shouldStartSkillOnboarding(result.profile.email)) {
           navigate('/dashboard');
           return;
         }
@@ -198,7 +198,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="tu@email.com"
-              autoComplete="username"
+              autoComplete="profileHandle"
               required
               icon={Mail}
             />

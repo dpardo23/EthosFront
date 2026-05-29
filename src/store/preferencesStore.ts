@@ -1,17 +1,17 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { UserPreferences, Language, PortfolioSection } from '@/shared/types';
+import type { ProfilePreferences, Language, PortfolioSection } from '@/shared/types';
 import { preferencesService } from '@/shared/services';
 
 interface PreferencesStore {
-  preferences: UserPreferences | null;
+  preferences: ProfilePreferences | null;
   loading: boolean;
   error: string | null;
-  fetchPreferences: (userId: string) => Promise<void>;
-  updatePreferences: (updates: Partial<UserPreferences>) => Promise<void>;
+  fetchPreferences: (profileId: string) => Promise<void>;
+  updatePreferences: (updates: Partial<ProfilePreferences>) => Promise<void>;
   updateLanguage: (language: Language) => Promise<void>;
   updateSectionOrder: (order: PortfolioSection[]) => Promise<void>;
-  updatePreference: (key: keyof UserPreferences, value: unknown) => Promise<void>;
+  updatePreference: (key: keyof ProfilePreferences, value: unknown) => Promise<void>;
 }
 
 export const usePreferencesStore = create<PreferencesStore>()(
@@ -21,17 +21,17 @@ export const usePreferencesStore = create<PreferencesStore>()(
       loading: false,
       error: null,
 
-      fetchPreferences: async (userId: string) => {
+      fetchPreferences: async (profileId: string) => {
         set({ loading: true, error: null });
         try {
-          const preferences = await preferencesService.getPreferences(userId);
+          const preferences = await preferencesService.getPreferences(profileId);
           set({ preferences, loading: false });
         } catch {
           set({ error: 'Error al cargar preferencias', loading: false });
         }
       },
 
-      updatePreferences: async (updates: Partial<UserPreferences>) => {
+      updatePreferences: async (updates: Partial<ProfilePreferences>) => {
         set({ loading: true, error: null });
         try {
           const currentPreferences = get().preferences;
@@ -41,7 +41,7 @@ export const usePreferencesStore = create<PreferencesStore>()(
 
           await Promise.all(
             Object.entries(updates).map(([key, value]) =>
-              preferencesService.updatePreference(key as keyof UserPreferences, value)
+              preferencesService.updatePreference(key as keyof ProfilePreferences, value)
             )
           );
 
@@ -84,7 +84,7 @@ export const usePreferencesStore = create<PreferencesStore>()(
         }
       },
 
-      updatePreference: async (key: keyof UserPreferences, value: unknown) => {
+      updatePreference: async (key: keyof ProfilePreferences, value: unknown) => {
         set({ loading: true, error: null });
         try {
           await preferencesService.updatePreference(key, value);

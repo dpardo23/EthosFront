@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, User, Briefcase, Clock, MapPin, Search } from 'lucide-react';
+import { X, Upload, User as ProfileIcon, Briefcase, Clock, MapPin, Search } from 'lucide-react';
 import { Button, LoadingSpinner } from '@/shared/ui';
 import { useAuthStore } from '@/store/authStore';
 import { useUiStore } from '@/store/uiStore';
@@ -16,7 +16,7 @@ interface ProfileEditorModalProps {
 }
 
 export function ProfileEditorModal({ isOpen, onClose }: ProfileEditorModalProps) {
-  const { user } = useAuthStore();
+  const { profile } = useAuthStore();
   const { addToast } = useUiStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -50,7 +50,7 @@ export function ProfileEditorModal({ isOpen, onClose }: ProfileEditorModalProps)
   }, [isOpen]);
 
   useEffect(() => {
-    if (isOpen && user?.id) {
+    if (isOpen && profile?.id) {
       const fetchProfile = async () => {
         setIsFetching(true);
         try {
@@ -58,14 +58,14 @@ export function ProfileEditorModal({ isOpen, onClose }: ProfileEditorModalProps)
           const data = response.data;
 
           setFormData({
-            firstName: data.firstName || user.name?.split(' ')[0] || '',
-            lastName: data.lastName || user.name?.split(' ').slice(1).join(' ') || '',
-            photoUrl: data.photoUrl || user.avatar || '',
+            firstName: data.firstName || profile.name?.split(' ')[0] || '',
+            lastName: data.lastName || profile.name?.split(' ').slice(1).join(' ') || '',
+            photoUrl: data.photoUrl || profile.avatar || '',
             seniority: data.seniority || 'Junior',
             availabilityStatus: data.availabilityStatus || 'Disponible',
-            location: data.location || user.location || '',
+            location: data.location || profile.location || '',
           });
-          setPreviewUrl(data.photoUrl || user.avatar || null);
+          setPreviewUrl(data.photoUrl || profile.avatar || null);
         } catch (error) {
           console.error("Error al cargar el perfil", error);
         } finally {
@@ -105,11 +105,11 @@ export function ProfileEditorModal({ isOpen, onClose }: ProfileEditorModalProps)
       await api.put('/v1/profile/professional', formData);
 
       useAuthStore.setState((state) => ({
-        user: state.user ? {
-          ...state.user,
+        profile: state.profile ? {
+          ...state.profile,
           name: `${formData.firstName} ${formData.lastName}`.trim(),
-          avatar: formData.photoUrl || state.user.avatar,
-          location: formData.location || state.user.location,
+          avatar: formData.photoUrl || state.profile.avatar,
+          location: formData.location || state.profile.location,
         } : null
       }));
 
@@ -171,7 +171,7 @@ export function ProfileEditorModal({ isOpen, onClose }: ProfileEditorModalProps)
                         <img src={previewUrl} className="h-full w-full object-cover" alt="Preview" />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center bg-gray-50 dark:bg-white/5">
-                          <User className="h-8 w-8 text-gray-400" />
+                          <ProfileIcon className="h-8 w-8 text-gray-400" />
                         </div>
                       )}
                       <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">

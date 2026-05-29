@@ -92,7 +92,7 @@ export const PORTFOLIO_MOCK_DASHBOARD: ProfessionalDashboardData = {
 export const PORTFOLIO_MOCK_PROJECTS: Project[] = [
   {
     id: 'p1',
-    userId: 'mock',
+    profileId: 'mock',
     title: 'EthosHub — Design System',
     description:
       'Sistema de diseño completo con más de 60 componentes accesibles construido con Radix UI y Tailwind CSS.',
@@ -113,7 +113,7 @@ export const PORTFOLIO_MOCK_PROJECTS: Project[] = [
   },
   {
     id: 'p2',
-    userId: 'mock',
+    profileId: 'mock',
     title: 'Dashboard de Analytics',
     description: 'Dashboard de métricas en tiempo real con gráficos D3 y WebSockets.',
     category: 'Web',
@@ -1062,25 +1062,25 @@ export function PortfolioBentoView({
 // ── Page (default export) ──────────────────────────────────────────────────────
 
 export default function PortfolioPage() {
-  const { user } = useAuthStore();
+  const { profile } = useAuthStore();
   const { projects, fetchProjects } = useProjectsStore();
 
   const [data, setData] = useState<ProfessionalDashboardData>(PORTFOLIO_MOCK_DASHBOARD);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user?.id) {
+    if (!profile?.id) {
       setLoading(false);
       return;
     }
     Promise.all([
-      dashboardService.getProfessionalDashboard(user.id),
-      fetchProjects(user.profile_id || user.id),
+      dashboardService.getProfessionalDashboard(profile.id),
+      fetchProjects(profile.profile_id || profile.id),
     ])
       .then(([d]) => setData(d))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [user?.id]);
+  }, [profile?.id]);
 
   if (loading) return <PortfolioSkeleton />;
 
@@ -1093,9 +1093,9 @@ export default function PortfolioPage() {
           data={data}
           projects={allProjects}
           isPublicView={false}
-          profileEmail={user?.email}
-          profileWebsite={user?.website}
-          profileSlug={user?.slug}
+          profileEmail={profile?.email}
+          profileWebsite={profile?.website}
+          profileSlug={profile?.slug}
         />
       </div>
     </div>

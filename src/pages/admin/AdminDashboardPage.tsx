@@ -27,7 +27,7 @@ const getKpiStats = () => [
     change: '+12.5%',
     trend: 'up' as const,
     icon: Users,
-    description: 'core.users',
+    description: 'core.profiles',
   },
   {
     label: 'Portafolios Activos',
@@ -55,17 +55,17 @@ const getKpiStats = () => [
   },
 ];
 
-// User growth data generator
+// Profile growth data generator
 const generateGrowthData = (days: number) => {
   const data = [];
-  const baseUsers = 10000;
+  const baseProfiles = 10000;
   for (let i = days; i >= 0; i--) {
     const date = new Date();
     date.setDate(date.getDate() - i);
     data.push({
       date: date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
-      usuarios: Math.floor(baseUsers + (days - i) * 95 + Math.random() * 50),
-      activos: Math.floor((baseUsers + (days - i) * 95) * 0.75 + Math.random() * 30),
+      usuarios: Math.floor(baseProfiles + (days - i) * 95 + Math.random() * 50),
+      activos: Math.floor((baseProfiles + (days - i) * 95) * 0.75 + Math.random() * 30),
     });
   }
   return data;
@@ -262,7 +262,7 @@ export default function AdminDashboardPage() {
 
       {/* Charts Row */}
       <div className="grid w-full grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">
-        {/* User Growth Area Chart */}
+        {/* Profile Growth Area Chart */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

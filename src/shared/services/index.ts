@@ -1,6 +1,6 @@
 import { delay, generateId } from '../lib/utils';
 import {
-  mockUsers,
+  mockProfiles,
   mockSoftSkills,
   mockProjects,
   mockConnections,
@@ -14,14 +14,14 @@ import {
   mockPlatformMetrics,
   mockActivityLogs,
   mockTimeSeriesData,
-  mockUserPreferences,
+  mockProfilePreferences,
   mockNotifications,
   reservedSlugs,
   takenSlugs,
 } from '../mocks/data';
 import type {
-  User,
-  UserRole,
+  Profile,
+  ProfileRole,
   HardSkill,
   SoftSkill,
   GlobalSkillTag,
@@ -38,7 +38,7 @@ import type {
   PlatformMetrics,
   ActivityLog,
   TimeSeriesData,
-  UserPreferences,
+  ProfilePreferences,
   Language,
   Notification,
 } from '../types';
@@ -88,35 +88,35 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
 // AUTH SERVICE
 // =============================================
 export const authService = {
-  async login(email: string, _password: string, role: UserRole): Promise<User> {
+  async login(email: string, _password: string, role: ProfileRole): Promise<Profile> {
     await delay(DELAY_MS);
-    const user = mockUsers.find((u) => u.role === role) || mockUsers[0];
-    return { ...user, email };
+    const profile = mockProfiles.find((u) => u.role === role) || mockProfiles[0];
+    return { ...profile, email };
   },
 
   async logout(): Promise<void> {
     await delay(300);
   },
 
-  async getCurrentUser(): Promise<User | null> {
+  async getCurrentProfile(): Promise<Profile | null> {
     await delay(300);
-    const stored = localStorage.getItem('ethoshub_user');
+    const stored = localStorage.getItem('ethoshub_profile');
     if (stored) {
       return JSON.parse(stored);
     }
     return null;
   },
 
-  async updateProfile(userId: string, data: Partial<User>): Promise<User> {
+  async updateProfile(profileId: string, data: Partial<Profile>): Promise<Profile> {
     await delay(DELAY_MS);
-    const user = mockUsers.find((entry) => entry.id === userId);
-    if (!user) {
-      throw new Error('User not found');
+    const profile = mockProfiles.find((entry) => entry.id === profileId);
+    if (!profile) {
+      throw new Error('Profile not found');
     }
 
-    Object.assign(user, data);
-    localStorage.setItem('ethoshub_user', JSON.stringify(user));
-    return { ...user };
+    Object.assign(profile, data);
+    localStorage.setItem('ethoshub_profile', JSON.stringify(profile));
+    return { ...profile };
   },
 };
 
@@ -131,16 +131,16 @@ export const skillsService = {
     return apiRequest<GlobalSkillTag[]>(path);
   },
 
-  async getHardSkills(userId: string): Promise<HardSkill[]> {
-    return apiRequest<HardSkill[]>(`/api/users/${userId}/skills/hard`);
+  async getHardSkills(profileId: string): Promise<HardSkill[]> {
+    return apiRequest<HardSkill[]>(`/api/profiles/${profileId}/skills/hard`);
   },
 
   async addHardSkill(
-    userId: string,
+    profileId: string,
     tagId: string,
     level: SkillLevel
   ): Promise<HardSkill> {
-    return apiRequest<HardSkill>(`/api/users/${userId}/skills/hard`, {
+    return apiRequest<HardSkill>(`/api/profiles/${profileId}/skills/hard`, {
       method: 'POST',
       body: JSON.stringify({ tagId, level }),
     });
@@ -172,19 +172,19 @@ export const skillsService = {
     });
   },
 
-  async reorderTopSkills(userId: string, skillIds: string[]): Promise<HardSkill[]> {
-    return apiRequest<HardSkill[]>(`/api/users/${userId}/skills/hard/top-order`, {
+  async reorderTopSkills(profileId: string, skillIds: string[]): Promise<HardSkill[]> {
+    return apiRequest<HardSkill[]>(`/api/profiles/${profileId}/skills/hard/top-order`, {
       method: 'PATCH',
       body: JSON.stringify({ skillIds }),
     });
   },
 
-  async getSoftSkills(userId: string): Promise<SoftSkill[]> {
-    return apiRequest<SoftSkill[]>(`/api/users/${userId}/skills/soft`);
+  async getSoftSkills(profileId: string): Promise<SoftSkill[]> {
+    return apiRequest<SoftSkill[]>(`/api/profiles/${profileId}/skills/soft`);
   },
 
-  async addSoftSkill(userId: string, title: string, description?: string): Promise<SoftSkill> {
-    return apiRequest<SoftSkill>(`/api/users/${userId}/skills/soft`, {
+  async addSoftSkill(profileId: string, title: string, description?: string): Promise<SoftSkill> {
+    return apiRequest<SoftSkill>(`/api/profiles/${profileId}/skills/soft`, {
       method: 'POST',
       body: JSON.stringify({ title, description }),
     });
@@ -316,7 +316,7 @@ function mapBackendProject(dto: BackendProjectDTO): Project {
 
   const baseProject: Project = {
     id: dto.projectId,
-    userId: dto.profileId,
+    profileId: dto.profileId,
     title: dto.title || '',
     description: dto.description || '',
     // ── Campos nuevos ──
@@ -350,8 +350,8 @@ let projectsData: Project[] = [];
 
 export const projectsService = {
 
-  async getProjects(userId: string): Promise<Project[]> {
-    const response = await fetch(`${API_BASE_URL}/api/projects/profile/${userId}`, {
+  async getProjects(profileId: string): Promise<Project[]> {
+    const response = await fetch(`${API_BASE_URL}/api/projects/profile/${profileId}`, {
       headers: getAuthHeaders(),
     });
     if (!response.ok) throw new Error('No se pudieron cargar los proyectos');
@@ -370,12 +370,12 @@ export const projectsService = {
     return mapBackendProject(row);
   },
 
-  async getPublicProjects(userId: string): Promise<Project[]> {
-    return projectsData.filter((p) => p.userId === userId && p.isPublic);
+  async getPublicProjects(profileId: string): Promise<Project[]> {
+    return projectsData.filter((p) => p.profileId === profileId && p.isPublic);
   },
 
-  async createProject(userId: string, data: Partial<Project>): Promise<Project> {
-    const payload = buildPayload(null, userId, data);
+  async createProject(profileId: string, data: Partial<Project>): Promise<Project> {
+    const payload = buildPayload(null, profileId, data);
     const response = await fetch(`${API_BASE_URL}/api/projects`, {
       method: 'POST',
       headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
@@ -397,7 +397,7 @@ export const projectsService = {
     // Fallback local (no debería ocurrir)
     const fallback: Project = {
       id: createdId || generateId(),
-      userId,
+      profileId,
       title: data.title || '',
       description: data.description || '',
       category: data.category || 'Other',
@@ -415,9 +415,9 @@ export const projectsService = {
     return fallback;
   },
 
-  async updateProject(projectId: string, data: Partial<Project>, _userId: string): Promise<Project> {
+  async updateProject(projectId: string, data: Partial<Project>, _profileId: string): Promise<Project> {
     const currentProject = projectsData.find((p) => p.id === projectId);
-    const profileId = currentProject?.userId;
+    const profileId = currentProject?.profileId;
     if (!profileId) throw new Error('No se encontró profileId para actualizar el proyecto');
 
     const payload = buildPayload(projectId, profileId, data, currentProject);
@@ -505,14 +505,14 @@ function buildPayload(
 // CONNECTIONS SERVICE
 // =============================================
 export const connectionsService = {
-  async getConnections(userId: string): Promise<OAuthConnection[]> {
+  async getConnections(profileId: string): Promise<OAuthConnection[]> {
     await delay(DELAY_MS);
-    return mockConnections.filter((c) => c.userId === userId);
+    return mockConnections.filter((c) => c.profileId === profileId);
   },
 
-  async syncAll(userId: string): Promise<void> {
+  async syncAll(profileId: string): Promise<void> {
     await delay(1500);
-    console.log('Synced all connections for user:', userId);
+    console.log('Synced all connections for profile:', profileId);
   },
 
   async disconnect(connectionId: string): Promise<void> {
@@ -567,9 +567,9 @@ export const connectionsService = {
 // VISIBILITY SERVICE
 // =============================================
 export const visibilityService = {
-  async getSettings(userId: string): Promise<VisibilitySettings | null> {
+  async getSettings(profileId: string): Promise<VisibilitySettings | null> {
     await delay(DELAY_MS);
-    return mockVisibilitySettings.find((v) => v.userId === userId) || null;
+    return mockVisibilitySettings.find((v) => v.profileId === profileId) || null;
   },
 
   async checkSlugAvailability(slug: string): Promise<{ available: boolean; reason?: string }> {
@@ -583,50 +583,50 @@ export const visibilityService = {
     return { available: true };
   },
 
-  async updateSlug(userId: string, slug: string): Promise<void> {
+  async updateSlug(profileId: string, slug: string): Promise<void> {
     await delay(DELAY_MS);
-    const settings = mockVisibilitySettings.find((v) => v.userId === userId);
+    const settings = mockVisibilitySettings.find((v) => v.profileId === profileId);
     if (settings) {
       settings.slug = slug;
     }
   },
 
   async updateSectionVisibility(
-    userId: string,
+    profileId: string,
     section: PortfolioSection,
     visibility: SectionVisibility
   ): Promise<void> {
     await delay(DELAY_MS);
-    const settings = mockVisibilitySettings.find((v) => v.userId === userId);
+    const settings = mockVisibilitySettings.find((v) => v.profileId === profileId);
     if (settings) {
       settings.sections[section] = visibility;
     }
   },
 
-  async updateSeoSettings(userId: string, seo: { title: string; description: string }): Promise<void> {
+  async updateSeoSettings(profileId: string, seo: { title: string; description: string }): Promise<void> {
     await delay(DELAY_MS);
-    const settings = mockVisibilitySettings.find((v) => v.userId === userId);
+    const settings = mockVisibilitySettings.find((v) => v.profileId === profileId);
     if (settings) {
       settings.seo = seo;
     }
   },
 
-  async updatePasswordProtection(userId: string, enabled: boolean, password?: string): Promise<void> {
+  async updatePasswordProtection(profileId: string, enabled: boolean, password?: string): Promise<void> {
     await delay(DELAY_MS);
-    const settings = mockVisibilitySettings.find((v) => v.userId === userId);
+    const settings = mockVisibilitySettings.find((v) => v.profileId === profileId);
     if (settings) {
       settings.isPasswordProtected = enabled;
       settings.password = password;
     }
   },
 
-  async getPublicPortfolio(slug: string): Promise<{ user: User; settings: VisibilitySettings } | null> {
+  async getPublicPortfolio(slug: string): Promise<{ profile: Profile; settings: VisibilitySettings } | null> {
     await delay(DELAY_MS);
     const settings = mockVisibilitySettings.find((v) => v.slug === slug);
     if (!settings) return null;
-    const user = mockUsers.find((u) => u.id === settings.userId);
-    if (!user) return null;
-    return { user, settings };
+    const profile = mockProfiles.find((u) => u.id === settings.profileId);
+    if (!profile) return null;
+    return { profile, settings };
   },
 
   async verifyPassword(slug: string, password: string): Promise<boolean> {
@@ -635,13 +635,13 @@ export const visibilityService = {
     return settings?.password === password;
   },
 
-  async getPublicPortfolios(): Promise<{ user: User; settings: VisibilitySettings }[]> {
+  async getPublicPortfolios(): Promise<{ profile: Profile; settings: VisibilitySettings }[]> {
     await delay(DELAY_MS);
     return mockVisibilitySettings
       .filter((v) => v.isPublicProfileEnabled && !v.isPasswordProtected)
       .map((settings) => {
-        const user = mockUsers.find((u) => u.id === settings.userId)!;
-        return { user, settings };
+        const profile = mockProfiles.find((u) => u.id === settings.profileId)!;
+        return { profile, settings };
       });
   },
 
@@ -693,28 +693,28 @@ export const analyticsService = {
 // =============================================
 // PREFERENCES SERVICE
 // =============================================
-let userPreferencesData = { ...mockUserPreferences };
+let profilePreferencesData = { ...mockProfilePreferences };
 
 export const preferencesService = {
-  async getPreferences(userId: string): Promise<UserPreferences> {
+  async getPreferences(profileId: string): Promise<ProfilePreferences> {
     await delay(DELAY_MS);
-    return { ...userPreferencesData, userId };
+    return { ...profilePreferencesData, profileId };
   },
 
   async updateLanguage(language: Language): Promise<void> {
     await delay(300);
-    userPreferencesData.language = language;
+    profilePreferencesData.language = language;
     localStorage.setItem('ethoshub_language', language);
   },
 
   async updateSectionOrder(order: PortfolioSection[]): Promise<void> {
     await delay(DELAY_MS);
-    userPreferencesData.sectionOrder = order;
+    profilePreferencesData.sectionOrder = order;
   },
 
-  async updatePreference(key: keyof UserPreferences, value: unknown): Promise<void> {
+  async updatePreference(key: keyof ProfilePreferences, value: unknown): Promise<void> {
     await delay(DELAY_MS);
-    (userPreferencesData as Record<string, unknown>)[key] = value;
+    (profilePreferencesData as Record<string, unknown>)[key] = value;
   },
 };
 
@@ -724,9 +724,9 @@ export const preferencesService = {
 let notificationsData = [...mockNotifications];
 
 export const notificationsService = {
-  async getNotifications(userId: string): Promise<Notification[]> {
+  async getNotifications(profileId: string): Promise<Notification[]> {
     await delay(DELAY_MS);
-    return notificationsData.filter((n) => n.userId === userId);
+    return notificationsData.filter((n) => n.profileId === profileId);
   },
 
   async markAsRead(notificationId: string): Promise<void> {
@@ -737,10 +737,10 @@ export const notificationsService = {
     }
   },
 
-  async markAllAsRead(userId: string): Promise<void> {
+  async markAllAsRead(profileId: string): Promise<void> {
     await delay(300);
     notificationsData
-      .filter((n) => n.userId === userId)
+      .filter((n) => n.profileId === profileId)
       .forEach((n) => {
         n.isRead = true;
       });

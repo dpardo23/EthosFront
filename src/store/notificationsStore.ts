@@ -7,10 +7,10 @@ interface NotificationsStore {
   unreadCount: number;
   loading: boolean;
   error: string | null;
-  addNotification: (notification: Omit<Notification, 'id' | 'isRead' | 'createdAt' | 'userId'> & { type: Notification['type'] }) => void;
-  fetchNotifications: (userId: string) => Promise<void>;
+  addNotification: (notification: Omit<Notification, 'id' | 'isRead' | 'createdAt' | 'profileId'> & { type: Notification['type'] }) => void;
+  fetchNotifications: (profileId: string) => Promise<void>;
   markAsRead: (notificationId: string) => Promise<void>;
-  markAllAsRead: (userId: string) => Promise<void>;
+  markAllAsRead: (profileId: string) => Promise<void>;
 }
 
 export const useNotificationsStore = create<NotificationsStore>((set) => ({
@@ -22,7 +22,7 @@ export const useNotificationsStore = create<NotificationsStore>((set) => ({
   addNotification: (notification) => {
     const nextNotification: Notification = {
       id: crypto.randomUUID(),
-      userId: 'local-user',
+      profileId: 'local-profile',
       isRead: false,
       createdAt: new Date().toISOString(),
       ...notification,
@@ -34,10 +34,10 @@ export const useNotificationsStore = create<NotificationsStore>((set) => ({
     }));
   },
 
-  fetchNotifications: async (userId: string) => {
+  fetchNotifications: async (profileId: string) => {
     set({ loading: true, error: null });
     try {
-      const notifications = await notificationsService.getNotifications(userId);
+      const notifications = await notificationsService.getNotifications(profileId);
       const unreadCount = notifications.filter((n) => !n.isRead).length;
       set({ notifications, unreadCount, loading: false });
     } catch {
@@ -59,9 +59,9 @@ export const useNotificationsStore = create<NotificationsStore>((set) => ({
     }
   },
 
-  markAllAsRead: async (userId: string) => {
+  markAllAsRead: async (profileId: string) => {
     try {
-      await notificationsService.markAllAsRead(userId);
+      await notificationsService.markAllAsRead(profileId);
       set((state) => ({
         notifications: state.notifications.map((n) => ({ ...n, isRead: true })),
         unreadCount: 0,

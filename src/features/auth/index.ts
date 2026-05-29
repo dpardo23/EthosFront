@@ -1,1 +1,1 @@
-export { MOCK_USERS, findMockUser } from './mockUsers';
+export { MOCK_PROFILES, findMockProfile } from './mockProfiles';

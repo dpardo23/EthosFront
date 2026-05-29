@@ -19,8 +19,8 @@ interface ConnectionsStore {
   loading: boolean;
   syncing: boolean;
   error: string | null;
-  fetchConnections: (userId: string) => Promise<void>;
-  syncAll: (userId: string) => Promise<void>;
+  fetchConnections: (profileId: string) => Promise<void>;
+  syncAll: (profileId: string) => Promise<void>;
   disconnect: (connectionId: string) => Promise<void>;
   reconnect: (connectionId: string) => Promise<void>;
   fetchGithubRepos: () => Promise<void>;
@@ -43,21 +43,21 @@ export const useConnectionsStore = create<ConnectionsStore>((set, get) => ({
   syncing: false,
   error: null,
 
-  fetchConnections: async (userId: string) => {
+  fetchConnections: async (profileId: string) => {
     set({ loading: true, error: null });
     try {
-      const connections = await connectionsService.getConnections(userId);
+      const connections = await connectionsService.getConnections(profileId);
       set({ connections, loading: false });
     } catch {
       set({ error: 'Error al cargar conexiones', loading: false });
     }
   },
 
-  syncAll: async (userId: string) => {
+  syncAll: async (profileId: string) => {
     set({ syncing: true, error: null });
     try {
-      await connectionsService.syncAll(userId);
-      await get().fetchConnections(userId);
+      await connectionsService.syncAll(profileId);
+      await get().fetchConnections(profileId);
       set({ syncing: false });
     } catch {
       set({ error: 'Error al sincronizar', syncing: false });

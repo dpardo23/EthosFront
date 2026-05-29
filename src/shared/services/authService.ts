@@ -1,7 +1,7 @@
-import type { User, UserRole } from '@/shared/types';
+import type { Profile, ProfileRole } from '@/shared/types';
 import api from '@/shared/api/api'; 
 
-export type ProfileUpdatePayload = Partial<User> & {
+export type ProfileUpdatePayload = Partial<Profile> & {
   firstName?: string;
   lastName?: string;
   photoUrl?: string;
@@ -12,10 +12,9 @@ export type ProfileUpdatePayload = Partial<User> & {
 
 type BackendAuthResponse = {
   token: string;
-  userId: string;
+  profileId: string;
   email: string;
   role?: string;
-  profileId?: string;
 };
 
 type BackendApiResponse<T> = {
@@ -27,7 +26,7 @@ type BackendApiResponse<T> = {
 };
 
 export type LoginApiResult = {
-  user: User;
+  profile: Profile;
   token: string;
   tokenType: string;
   expiresIn: number;
@@ -35,7 +34,7 @@ export type LoginApiResult = {
 
 type RegisterRole = 'PROFESSIONAL' | 'RECRUITER';
 
-function mapRoleToBackend(role: UserRole): RegisterRole {
+function mapRoleToBackend(role: ProfileRole): RegisterRole {
   return role === 'recruiter' ? 'RECRUITER' : 'PROFESSIONAL';
 }
 
@@ -44,21 +43,21 @@ function sanitizeSlug(value: string): string {
   return base || `usuario-${Date.now()}`;
 }
 
-export const ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
+export const ROLE_DISPLAY_NAMES: Record<ProfileRole, string> = {
   professional: 'Profesional',
   recruiter: 'Reclutador',
   admin: 'Administrador',
   guest: 'Invitado',
 };
 
-export const ROLE_REDIRECT_PATHS: Record<UserRole, string> = {
+export const ROLE_REDIRECT_PATHS: Record<ProfileRole, string> = {
   professional: '/dashboard',
   recruiter: '/recruiter/dashboard', // Asegurado para que no vaya al de profesional
   admin: '/admin/dashboard',
   guest: '/',
 };
 
-async function login(email: string, password: string, role?: UserRole): Promise<LoginApiResult> {
+async function login(email: string, password: string, role?: ProfileRole): Promise<LoginApiResult> {
   const normalizedEmail = email.toLowerCase().trim();
 
   const response = await api.post<BackendApiResponse<BackendAuthResponse>>('/auth/login', { 
@@ -71,7 +70,7 @@ async function login(email: string, password: string, role?: UserRole): Promise<
     throw new Error('La respuesta de login no incluyó token');
   }
   
-  let finalRole: UserRole = 'professional';
+  let finalRole: ProfileRole = 'professional';
 
   // 🔥 AQUI ESTABA EL BUG PRINCIPAL DEL FRONTEND
   if (authResponse.role) {
@@ -86,11 +85,11 @@ async function login(email: string, password: string, role?: UserRole): Promise<
     finalRole = role;
   }
 
-  const user: User = {
-    id: authResponse.userId,
+  const profile: Profile = {
+    id: authResponse.profileId,
     email: authResponse.email,
     name: authResponse.email.split('@')[0],
-    username: authResponse.email.split('@')[0],
+    profileHandle: authResponse.email.split('@')[0],
     avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(authResponse.email)}`,
     role: finalRole,
     profile_id: authResponse.profileId,
@@ -103,7 +102,7 @@ async function login(email: string, password: string, role?: UserRole): Promise<
   };
 
   return {
-    user,
+    profile,
     token: authResponse.token,
     tokenType: 'Bearer',
     expiresIn: 86400,
@@ -113,7 +112,7 @@ async function login(email: string, password: string, role?: UserRole): Promise<
 async function registerLocal(
   email: string,
   password: string,
-  role: UserRole,
+  role: ProfileRole,
   extras?: { firstName?: string; lastName?: string; phoneNumber?: string; countryCode?: string }
 ): Promise<void> {
   const normalizedEmail = email.toLowerCase().trim();
@@ -125,7 +124,7 @@ async function registerLocal(
   });
 }
 
-async function getProfile(profileId: string): Promise<Partial<User>> {
+async function getProfile(profileId: string): Promise<Partial<Profile>> {
   const response = await api.get(`/v1/recruiter/profile/${profileId}`);
   const profile = response.data.data;
 
@@ -152,7 +151,7 @@ async function getProfile(profileId: string): Promise<Partial<User>> {
 async function updateProfile(
   profileId: string,
   data: ProfileUpdatePayload
-): Promise<User> {
+): Promise<Profile> {
   const response = await api.put(
     `/v1/recruiter/profile/${profileId}`,
     {
@@ -171,7 +170,7 @@ async function updateProfile(
   const profile = response.data.data;
 
   return {
-    id: profile.userId ?? profileId,
+    id: profile.profileId ?? profileId,
     profile_id: profile.profileId ?? profileId,
     name: `${profile.firstName || ''} ${profile.lastName || ''}`.trim(),
     firstName: profile.firstName,
@@ -184,7 +183,7 @@ async function updateProfile(
     status: profile.availabilityStatus || 'Disponible',
     seniority: profile.seniority || 'Junior',
     ...data,
-  } as User;
+  } as Profile;
 }
 
 async function logout(): Promise<void> {

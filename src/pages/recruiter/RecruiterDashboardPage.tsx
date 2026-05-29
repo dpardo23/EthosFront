@@ -558,7 +558,7 @@ function EditCompanyModal({
 }
 
 export default function RecruiterDashboardPage() {
-  const { user } = useAuthStore();
+  const { profile } = useAuthStore();
   const navigate = useNavigate();
   const [companyProfile, setCompanyProfile] = useState(mockCompanyProfile);
   const [showEditCompany, setShowEditCompany] = useState(false);
@@ -583,7 +583,7 @@ export default function RecruiterDashboardPage() {
           </span>
         </div>
         <h1 className="mt-2 font-sans text-2xl font-bold text-black sm:text-3xl dark:text-white">
-          Bienvenido, {user?.name?.split(' ')[0] || 'Reclutador'}
+          Bienvenido, {profile?.name?.split(' ')[0] || 'Reclutador'}
         </h1>
         <p className="mt-1 font-sans text-gray-600 dark:text-gray-400">
           Tu centro de comando para gestionar vacantes y encontrar talento.

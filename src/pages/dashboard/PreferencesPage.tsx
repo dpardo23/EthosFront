@@ -186,7 +186,7 @@ function ToggleRow({
 // ─── Main Component ────────────────────────────────────────────────────────
 
 export default function PreferencesPage() {
-  const { user } = useAuthStore();
+  const { profile: authProfile } = useAuthStore();
   const { preferences, updatePreferences } = usePreferencesStore();
   const {
     settings: visibility,
@@ -258,8 +258,8 @@ export default function PreferencesPage() {
   const dragStart = useRef({ mx: 0, my: 0, ox: 0, oy: 0 });
 
   useEffect(() => {
-    if (user?.id) {
-      fetchSettings(user.id);
+    if (authProfile?.id) {
+      fetchSettings(authProfile.id);
       api
         .get('/v1/profile/basic')
         .then((r) => {
@@ -271,16 +271,16 @@ export default function PreferencesPage() {
             seniority: d.seniority || '',
             availabilityStatus: d.availabilityStatus || '',
             location: d.location || '',
-            bio: d.bio || user.bio || '',
-            website: d.website || user.website || '',
+            bio: d.bio || authProfile.bio || '',
+            website: d.website || authProfile.website || '',
           });
         })
         .catch(() => {
-          setProfile((p) => ({ ...p, bio: user.bio || '', website: user.website || '' }));
+          setProfile((p) => ({ ...p, bio: authProfile.bio || '', website: authProfile.website || '' }));
         })
         .finally(() => setLoadingProfile(false));
     }
-  }, [user?.id]);
+  }, [authProfile?.id]);
 
   useEffect(() => {
     if (visibility) {
@@ -292,7 +292,7 @@ export default function PreferencesPage() {
   }, [visibility]);
 
   const safePrefs = preferences ?? {
-    userId: user?.id ?? '',
+    profileId: authProfile?.id ?? '',
     language: 'es' as const,
     theme: 'dark' as const,
     showGithubHeatmap: true,
@@ -331,11 +331,11 @@ export default function PreferencesPage() {
         website: profile.website,
       });
       useAuthStore.setState((s) => ({
-        user: s.user
+        profile: s.profile
           ? {
-              ...s.user,
+              ...s.profile,
               name: `${profile.firstName} ${profile.lastName}`.trim(),
-              avatar: profile.photoUrl || s.user.avatar,
+              avatar: profile.photoUrl || s.profile.avatar,
               location: profile.location,
               website: profile.website,
             }
@@ -354,7 +354,7 @@ export default function PreferencesPage() {
     try {
       await api.patch('/v1/profile/bio', { bio: profile.bio });
       useAuthStore.setState((s) => ({
-        user: s.user ? { ...s.user, bio: profile.bio } : null,
+        profile: s.profile ? { ...s.profile, bio: profile.bio } : null,
       }));
       addToast({ type: 'success', title: 'Biografía guardada' });
     } catch {
@@ -365,10 +365,10 @@ export default function PreferencesPage() {
   }
 
   async function handleSaveSlug() {
-    if (!user?.id || !slugDraft.trim()) return;
+    if (!authProfile?.id || !slugDraft.trim()) return;
     setSavingSlug(true);
     try {
-      await updateSlug(user.id, slugDraft.trim());
+      await updateSlug(authProfile.id, slugDraft.trim());
       addToast({ type: 'success', title: 'Slug actualizado' });
     } catch {
       addToast({ type: 'error', title: 'Error al actualizar slug' });
@@ -378,10 +378,10 @@ export default function PreferencesPage() {
   }
 
   async function handleSaveSeo() {
-    if (!user?.id) return;
+    if (!authProfile?.id) return;
     setSavingSeo(true);
     try {
-      await updateSeoSettings(user.id, {
+      await updateSeoSettings(authProfile.id, {
         title: seoTitle.trim(),
         description: seoDesc.trim(),
       });
@@ -402,9 +402,9 @@ export default function PreferencesPage() {
   }
 
   async function handlePasswordProtection(enabled: boolean) {
-    if (!user?.id) return;
+    if (!authProfile?.id) return;
     try {
-      await updatePasswordProtection(user.id, enabled, enabled ? visPass : undefined);
+      await updatePasswordProtection(authProfile.id, enabled, enabled ? visPass : undefined);
       addToast({
         type: 'success',
         title: enabled ? 'Protección activada' : 'Protección desactivada',
@@ -415,9 +415,9 @@ export default function PreferencesPage() {
   }
 
   async function handleSaveVisPass() {
-    if (!user?.id || !visPass.trim()) return;
+    if (!authProfile?.id || !visPass.trim()) return;
     try {
-      await updatePasswordProtection(user.id, true, visPass);
+      await updatePasswordProtection(authProfile.id, true, visPass);
       addToast({ type: 'success', title: 'Contraseña del portafolio guardada' });
     } catch {
       addToast({ type: 'error', title: 'Error al guardar contraseña' });
@@ -425,9 +425,9 @@ export default function PreferencesPage() {
   }
 
   async function handleSectionVisibility(section: PortfolioSection, value: SectionVisibility) {
-    if (!user?.id) return;
+    if (!authProfile?.id) return;
     try {
-      await updateSectionVisibility(user.id, section, value);
+      await updateSectionVisibility(authProfile.id, section, value);
     } catch {
       addToast({ type: 'error', title: 'Error al actualizar visibilidad' });
     }
@@ -460,7 +460,7 @@ export default function PreferencesPage() {
     setSavingEmail(true);
     try {
       await api.patch('/v1/auth/change-email', { otpCode: emailOtp, newEmail: emailNew });
-      useAuthStore.setState((s) => ({ user: s.user ? { ...s.user, email: emailNew } : null }));
+      useAuthStore.setState((s) => ({ profile: s.profile ? { ...s.profile, email: emailNew } : null }));
       setEmailNew('');
       setEmailOtp('');
       setEmailStep(1);
@@ -521,7 +521,7 @@ export default function PreferencesPage() {
     setShowExportLoading(true);
     await new Promise((r) => setTimeout(r, 3000));
     setShowExportLoading(false);
-    const blob = new Blob([JSON.stringify({ profile: user, exported: new Date().toISOString() }, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify({ profile: authProfile, exported: new Date().toISOString() }, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -640,25 +640,25 @@ export default function PreferencesPage() {
               </p>
             </div>
 
-            {user && (
+            {authProfile && (
               <div className="flex items-center gap-3 rounded-2xl border border-black/10 bg-white/60 p-3 backdrop-blur-sm dark:border-white/10 dark:bg-black/30 sm:p-4">
                 <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-black/10 dark:border-white/10">
-                  {user.avatar ? (
+                  {authProfile.avatar ? (
                     <img
-                      src={user.avatar}
-                      alt={user.name}
+                      src={authProfile.avatar}
+                      alt={authProfile.name}
                       className="h-full w-full object-cover"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-violet-600/20 text-lg font-bold text-violet-600 dark:text-violet-400">
-                      {user.name?.[0]}
+                      {authProfile.name?.[0]}
                     </div>
                   )}
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate font-semibold text-gray-900 dark:text-white">{user.name}</p>
+                  <p className="truncate font-semibold text-gray-900 dark:text-white">{authProfile.name}</p>
                   <p className="truncate text-xs text-violet-600 dark:text-violet-400">
-                    {user.profession || user.role}
+                    {authProfile.profession || authProfile.role}
                   </p>
                   {visibility?.slug && (
                     <p className="mt-0.5 truncate text-xs text-gray-400 dark:text-gray-500">
@@ -778,15 +778,15 @@ export default function PreferencesPage() {
                           className="group relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border-2 border-dashed border-border transition-all hover:border-violet-500/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
                           title="Cambiar foto de perfil"
                         >
-                          {profile.photoUrl || user?.avatar ? (
+                          {profile.photoUrl || authProfile?.avatar ? (
                             <img
-                              src={profile.photoUrl || user?.avatar}
+                              src={profile.photoUrl || authProfile?.avatar}
                               alt="Avatar"
                               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                             />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center bg-violet-500/10 text-2xl font-bold text-violet-500 dark:text-violet-400">
-                              {(profile.firstName || user?.name || '?')[0]}
+                              {(profile.firstName || authProfile?.name || '?')[0]}
                             </div>
                           )}
                           <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
@@ -1586,7 +1586,7 @@ export default function PreferencesPage() {
                             <p className="mt-0.5 text-xs text-muted-foreground">
                               Te enviaremos un código de 6 dígitos a{' '}
                               <span className="font-medium text-foreground">
-                                {user?.email || 'tu correo'}
+                                {authProfile?.email || 'tu correo'}
                               </span>{' '}
                               para confirmar el cambio.
                             </p>
@@ -1614,7 +1614,7 @@ export default function PreferencesPage() {
                         <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
                           <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
                           <p className="text-xs text-emerald-600 dark:text-emerald-400">
-                            Código enviado a <span className="font-semibold">{user?.email}</span>
+                            Código enviado a <span className="font-semibold">{authProfile?.email}</span>
                           </p>
                         </div>
                         <div>
@@ -1801,7 +1801,7 @@ export default function PreferencesPage() {
                             <p className="mt-0.5 text-xs text-muted-foreground">
                               Te enviaremos un código de 6 dígitos a{' '}
                               <span className="font-medium text-foreground">
-                                {user?.email || 'tu correo actual'}
+                                {authProfile?.email || 'tu correo actual'}
                               </span>{' '}
                               para confirmar el cambio de dirección.
                             </p>
@@ -1829,7 +1829,7 @@ export default function PreferencesPage() {
                         <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
                           <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
                           <p className="text-xs text-emerald-600 dark:text-emerald-400">
-                            Código enviado a <span className="font-semibold">{user?.email}</span>
+                            Código enviado a <span className="font-semibold">{authProfile?.email}</span>
                           </p>
                         </div>
                         <div>

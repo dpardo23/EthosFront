@@ -685,7 +685,7 @@ function CoverPresetSelector({
 
 export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectModalProps) {
   const navigate = useNavigate();
-  const { user: profile } = useAuthStore();
+  const { profile: profile } = useAuthStore();
   const { projects, createProject, updateProject } = useProjectsStore();
   const { addToast } = useUiStore();
   const isEditing = Boolean(project);

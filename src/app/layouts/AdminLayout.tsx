@@ -20,7 +20,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 const adminNavItems = [
   { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Metricas Globales' },
-  { path: '/admin/users', icon: Users, label: 'Gestion de Usuarios' },
+  { path: '/admin/profiles', icon: Users, label: 'Gestion de Usuarios' },
   { path: '/admin/moderation', icon: AlertTriangle, label: 'Moderacion' },
   { path: '/admin/skills', icon: Code2, label: 'Normalizacion de Skills' },
   { path: '/admin/domains', icon: Globe, label: 'Gestión de Dominios' }, // Nueva Pestaña
@@ -30,7 +30,7 @@ export function AdminLayout() {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { profile, logout } = useAuthStore();
   const { resolvedTheme, initializeTheme } = useUiStore();
   const isDark = resolvedTheme === 'dark';
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -120,9 +120,9 @@ export function AdminLayout() {
             <ThemeToggle size="md" className="border-gray-200 hover:border-violet-500/50 hover:bg-violet-500/10 dark:border-white/10" />
           </div>
           <div className="flex items-center gap-3">
-            <Avatar src={user?.avatar} alt={user?.name} fallback={user?.name} size="md" className="border border-violet-500/30" />
+            <Avatar src={profile?.avatar} alt={profile?.name} fallback={profile?.name} size="md" className="border border-violet-500/30" />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-black dark:text-white">{user?.name}</p>
+              <p className="truncate text-sm font-medium text-black dark:text-white">{profile?.name}</p>
               <p className="truncate text-xs text-violet-600 dark:text-violet-400">Administrador</p>
             </div>
           </div>

@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import { companyProfileService } from '@/shared/services/companyProfileService';
 
 export function CompanyProfileCard() {
-  const { user, syncUser } = useAuthStore();
+  const { profile, syncProfile } = useAuthStore();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -21,28 +21,28 @@ export function CompanyProfileCard() {
   });
 
   useEffect(() => {
-    if (user?.profile_id) {
+    if (profile?.profile_id) {
       loadCompanyProfile();
     }
-  }, [user?.profile_id]);
+  }, [profile?.profile_id]);
 
   const loadCompanyProfile = async () => {
-    if (!user?.profile_id) return;
+    if (!profile?.profile_id) return;
     try {
-      const profile = await companyProfileService.getCompanyProfile(user.profile_id);
-      if (profile) {
+      const companyProfile = await companyProfileService.getCompanyProfile(profile.profile_id);
+      if (companyProfile) {
         setFormData({
-          companyName: profile.company_name || '',
-          industry: profile.industry || '',
-          companySize: profile.company_size?.toString() || '',
-          nit: profile.nit || '',
-          contactFirstName: profile.contact_first_name || '',
-          contactLastName: profile.contact_last_name || '',
-          websiteUrl: profile.website_url || '',
+          companyName: companyProfile.company_name || '',
+          industry: companyProfile.industry || '',
+          companySize: companyProfile.company_size?.toString() || '',
+          nit: companyProfile.nit || '',
+          contactFirstName: companyProfile.contact_first_name || '',
+          contactLastName: companyProfile.contact_last_name || '',
+          websiteUrl: companyProfile.website_url || '',
         });
 
-        syncUser({
-          website: profile.website_url || '',
+        syncProfile({
+          website: companyProfile.website_url || '',
         });
       }
     } catch (error) {
@@ -55,14 +55,14 @@ export function CompanyProfileCard() {
     setErrorMessage('');
     setSuccessMessage('');
 
-    if (!user?.profile_id) {
+    if (!profile?.profile_id) {
       setErrorMessage('No se encontró el ID del perfil');
       return;
     }
 
     setIsLoading(true);
     try {
-      await companyProfileService.saveCompanyProfile(user.profile_id, {
+      await companyProfileService.saveCompanyProfile(profile.profile_id, {
         company_name: formData.companyName,
         industry: formData.industry,
         company_size: parseInt(formData.companySize, 10),
@@ -72,7 +72,7 @@ export function CompanyProfileCard() {
         website_url: formData.websiteUrl,
       });
 
-      syncUser({
+      syncProfile({
         name: `${formData.contactFirstName} ${formData.contactLastName}`.trim(),
         website: formData.websiteUrl,
       });

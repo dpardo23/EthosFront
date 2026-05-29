@@ -3,7 +3,7 @@
  * - 7-provider catalogue: GitHub, Google, Gmail, LinkedIn, Slack, Sitio Web, dev.to
  * - 2-step AddConnectionModal: catalog → configure (OAuth UI / URL input)
  * - AnimatePresence x-slide between modal steps; createPortal → #portal-root
- * - "profile" terminology throughout; never "user"
+ * - "profile" terminology throughout; never "profile"
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -48,7 +48,7 @@ interface LocalConnection {
   provider: LocalProvider;
   status: LocalStatus;
   label: string;
-  username?: string;
+  profileHandle?: string;
   url?: string;
   lastSynced?: string;
   tokenExpiresAt?: string;
@@ -63,7 +63,7 @@ const MOCK_CONNECTIONS: LocalConnection[] = [
     provider: 'github',
     status: 'connected',
     label: 'GitHub',
-    username: 'dpardo',
+    profileHandle: 'dpardo',
     url: 'https://github.com/dpardo',
     lastSynced: '2026-05-27T10:30:00Z',
     tokenExpiresAt: '2026-11-27T10:30:00Z',
@@ -74,7 +74,7 @@ const MOCK_CONNECTIONS: LocalConnection[] = [
     provider: 'linkedin',
     status: 'connected',
     label: 'LinkedIn',
-    username: 'Diego Pardo',
+    profileHandle: 'Diego Pardo',
     url: 'https://linkedin.com/in/dpardo',
     lastSynced: '2026-05-26T14:00:00Z',
     tokenExpiresAt: '2026-08-26T14:00:00Z',
@@ -94,7 +94,7 @@ const MOCK_CONNECTIONS: LocalConnection[] = [
     provider: 'devto',
     status: 'disconnected',
     label: 'dev.to',
-    username: 'dpardo',
+    profileHandle: 'dpardo',
     url: 'https://dev.to/dpardo',
     apiHealth: 'down',
   },
@@ -273,7 +273,7 @@ const stepVariants: Variants = {
 
 export default function ConnectionsPage() {
   const { t } = useTranslation();
-  const { user: profile } = useAuthStore();
+  const { profile: profile } = useAuthStore();
   const { addToast } = useUiStore();
 
   const [connections, setConnections] = useState<LocalConnection[]>(MOCK_CONNECTIONS);
@@ -533,10 +533,10 @@ function ConnectionCard({
             <p className="text-[14px] font-semibold text-foreground truncate">{meta.label}</p>
             <StatusDot status={connection.status} />
           </div>
-          {connection.username && (
-            <p className="text-[12px] text-muted-foreground truncate">@{connection.username}</p>
+          {connection.profileHandle && (
+            <p className="text-[12px] text-muted-foreground truncate">@{connection.profileHandle}</p>
           )}
-          {!connection.username && connection.url && (
+          {!connection.profileHandle && connection.url && (
             <p className="text-[12px] text-muted-foreground truncate">{connection.url.replace('https://', '')}</p>
           )}
         </div>

@@ -1,38 +1,38 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { User, UserRole } from '@/shared/types';
+import type { Profile, ProfileRole } from '@/shared/types';
 import { authService, ROLE_DISPLAY_NAMES, ROLE_REDIRECT_PATHS, type ProfileUpdatePayload } from '@/shared/services/authService';
-import { findMockUser } from '@/features/auth';
+import { findMockProfile } from '@/features/auth';
 
 const ACCESS_TOKEN_KEY = 'ethoshub_access_token';
 const TOKEN_TYPE_KEY = 'ethoshub_token_type';
 const EXPIRES_AT_KEY = 'ethoshub_access_expires_at';
 
 interface LoginResult {
-  user: User;
+  profile: Profile;
   roleDisplayName: string;
   redirectPath: string;
 }
 
 interface AuthStore {
-  user: User | null;
+  profile: Profile | null;
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
-  login: (email: string, password: string, role?: UserRole) => Promise<LoginResult | null>;
+  login: (email: string, password: string, role?: ProfileRole) => Promise<LoginResult | null>;
   updateProfile: (data: ProfileUpdatePayload) => Promise<void>;
   updateRecruiterIdentity: (data: { firstName: string; lastName: string; country?: string; countryId?: number; phone?: string; photoUrl?: string }) => Promise<void>;
-  syncUser: (data: Partial<User>) => void;
+  syncProfile: (data: Partial<Profile>) => void;
   fetchProfile: () => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   completeOAuthLogin: (args: {
-    user: User;
+    profile: Profile;
     token: string;
     tokenType?: string;
     expiresIn?: number;
   }) => void;
-  switchRole: (role: UserRole) => void;
+  switchRole: (role: ProfileRole) => void;
   getRoleDisplayName: () => string;
   getRedirectPath: () => string;
 }
@@ -40,36 +40,36 @@ interface AuthStore {
 export const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
-      user: null,
+      profile: null,
       isAuthenticated: false,
       loading: false,
       error: null,
 
-      login: async (email: string, password: string, role?: UserRole): Promise<LoginResult | null> => {
+      login: async (email: string, password: string, role?: ProfileRole): Promise<LoginResult | null> => {
         set({ loading: true, error: null });
 
-        const mockUser = findMockUser(email);
-        if (mockUser) {
-          const token = `mock-token-${mockUser.role}-${Date.now()}`;
+        const mockProfile = findMockProfile(email);
+        if (mockProfile) {
+          const token = `mock-token-${mockProfile.role}-${Date.now()}`;
           localStorage.setItem(ACCESS_TOKEN_KEY, token);
           localStorage.setItem(TOKEN_TYPE_KEY, 'Bearer');
-          set({ user: mockUser, isAuthenticated: true, loading: false, error: null });
+          set({ profile: mockProfile, isAuthenticated: true, loading: false, error: null });
           return {
-            user: mockUser,
-            roleDisplayName: ROLE_DISPLAY_NAMES[mockUser.role] ?? 'Usuario',
-            redirectPath: ROLE_REDIRECT_PATHS[mockUser.role] ?? '/dashboard',
+            profile: mockProfile,
+            roleDisplayName: ROLE_DISPLAY_NAMES[mockProfile.role] ?? 'Usuario',
+            redirectPath: ROLE_REDIRECT_PATHS[mockProfile.role] ?? '/dashboard',
           };
         }
 
         try {
           const result = await authService.login(email, password, role);
           
-          const rawRole = (result.user?.role || '').toLowerCase();
-          const normalizedRole: UserRole = rawRole.includes('admin') ? 'admin' 
+          const rawRole = (result.profile?.role || '').toLowerCase();
+          const normalizedRole: ProfileRole = rawRole.includes('admin') ? 'admin' 
                                          : rawRole.includes('rec') || rawRole.includes('reclutador') ? 'recruiter' 
                                          : 'professional';
           
-          const user = { ...result.user, role: normalizedRole };
+          const profile = { ...result.profile, role: normalizedRole };
 
           localStorage.setItem(ACCESS_TOKEN_KEY, result.token);
           localStorage.setItem(TOKEN_TYPE_KEY, result.tokenType || 'Bearer');
@@ -80,12 +80,12 @@ export const useAuthStore = create<AuthStore>()(
             localStorage.removeItem(EXPIRES_AT_KEY);
           }
 
-          set({ user, isAuthenticated: true, loading: false });
+          set({ profile, isAuthenticated: true, loading: false });
 
           await get().fetchProfile();
 
           return {
-            user: get().user || user,
+            profile: get().profile || profile,
             roleDisplayName: ROLE_DISPLAY_NAMES[normalizedRole] || 'Usuario',
             redirectPath: ROLE_REDIRECT_PATHS[normalizedRole] || '/dashboard',
           };
@@ -101,18 +101,18 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       fetchProfile: async () => {
-        const { user } = get();
-        if (!user) return;
-        if (!user.profile_id) {
+        const { profile } = get();
+        if (!profile) return;
+        if (!profile.profile_id) {
           console.error('El usuario no tiene profile_id');
           return;
         }
         try {
-          const dbData = await authService.getProfile(user.profile_id);
+          const dbData = await authService.getProfile(profile.profile_id);
           set((state) => ({
-            user: state.user
+            profile: state.profile
               ? {
-                  ...state.user,
+                  ...state.profile,
                   ...dbData,
                 }
               : null,
@@ -123,10 +123,10 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       updateProfile: async (data: ProfileUpdatePayload) => {
-        const { user } = get();
-        if (!user) return;
+        const { profile } = get();
+        if (!profile) return;
         
-        if (!user.profile_id) {
+        if (!profile.profile_id) {
           console.error('El usuario no tiene un profile_id asociado');
           set({ error: 'No se encontró el ID de perfil', loading: false });
           return;
@@ -134,17 +134,17 @@ export const useAuthStore = create<AuthStore>()(
         
         set({ loading: true, error: null });
         try {
-          const updatedUser = await authService.updateProfile(user.profile_id, data);
+          const updatedProfile = await authService.updateProfile(profile.profile_id, data);
           
           set({ 
-            user: { 
-              ...user, 
-              ...(updatedUser || {}), 
+            profile: { 
+              ...profile, 
+              ...(updatedProfile || {}), 
               ...data,
-              name: data.firstName || data.lastName ? `${data.firstName || user.name.split(' ')[0]} ${data.lastName || user.name.split(' ').slice(1).join(' ')}`.trim() : user.name,
-              avatar: data.photoUrl || data.avatar || user.avatar,
-              location: data.country || data.location || user.location,
-              phone: data.phone || user.phone,
+              name: data.firstName || data.lastName ? `${data.firstName || profile.name.split(' ')[0]} ${data.lastName || profile.name.split(' ').slice(1).join(' ')}`.trim() : profile.name,
+              avatar: data.photoUrl || data.avatar || profile.avatar,
+              location: data.country || data.location || profile.location,
+              phone: data.phone || profile.phone,
             }, 
             loading: false 
           });
@@ -154,10 +154,10 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       updateRecruiterIdentity: async (data) => {
-        const { user } = get();
-        if (!user) return;
+        const { profile } = get();
+        if (!profile) return;
         
-        if (!user.profile_id) {
+        if (!profile.profile_id) {
           console.error('El usuario no tiene un profile_id asociado');
           set({ error: 'No se encontró el ID de perfil', loading: false });
           return;
@@ -165,7 +165,7 @@ export const useAuthStore = create<AuthStore>()(
         
         set({ loading: true, error: null });
         try {
-          await authService.updateRecruiterIdentity(user.profile_id, {
+          await authService.updateRecruiterIdentity(profile.profile_id, {
             firstName: data.firstName,
             lastName: data.lastName,
             countryId: data.countryId,
@@ -174,12 +174,12 @@ export const useAuthStore = create<AuthStore>()(
           });
           
           set({ 
-            user: { 
-              ...user,
+            profile: { 
+              ...profile,
               name: `${data.firstName} ${data.lastName}`.trim(),
-              avatar: data.photoUrl || user.avatar,
-              location: data.country || user.location,
-              phone: data.phone || user.phone,
+              avatar: data.photoUrl || profile.avatar,
+              location: data.country || profile.location,
+              phone: data.phone || profile.phone,
             }, 
             loading: false 
           });
@@ -191,9 +191,9 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      syncUser: (data: Partial<User>) => {
+      syncProfile: (data: Partial<Profile>) => {
         set((state) => ({
-          user: state.user ? { ...state.user, ...data } : state.user,
+          profile: state.profile ? { ...state.profile, ...data } : state.profile,
         }));
       },
 
@@ -204,47 +204,47 @@ export const useAuthStore = create<AuthStore>()(
           localStorage.removeItem(ACCESS_TOKEN_KEY);
           localStorage.removeItem(TOKEN_TYPE_KEY);
           localStorage.removeItem(EXPIRES_AT_KEY);
-          set({ user: null, isAuthenticated: false, loading: false });
+          set({ profile: null, isAuthenticated: false, loading: false });
         } catch {
           set({ loading: false });
         }
       },
 
       checkAuth: async () => {
-        const { user } = get();
-        if (user) {
+        const { profile } = get();
+        if (profile) {
           set({ isAuthenticated: true });
           await get().fetchProfile();
         }
       },
 
-      completeOAuthLogin: ({ user, token, tokenType = 'Bearer', expiresIn }) => {
+      completeOAuthLogin: ({ profile, token, tokenType = 'Bearer', expiresIn }) => {
         localStorage.setItem(ACCESS_TOKEN_KEY, token);
         localStorage.setItem(TOKEN_TYPE_KEY, tokenType);
         if (expiresIn) localStorage.setItem(EXPIRES_AT_KEY, String(Date.now() + expiresIn));
         
-        const rawRole = (user.role || '').toLowerCase();
-        const normalizedRole: UserRole = rawRole.includes('admin') ? 'admin' : (rawRole as UserRole);
+        const rawRole = (profile.role || '').toLowerCase();
+        const normalizedRole: ProfileRole = rawRole.includes('admin') ? 'admin' : (rawRole as ProfileRole);
         
-        set({ user: { ...user, role: normalizedRole }, isAuthenticated: true, error: null, loading: false });
+        set({ profile: { ...profile, role: normalizedRole }, isAuthenticated: true, error: null, loading: false });
         get().fetchProfile();
       },
 
-      switchRole: (role: UserRole) => {
-        const { user } = get();
-        if (user) set({ user: { ...user, role } });
+      switchRole: (role: ProfileRole) => {
+        const { profile } = get();
+        if (profile) set({ profile: { ...profile, role } });
       },
 
       getRoleDisplayName: () => {
-        const { user } = get();
-        if (!user) return 'Invitado';
-        return ROLE_DISPLAY_NAMES[user.role] || 'Usuario';
+        const { profile } = get();
+        if (!profile) return 'Invitado';
+        return ROLE_DISPLAY_NAMES[profile.role] || 'Usuario';
       },
 
       getRedirectPath: () => {
-        const { user } = get();
-        if (!user) return '/';
-        return ROLE_REDIRECT_PATHS[user.role] || '/dashboard';
+        const { profile } = get();
+        if (!profile) return '/';
+        return ROLE_REDIRECT_PATHS[profile.role] || '/dashboard';
       },
     }),
     { name: 'ethoshub_auth' }

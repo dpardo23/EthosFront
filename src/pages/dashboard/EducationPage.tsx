@@ -363,7 +363,7 @@ function EducationCard({ rec, reorderMode, deleteConfirmId, isDeleting, onView, 
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function EducationPage() {
-  const { user: profile } = useAuthStore();
+  const { profile: profile } = useAuthStore();
   const [records, setRecords] = useState<AcademicRecord[]>([]);
   const [ordered, setOrdered] = useState<AcademicRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -393,7 +393,8 @@ export default function EducationPage() {
     setIsLoading(true);
     try {
       const data = await educationService.getRecords(profile.id);
-      const list = data || [];
+      // Fallback defensivo: nunca confiamos en que la API devuelva un arreglo.
+      const list = Array.isArray(data) ? data : [];
       const final = list.length > 0 ? list : MOCK_EDUCATION;
       setRecords(final);
       setOrdered([...final]);
@@ -461,7 +462,7 @@ export default function EducationPage() {
     try {
       const payload: any = {
         ...form,
-        userId: profile.id,
+        profileId: profile.id,
         gpa: form.gpa ? parseFloat(form.gpa) : null,
         endDate: form.endDate || null,
       };
@@ -515,10 +516,14 @@ export default function EducationPage() {
     } catch (e) { console.error(e); } finally { setUploadingCred(false); }
   };
 
+  // Blindaje final del render: aunque el estado quede corrupto por una
+  // respuesta no-array, todo el JSX consume este arreglo garantizado.
+  const safeRecords = Array.isArray(records) ? records : [];
+
   // Stats
-  const uniqueInstitutions = new Set(records.map(r => r.institutionName).filter(Boolean)).size;
+  const uniqueInstitutions = new Set(safeRecords.map(r => r.institutionName).filter(Boolean)).size;
   let totalYears = 0;
-  records.forEach(r => {
+  safeRecords.forEach(r => {
     if (r.startDate) {
       const s = new Date(r.startDate).getTime();
       const en = r.isCurrent || !r.endDate ? Date.now() : new Date(r.endDate).getTime();
@@ -977,7 +982,7 @@ export default function EducationPage() {
             </div>
             <div className="flex flex-row items-center gap-2.5 shrink-0 self-center">
               {[
-                { v: String(records.length), l: 'Títulos' },
+                { v: String(safeRecords.length), l: 'Títulos' },
                 { v: totalYears > 0 ? `${Math.max(1, Math.floor(totalYears))}+` : '0', l: 'Años' },
                 { v: String(uniqueInstitutions), l: 'Centros' },
               ].map(s => (
@@ -995,16 +1000,16 @@ export default function EducationPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
             Historial académico
-            {records.length > 0 && (
+            {safeRecords.length > 0 && (
               <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                {records.length}
+                {safeRecords.length}
               </span>
             )}
           </h2>
           <div className="flex gap-2">
-            {records.length > 1 && (
+            {safeRecords.length > 1 && (
               <Button variant="ghost" size="sm"
-                onClick={() => { setIsReorderMode(r => !r); if (!isReorderMode) setOrdered([...records]); }}
+                onClick={() => { setIsReorderMode(r => !r); if (!isReorderMode) setOrdered([...safeRecords]); }}
                 className={`gap-1.5 text-xs ${isReorderMode ? 'bg-primary/10 text-primary border border-primary/20' : 'text-muted-foreground'}`}>
                 <ArrowUpDown className="h-3.5 w-3.5" />
                 {isReorderMode ? 'Guardar orden' : 'Reordenar'}
@@ -1023,7 +1028,7 @@ export default function EducationPage() {
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
-        ) : records.length === 0 ? (
+        ) : safeRecords.length === 0 ? (
           <EmptyState onAdd={openAdd} />
         ) : (
           <div className="relative">
@@ -1053,7 +1058,7 @@ export default function EducationPage() {
               </Reorder.Group>
             ) : (
               <div className="space-y-3">
-                {records.map((rec, i) => (
+                {(Array.isArray(safeRecords) ? safeRecords : []).map((rec, i) => (
                   <motion.div
                     key={rec.academicRecordId || i}
                     layout

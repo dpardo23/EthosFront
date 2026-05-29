@@ -1,16 +1,16 @@
 // =============================================
-// AUTH & USERS
+// AUTH & PROFILES
 // =============================================
-export type UserRole = 'professional' | 'recruiter' | 'guest' | 'admin';
+export type ProfileRole = 'professional' | 'recruiter' | 'guest' | 'admin';
 
-export interface User {
+export interface Profile {
   id: string;
   email: string;
   name: string;
-  username?: string;
+  profileHandle?: string;
   avatar?: string;
   bio?: string;
-  role: UserRole;
+  role: ProfileRole;
   slug?: string;
   profession?: string;
   headline?: string;
@@ -27,7 +27,7 @@ export interface User {
   availabilityStatus?: string;
 }
 export interface AuthState {
-  user: User | null;
+  profile: Profile | null;
   isAuthenticated: boolean;
   loading: boolean;
 }
@@ -55,7 +55,7 @@ export interface GlobalSkillTag {
 
 export interface HardSkill {
   id: string;
-  userId: string;
+  profileId: string;
   skillTag: GlobalSkillTag;
   level: SkillLevel;
   isTop: boolean;
@@ -66,7 +66,7 @@ export interface HardSkill {
 
 export interface SoftSkill {
   id: string;
-  userId: string;
+  profileId: string;
   title: string;
   description?: string;
   createdAt: string;
@@ -89,7 +89,7 @@ export type ProjectCategory = 'Web' | 'Mobile' | 'API' | 'Data' | 'DevOps' | 'Ot
 
 export interface Project {
   id: string;
-  userId: string;
+  profileId: string;
   title: string;
   description: string;
   category: ProjectCategory;
@@ -138,7 +138,7 @@ export type ConnectionStatus = 'connected' | 'disconnected' | 'expired';
 
 export interface OAuthConnection {
   id: string;
-  userId: string;
+  profileId: string;
   provider: ConnectionProvider;
   status: ConnectionStatus;
   lastSynced?: string;
@@ -204,7 +204,7 @@ export type SectionVisibility = 'PUBLIC' | 'LINK_ONLY' | 'PRIVATE';
 export type PortfolioSection = 'projects' | 'skills' | 'experience' | 'bio' | 'contact';
 
 export interface VisibilitySettings {
-  userId: string;
+  profileId: string;
   slug: string;
   isPublicProfileEnabled: boolean;
   isPasswordProtected: boolean;
@@ -242,7 +242,7 @@ export interface ModerationAction {
 // ANALYTICS
 // =============================================
 export interface PortfolioMetrics {
-  userId: string;
+  profileId: string;
   totalVisits: number;
   uniqueVisitors: number;
   totalInteractions: number;
@@ -251,23 +251,23 @@ export interface PortfolioMetrics {
 }
 
 export interface PlatformMetrics {
-  totalUsers: number;
-  activeUsers: number;
-  inactiveUsers: number;
+  totalProfiles: number;
+  activeProfiles: number;
+  inactiveProfiles: number;
   totalPortfolios: number;
   publishedPortfolios: number;
   totalVisits: number;
   totalInteractions: number;
-  userGrowth: number;
+  profileGrowth: number;
   visitGrowth: number;
 }
 
 export interface ActivityLog {
   id: string;
-  type: 'user_registered' | 'portfolio_created' | 'portfolio_published' | 'visit' | 'interaction';
+  type: 'profile_registered' | 'portfolio_created' | 'portfolio_published' | 'visit' | 'interaction';
   description: string;
-  userId?: string;
-  userName?: string;
+  profileId?: string;
+  profileHandle?: string;
   createdAt: string;
 }
 
@@ -301,8 +301,8 @@ export interface PrivacyPreferences {
   allowMessages: boolean;
 }
 
-export interface UserPreferences {
-  userId: string;
+export interface ProfilePreferences {
+  profileId: string;
   language: Language;
   theme: Theme;
   showGithubHeatmap: boolean;
@@ -319,7 +319,7 @@ export type NotificationType = 'endorsement' | 'visit' | 'recommendation' | 'sys
 
 export interface Notification {
   id: string;
-  userId: string;
+  profileId: string;
   type: NotificationType;
   title: string;
   message: string;
@@ -332,7 +332,7 @@ export interface Notification {
 // =============================================
 export interface AcademicRecord {
   id: string;
-  userId: string;
+  profileId: string;
   institutionName: string;
   degree: string;
   fieldOfStudy: string;

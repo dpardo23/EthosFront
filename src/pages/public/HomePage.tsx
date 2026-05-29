@@ -4,8 +4,8 @@ import PublicLandingPage from './PublicLandingPage';
 
 /**
  * Smart HomePage Router
- * - Unauthenticated users see the public marketing landing page
- * - Authenticated users are redirected to their dashboard
+ * - Unauthenticated profiles see the public marketing landing page
+ * - Authenticated profiles are redirected to their dashboard
  */
 export default function HomePage() {
   const { isAuthenticated } = useAuthStore();

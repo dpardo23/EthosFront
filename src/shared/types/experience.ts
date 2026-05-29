@@ -1,6 +1,6 @@
 export interface WorkExperience {
   workExperienceId?: string;
-  userId?: string;
+  profileId?: string;
   companyName: string;
   jobTitle: string;
   description?: string;

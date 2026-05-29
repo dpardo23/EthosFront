@@ -108,8 +108,8 @@ const resources = {
       
       // Analytics
       'analytics.title': 'Panel de Analíticas',
-      'analytics.totalUsers': 'Usuarios totales',
-      'analytics.activeUsers': 'Usuarios activos',
+      'analytics.totalProfiles': 'Usuarios totales',
+      'analytics.activeProfiles': 'Usuarios activos',
       'analytics.totalPortfolios': 'Portafolios totales',
       'analytics.totalVisits': 'Visitas totales',
       'analytics.recentActivity': 'Actividad reciente',
@@ -243,8 +243,8 @@ const resources = {
       
       // Analytics
       'analytics.title': 'Analytics Dashboard',
-      'analytics.totalUsers': 'Total users',
-      'analytics.activeUsers': 'Active users',
+      'analytics.totalProfiles': 'Total profiles',
+      'analytics.activeProfiles': 'Active profiles',
       'analytics.totalPortfolios': 'Total portfolios',
       'analytics.totalVisits': 'Total visits',
       'analytics.recentActivity': 'Recent activity',

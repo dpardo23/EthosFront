@@ -7,7 +7,7 @@ import {
   XCircle,
   Clock,
   Eye,
-  User,
+  User as ProfileIcon,
   FileText,
   Image,
   MessageSquare,
@@ -31,9 +31,9 @@ import { cn } from '@/shared/lib/utils';
 // Types for admin schema
 interface AuditLogEntry {
   id: string;
-  user_id: string;
-  user_name: string;
-  user_avatar?: string;
+  profile_id: string;
+  profile_name: string;
+  profile_avatar?: string;
   action: string;
   entity_type: 'portfolio' | 'project' | 'profile' | 'skill' | 'connection' | 'auth';
   entity_id?: string;
@@ -46,9 +46,9 @@ interface AuditLogEntry {
 interface ModerationItem {
   id: string;
   type: 'profile_content' | 'project' | 'image' | 'comment';
-  user_id: string;
-  user_name: string;
-  user_avatar?: string;
+  profile_id: string;
+  profile_name: string;
+  profile_avatar?: string;
   content_preview: string;
   reason: string;
   reported_at: string;
@@ -69,9 +69,9 @@ interface SystemStatus {
 const mockAuditLogs: AuditLogEntry[] = [
   {
     id: '1',
-    user_id: 'u1',
-    user_name: 'Ana Martinez',
-    user_avatar: 'https://i.pravatar.cc/150?u=ana',
+    profile_id: 'u1',
+    profile_name: 'Ana Martinez',
+    profile_avatar: 'https://i.pravatar.cc/150?u=ana',
     action: 'UPDATE',
     entity_type: 'portfolio',
     entity_id: 'p123',
@@ -82,9 +82,9 @@ const mockAuditLogs: AuditLogEntry[] = [
   },
   {
     id: '2',
-    user_id: 'u2',
-    user_name: 'Carlos Ruiz',
-    user_avatar: 'https://i.pravatar.cc/150?u=carlos',
+    profile_id: 'u2',
+    profile_name: 'Carlos Ruiz',
+    profile_avatar: 'https://i.pravatar.cc/150?u=carlos',
     action: 'CREATE',
     entity_type: 'project',
     entity_id: 'proj456',
@@ -95,9 +95,9 @@ const mockAuditLogs: AuditLogEntry[] = [
   },
   {
     id: '3',
-    user_id: 'u3',
-    user_name: 'Maria Lopez',
-    user_avatar: 'https://i.pravatar.cc/150?u=maria',
+    profile_id: 'u3',
+    profile_name: 'Maria Lopez',
+    profile_avatar: 'https://i.pravatar.cc/150?u=maria',
     action: 'DELETE',
     entity_type: 'project',
     entity_id: 'proj789',
@@ -108,8 +108,8 @@ const mockAuditLogs: AuditLogEntry[] = [
   },
   {
     id: '4',
-    user_id: 'u4',
-    user_name: 'Pedro Sanchez',
+    profile_id: 'u4',
+    profile_name: 'Pedro Sanchez',
     action: 'LOGIN_FAILED',
     entity_type: 'auth',
     details: 'Intento de login fallido (3 intentos)',
@@ -119,9 +119,9 @@ const mockAuditLogs: AuditLogEntry[] = [
   },
   {
     id: '5',
-    user_id: 'u5',
-    user_name: 'Laura Garcia',
-    user_avatar: 'https://i.pravatar.cc/150?u=laura',
+    profile_id: 'u5',
+    profile_name: 'Laura Garcia',
+    profile_avatar: 'https://i.pravatar.cc/150?u=laura',
     action: 'UPDATE',
     entity_type: 'profile',
     details: 'Actualizo foto de perfil',
@@ -131,9 +131,9 @@ const mockAuditLogs: AuditLogEntry[] = [
   },
   {
     id: '6',
-    user_id: 'u6',
-    user_name: 'Javier Fernandez',
-    user_avatar: 'https://i.pravatar.cc/150?u=javier',
+    profile_id: 'u6',
+    profile_name: 'Javier Fernandez',
+    profile_avatar: 'https://i.pravatar.cc/150?u=javier',
     action: 'CREATE',
     entity_type: 'connection',
     details: 'Nueva conexion con @sofiatorres',
@@ -148,9 +148,9 @@ const mockModerationItems: ModerationItem[] = [
   {
     id: 'm1',
     type: 'profile_content',
-    user_id: 'u9',
-    user_name: 'Usuario Sospechoso',
-    user_avatar: 'https://i.pravatar.cc/150?u=suspicious',
+    profile_id: 'u9',
+    profile_name: 'Usuario Sospechoso',
+    profile_avatar: 'https://i.pravatar.cc/150?u=suspicious',
     content_preview: 'Contenido de perfil con posible spam o enlaces maliciosos...',
     reason: 'Contenido reportado como spam',
     reported_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
@@ -161,9 +161,9 @@ const mockModerationItems: ModerationItem[] = [
   {
     id: 'm2',
     type: 'project',
-    user_id: 'u10',
-    user_name: 'John Test',
-    user_avatar: 'https://i.pravatar.cc/150?u=johntest',
+    profile_id: 'u10',
+    profile_name: 'John Test',
+    profile_avatar: 'https://i.pravatar.cc/150?u=johntest',
     content_preview: 'Proyecto con imagenes inapropiadas...',
     reason: 'Imagenes inapropiadas',
     reported_at: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
@@ -174,8 +174,8 @@ const mockModerationItems: ModerationItem[] = [
   {
     id: 'm3',
     type: 'comment',
-    user_id: 'u11',
-    user_name: 'Troll Account',
+    profile_id: 'u11',
+    profile_name: 'Troll Account',
     content_preview: 'Comentario ofensivo en el proyecto de otro usuario...',
     reason: 'Lenguaje ofensivo',
     reported_at: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
@@ -208,9 +208,9 @@ const getEntityIcon = (type: string) => {
   switch (type) {
     case 'portfolio': return FileText;
     case 'project': return FileText;
-    case 'profile': return User;
+    case 'profile': return ProfileIcon;
     case 'skill': return Zap;
-    case 'connection': return User;
+    case 'connection': return ProfileIcon;
     case 'auth': return Shield;
     default: return Activity;
   }
@@ -218,7 +218,7 @@ const getEntityIcon = (type: string) => {
 
 const getModerationTypeIcon = (type: string) => {
   switch (type) {
-    case 'profile_content': return User;
+    case 'profile_content': return ProfileIcon;
     case 'project': return FileText;
     case 'image': return Image;
     case 'comment': return MessageSquare;
@@ -424,13 +424,13 @@ export default function AdminModerationPage() {
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                           <div className="flex items-center gap-2">
                             <Avatar 
-                              src={log.user_avatar} 
-                              name={log.user_name} 
+                              src={log.profile_avatar} 
+                              name={log.profile_name} 
                               size="sm" 
                               className="border border-gray-200 dark:border-violet-500/20"
                             />
                             <div>
-                              <p className="text-sm font-medium text-gray-900 dark:text-white">{log.user_name}</p>
+                              <p className="text-sm font-medium text-gray-900 dark:text-white">{log.profile_name}</p>
                               <p className="text-xs text-gray-500 dark:text-violet-300/60">{formatTimeAgo(log.timestamp)}</p>
                             </div>
                           </div>
@@ -521,7 +521,7 @@ export default function AdminModerationPage() {
                             </div>
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-2">
-                                <p className="font-medium text-gray-900 dark:text-white">{item.user_name}</p>
+                                <p className="font-medium text-gray-900 dark:text-white">{item.profile_name}</p>
                                 {getPriorityBadge(item.priority)}
                               </div>
                               <p className="mt-1 line-clamp-2 text-sm text-gray-600 dark:text-violet-300/70">
@@ -655,16 +655,16 @@ export default function AdminModerationPage() {
                   </button>
                 </div>
 
-                {/* User Info */}
+                {/* Profile Info */}
                 <div className="mb-6 flex items-center gap-4 rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-violet-500/20 dark:bg-violet-500/5">
                   <Avatar 
-                    src={selectedItem.user_avatar} 
-                    name={selectedItem.user_name} 
+                    src={selectedItem.profile_avatar} 
+                    name={selectedItem.profile_name} 
                     size="lg" 
                     className="border-2 border-gray-200 dark:border-violet-500/30"
                   />
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">{selectedItem.user_name}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{selectedItem.profile_name}</p>
                     <p className="text-sm text-gray-500 dark:text-violet-300/60">Usuario reportado</p>
                     {getPriorityBadge(selectedItem.priority)}
                   </div>

@@ -17,7 +17,7 @@ interface AcademicRecordModalProps {
   isOpen: boolean;
   onClose: () => void;
   record: AcademicRecord | null;
-  onSave: (record: Omit<AcademicRecord, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => void;
+  onSave: (record: Omit<AcademicRecord, 'id' | 'profileId' | 'createdAt' | 'updatedAt'>) => void;
   onDelete?: () => void;
 }
 

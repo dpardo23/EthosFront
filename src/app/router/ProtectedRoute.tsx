@@ -1,21 +1,21 @@
 import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '@/store';
-import type { UserRole } from '@/shared/types';
+import type { ProfileRole } from '@/shared/types';
 import type { ReactNode } from 'react';
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  allowedRoles?: UserRole[];
+  allowedRoles?: ProfileRole[];
 }
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, profile } = useAuthStore();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+  if (allowedRoles && profile && !allowedRoles.includes(profile.role)) {
     return <Navigate to="/access-denied" replace />;
   }
 

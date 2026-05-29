@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  User,
+  User as ProfileIcon,
   Lock,
   Bell,
   Palette,
@@ -33,13 +33,13 @@ import { useAuthStore } from '@/store/authStore';
 import { usePreferencesStore } from '@/store/preferencesStore';
 import { useUiStore } from '@/store/uiStore';
 import { cn } from '@/shared/lib/utils';
-import type { UserPreferences } from '@/shared/types';
+import type { ProfilePreferences } from '@/shared/types';
 
 type SettingsTab = 'profile' | 'account' | 'notifications' | 'privacy' | 'appearance' | 'billing';
 
 export default function SettingsPage() {
   const { t, i18n } = useTranslation();
-  const { user, logout } = useAuthStore();
+  const { profile, logout } = useAuthStore();
   const { preferences, updatePreferences } = usePreferencesStore();
   const { addToast, setTheme, theme: activeTheme } = useUiStore();
 
@@ -50,8 +50,8 @@ export default function SettingsPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
 
-  const safePreferences: UserPreferences = preferences ?? {
-    userId: user?.id ?? '',
+  const safePreferences: ProfilePreferences = preferences ?? {
+    profileId: profile?.id ?? '',
     language: 'es',
     theme: 'light',
     showGithubHeatmap: true,
@@ -117,7 +117,7 @@ export default function SettingsPage() {
   });
 
   const tabs = [
-    { id: 'profile' as SettingsTab, label: t('settings.profile'), icon: User },
+    { id: 'profile' as SettingsTab, label: t('settings.profile'), icon: ProfileIcon },
     { id: 'account' as SettingsTab, label: t('settings.account'), icon: Lock },
     { id: 'notifications' as SettingsTab, label: t('settings.notifications'), icon: Bell },
     { id: 'privacy' as SettingsTab, label: t('settings.privacy'), icon: Shield },
@@ -136,10 +136,10 @@ export default function SettingsPage() {
     try {
       await api.patch('/v1/profile/basic', profileForm);
       useAuthStore.setState((state) => ({
-        user: state.user ? {
-          ...state.user,
+        profile: state.profile ? {
+          ...state.profile,
           name: `${profileForm.firstName} ${profileForm.lastName}`.trim(),
-          avatar: profileForm.photoUrl || state.user.avatar
+          avatar: profileForm.photoUrl || state.profile.avatar
         } : null
       }));
 
@@ -277,7 +277,7 @@ export default function SettingsPage() {
                       </h2>
                       <div className="flex items-center gap-6">
                         <div className="relative">
-                          <Avatar src={profileForm.photoUrl || user?.avatar} name={profileForm.firstName || ''} size="2xl" />
+                          <Avatar src={profileForm.photoUrl || profile?.avatar} name={profileForm.firstName || ''} size="2xl" />
                           <button className="absolute bottom-0 right-0 p-2 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-colors">
                             <Camera className="w-4 h-4" />
                           </button>
@@ -507,7 +507,7 @@ export default function SettingsPage() {
                       >
                         <span className="text-foreground">{item.label}</span>
                         <Switch
-                          checked={safePreferences.notifications[item.key as keyof UserPreferences['notifications']] ?? true}
+                          checked={safePreferences.notifications[item.key as keyof ProfilePreferences['notifications']] ?? true}
                           onChange={(checked) =>
                             updatePreferences({
                               notifications: {
@@ -549,7 +549,7 @@ export default function SettingsPage() {
                       >
                         <span className="text-foreground">{item.label}</span>
                         <Switch
-                          checked={safePreferences.privacy[item.key as keyof UserPreferences['privacy']] ?? true}
+                          checked={safePreferences.privacy[item.key as keyof ProfilePreferences['privacy']] ?? true}
                           onChange={(checked) =>
                             updatePreferences({
                               privacy: {

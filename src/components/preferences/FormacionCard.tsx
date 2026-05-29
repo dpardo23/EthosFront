@@ -17,7 +17,7 @@ import { AcademicRecordModal } from './AcademicRecordModal';
 const initialRecords: AcademicRecord[] = [
   {
     id: '1',
-    userId: 'user-1',
+    profileId: 'profile-1',
     institutionName: 'Universidad Nacional Autonoma de Mexico',
     degree: 'Licenciatura en Ingenieria de Software',
     fieldOfStudy: 'Ingenieria de Software',
@@ -30,7 +30,7 @@ const initialRecords: AcademicRecord[] = [
   },
   {
     id: '2',
-    userId: 'user-1',
+    profileId: 'profile-1',
     institutionName: 'Platzi',
     degree: 'Diplomado en Cloud Computing',  
     fieldOfStudy: 'AWS & DevOps',
@@ -60,7 +60,7 @@ export function FormacionCard() {
     setIsModalOpen(true);
   };
 
-  const handleSaveRecord = (record: Omit<AcademicRecord, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
+  const handleSaveRecord = (record: Omit<AcademicRecord, 'id' | 'profileId' | 'createdAt' | 'updatedAt'>) => {
     if (editingRecord) {
       // Update existing record
       setRecords((prev) =>
@@ -75,7 +75,7 @@ export function FormacionCard() {
       const newRecord: AcademicRecord = {
         ...record,
         id: crypto.randomUUID(),
-        userId: 'user-1',
+        profileId: 'profile-1',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };

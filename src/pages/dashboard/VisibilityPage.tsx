@@ -34,7 +34,7 @@ const visibilityOptions: { value: SectionVisibility; label: string }[] = [
 
 export default function VisibilityPage() {
   const { t } = useTranslation();
-  const { user } = useAuthStore();
+  const { profile } = useAuthStore();
   const { addToast } = useUiStore();
   const {
     settings,
@@ -53,10 +53,10 @@ export default function VisibilityPage() {
   const [password, setPassword] = useState('');
 
   useEffect(() => {
-    if (user?.id) {
-      fetchSettings(user.id);
+    if (profile?.id) {
+      fetchSettings(profile.id);
     }
-  }, [fetchSettings, user?.id]);
+  }, [fetchSettings, profile?.id]);
 
   useEffect(() => {
     if (!settings) {
@@ -83,13 +83,13 @@ export default function VisibilityPage() {
   };
 
   const handleSaveSlug = async () => {
-    if (!user?.id || !slugDraft.trim()) {
+    if (!profile?.id || !slugDraft.trim()) {
       addToast({ type: 'error', title: 'Ingresa un slug valido' });
       return;
     }
 
     try {
-      await updateSlug(user.id, slugDraft.trim());
+      await updateSlug(profile.id, slugDraft.trim());
       addToast({ type: 'success', title: 'Slug actualizado' });
     } catch {
       addToast({ type: 'error', title: 'No se pudo actualizar el slug' });
@@ -97,12 +97,12 @@ export default function VisibilityPage() {
   };
 
   const handleSaveSeo = async () => {
-    if (!user?.id) {
+    if (!profile?.id) {
       return;
     }
 
     try {
-      await updateSeoSettings(user.id, {
+      await updateSeoSettings(profile.id, {
         title: seoTitle.trim(),
         description: seoDescription.trim(),
       });
@@ -113,12 +113,12 @@ export default function VisibilityPage() {
   };
 
   const handlePasswordMode = async (enabled: boolean) => {
-    if (!user?.id) {
+    if (!profile?.id) {
       return;
     }
 
     try {
-      await updatePasswordProtection(user.id, enabled, enabled ? password : undefined);
+      await updatePasswordProtection(profile.id, enabled, enabled ? password : undefined);
       addToast({
         type: 'success',
         title: enabled ? 'Proteccion activada' : 'Proteccion desactivada',
@@ -129,7 +129,7 @@ export default function VisibilityPage() {
   };
 
   const handleSavePassword = async () => {
-    if (!user?.id || !settings?.isPasswordProtected) {
+    if (!profile?.id || !settings?.isPasswordProtected) {
       return;
     }
 
@@ -139,7 +139,7 @@ export default function VisibilityPage() {
     }
 
     try {
-      await updatePasswordProtection(user.id, true, password);
+      await updatePasswordProtection(profile.id, true, password);
       addToast({ type: 'success', title: 'Contrasena actualizada' });
     } catch {
       addToast({ type: 'error', title: 'No se pudo guardar la contrasena' });
@@ -147,12 +147,12 @@ export default function VisibilityPage() {
   };
 
   const handleSectionChange = async (section: PortfolioSection, value: SectionVisibility) => {
-    if (!user?.id) {
+    if (!profile?.id) {
       return;
     }
 
     try {
-      await updateSectionVisibility(user.id, section, value);
+      await updateSectionVisibility(profile.id, section, value);
       addToast({ type: 'success', title: `Visibilidad de ${sectionLabels[section]} actualizada` });
     } catch {
       addToast({ type: 'error', title: 'No se pudo actualizar la seccion' });

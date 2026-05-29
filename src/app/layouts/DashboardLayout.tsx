@@ -16,7 +16,7 @@ import {
   LogOut,
   ChevronDown,
   Globe,
-  User,
+  User as ProfileIcon,
   Search,
   Shield,
   ChevronLeft,
@@ -30,7 +30,7 @@ import { cn } from '@/shared/lib/utils';
 import { useAuthStore, useUiStore, useNotificationsStore } from '@/store';
 import { Avatar } from '@/shared/ui';
 import { EthosCoreLogo, EthosLogoIcon } from '@/components/brand/EthosCoreLogo';
-import type { UserRole } from '@/shared/types';
+import type { ProfileRole } from '@/shared/types';
 
 type NavItem = {
   path: string;
@@ -62,7 +62,7 @@ const adminNavItems: NavItem[] = [
   { path: '/dashboard/preferences', icon: Settings,        label: 'Configuración' },
 ];
 
-function getNavItems(role: UserRole): NavItem[] {
+function getNavItems(role: ProfileRole): NavItem[] {
   if (role === 'recruiter') return recruiterNavItems;
   if (role === 'admin') return adminNavItems;
   return professionalNavItems;
@@ -168,7 +168,7 @@ function SidebarNavItem({
 
 type SidebarProfile = {
   name?: string | null;
-  role?: UserRole | null;
+  role?: ProfileRole | null;
   slug?: string | null;
   email?: string | null;
   avatar?: string | null;
@@ -282,14 +282,14 @@ export function DashboardLayout() {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const { user: profile, logout } = useAuthStore();
+  const { profile: profile, logout } = useAuthStore();
   const { sidebarOpen, setSidebarOpen, resolvedTheme, initializeTheme } = useUiStore();
   const { unreadCount } = useNotificationsStore();
 
   const [collapsed, setCollapsed] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const userMenuRef = useRef<HTMLDivElement>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
   const navItems = getNavItems(profile?.role || 'professional');
@@ -324,7 +324,7 @@ export function DashboardLayout() {
   // Click outside topbar menus
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setShowUserMenu(false);
+      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) setShowProfileMenu(false);
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) setShowNotifications(false);
     };
     document.addEventListener('mousedown', handler);
@@ -470,9 +470,9 @@ export function DashboardLayout() {
             </div>
 
             {/* Profile menu */}
-            <div className="relative" ref={userMenuRef}>
+            <div className="relative" ref={profileMenuRef}>
               <button
-                onClick={() => setShowUserMenu(v => !v)}
+                onClick={() => setShowProfileMenu(v => !v)}
                 className="flex h-9 items-center gap-2 rounded-xl border border-border bg-muted/40 pl-1.5 pr-2.5 hover:bg-accent transition-all duration-150"
               >
                 <Avatar src={profile?.avatar} alt={profile?.name} fallback={profile?.name} size="sm" />
@@ -481,12 +481,12 @@ export function DashboardLayout() {
                 </span>
                 <ChevronDown className={cn(
                   'h-3 w-3 text-muted-foreground transition-transform duration-200',
-                  showUserMenu && 'rotate-180'
+                  showProfileMenu && 'rotate-180'
                 )} />
               </button>
 
               <AnimatePresence>
-                {showUserMenu && (
+                {showProfileMenu && (
                   <motion.div
                     initial={{ opacity: 0, y: 8, scale: 0.96 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -515,7 +515,7 @@ export function DashboardLayout() {
                           to={`/p/${profile.slug}`}
                           target="_blank"
                           className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                          onClick={() => setShowUserMenu(false)}
+                          onClick={() => setShowProfileMenu(false)}
                         >
                           <Globe className="h-4 w-4" />
                           Ver portafolio
@@ -526,7 +526,7 @@ export function DashboardLayout() {
                         <Link
                           to="/explorar"
                           className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                          onClick={() => setShowUserMenu(false)}
+                          onClick={() => setShowProfileMenu(false)}
                         >
                           <Globe className="h-4 w-4" />
                           Explorar portafolios
@@ -535,9 +535,9 @@ export function DashboardLayout() {
                       <Link
                         to="/dashboard/preferences"
                         className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                        onClick={() => setShowUserMenu(false)}
+                        onClick={() => setShowProfileMenu(false)}
                       >
-                        <User className="h-4 w-4" />
+                        <ProfileIcon className="h-4 w-4" />
                         Mi perfil
                       </Link>
 

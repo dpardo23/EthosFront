@@ -32,12 +32,12 @@ import {
   mockLinkedinExperiences,
   mockProjects,
   mockRecommendations,
-  mockUsers,
+  mockProfiles,
 } from '@/shared/mocks/data';
 import {
   recruiterTalentHardSkills,
   recruiterTalentProjects,
-  recruiterTalentUsers,
+  recruiterTalentProfileList,
 } from '@/shared/mocks/recruiterTalent';
 
 type PublicProfile = {
@@ -103,20 +103,20 @@ type PublicProfile = {
 };
 
 function buildPublicProfile(slug: string): PublicProfile | null {
-  const allUsers = [...mockUsers, ...recruiterTalentUsers];
+  const allProfiles = [...mockProfiles, ...recruiterTalentProfileList];
   const allHardSkills = [...mockHardSkills, ...recruiterTalentHardSkills];
   const allProjects = [...mockProjects, ...recruiterTalentProjects];
-  const user = allUsers.find((item) => item.slug === slug);
-  if (!user) {
+  const profile = allProfiles.find((item) => item.slug === slug);
+  if (!profile) {
     return null;
   }
 
-  const hardSkills = allHardSkills.filter((item) => item.userId === user.id);
-  const projects = allProjects.filter((item) => item.userId === user.id && item.isPublic);
+  const hardSkills = allHardSkills.filter((item) => item.profileId === profile.id);
+  const projects = allProjects.filter((item) => item.profileId === profile.id && item.isPublic);
   const experiences = mockLinkedinExperiences.slice(0, 3);
   const education = mockLinkedinEducations.slice(0, 2);
   const recommendations = mockRecommendations.filter((item) => item.isPublic).slice(0, 3);
-  const connections = mockConnections.filter((item) => item.userId === user.id);
+  const connections = mockConnections.filter((item) => item.profileId === profile.id);
 
   const headlineBySlug: Record<string, string> = {
     'carlos-mendoza': 'Senior Full Stack Developer | React, Node.js y Cloud Architecture',
@@ -157,21 +157,21 @@ function buildPublicProfile(slug: string): PublicProfile | null {
     ],
   };
 
-  const userSlug = user.slug || '';
+  const profileSlug = profile.slug || '';
 
   return {
-    id: user.id,
-    slug: user?.slug || '',
-    name: user.name || '',
-    profession: user.profession || '',
-    bio: user?.bio || '',
-    location: user.location || '',
-    website: user.website || '',
-    email: user.email || '',
-    avatar: user.avatar || '',
-    headline: headlineBySlug[userSlug] ?? user.profession ?? '',
-    company: companyBySlug[userSlug] ?? user.company ?? 'Professional Profile',
-    about: aboutBySlug[userSlug] ?? user.bio ?? '',
+    id: profile.id,
+    slug: profile?.slug || '',
+    name: profile.name || '',
+    profession: profile.profession || '',
+    bio: profile?.bio || '',
+    location: profile.location || '',
+    website: profile.website || '',
+    email: profile.email || '',
+    avatar: profile.avatar || '',
+    headline: headlineBySlug[profileSlug] ?? profile.profession ?? '',
+    company: companyBySlug[profileSlug] ?? profile.company ?? 'Professional Profile',
+    about: aboutBySlug[profileSlug] ?? profile.bio ?? '',
     skills: hardSkills.slice(0, 6).map((skill) => ({
       id: skill.id,
       name: skill.skillTag.name,
@@ -206,7 +206,7 @@ function buildPublicProfile(slug: string): PublicProfile | null {
       period: `${item.startDate} - ${item.endDate}`,
       description: 'Formacion orientada a fundamentos, criterio tecnico y crecimiento profesional.',
     })),
-    highlights: (user.slug && highlightsBySlug[user.slug]) ? highlightsBySlug[user.slug] : ['Perfil profesional en construcción.'],
+    highlights: (profile.slug && highlightsBySlug[profile.slug]) ? highlightsBySlug[profile.slug] : ['Perfil profesional en construcción.'],
     recommendations: recommendations.map((item) => ({
       id: item.id,
       author: item.authorName,
@@ -215,7 +215,7 @@ function buildPublicProfile(slug: string): PublicProfile | null {
     })),
     stats: {
       profileViews:
-        user.slug === 'carlos-mendoza' ? 18420 : user.slug === 'maria-lopez' ? 9630 : 7240,
+        profile.slug === 'carlos-mendoza' ? 18420 : profile.slug === 'maria-lopez' ? 9630 : 7240,
       projectCount: projects.length,
       recommendations: recommendations.length,
       connections: connections.length * 78,

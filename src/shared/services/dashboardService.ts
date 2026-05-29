@@ -62,9 +62,9 @@ export interface ProfessionalDashboardData {
 // ── Service ────────────────────────────────────────────────────────────────
 
 export const dashboardService = {
-  async getProfessionalDashboard(userId: string): Promise<ProfessionalDashboardData> {
+  async getProfessionalDashboard(profileId: string): Promise<ProfessionalDashboardData> {
     const response = await fetch(
-      `${API_BASE_URL}/api/v1/dashboard/professional/${userId}`,
+      `${API_BASE_URL}/api/v1/dashboard/professional/${profileId}`,
       { headers: getAuthHeaders() }
     );
     if (!response.ok) {

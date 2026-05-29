@@ -462,7 +462,7 @@ function DashboardSkeleton() {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function DashboardHomePage() {
-  const { user } = useAuthStore();
+  const { profile } = useAuthStore();
   const { projects, fetchProjects } = useProjectsStore();
   const { resolvedTheme } = useUiStore();
   const isDark = resolvedTheme === 'dark';
@@ -471,18 +471,18 @@ export default function DashboardHomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  if (user?.role === 'recruiter') return <RecruiterTalentSearchPage />;
+  if (profile?.role === 'recruiter') return <RecruiterTalentSearchPage />;
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!profile?.id) return;
     Promise.all([
-      dashboardService.getProfessionalDashboard(user.id),
-      fetchProjects(user.profile_id || user.id),
+      dashboardService.getProfessionalDashboard(profile.id),
+      fetchProjects(profile.profile_id || profile.id),
     ])
       .then(([d]) => setData(d))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [user?.id]);
+  }, [profile?.id]);
 
   if (loading) return <DashboardSkeleton />;
 
@@ -502,7 +502,7 @@ export default function DashboardHomePage() {
 
   const { basic_info, projects_count, bio_headline, hard_skills, soft_skills, experience, education } = data;
   const fullName = `${basic_info.first_name} ${basic_info.last_name}`.trim();
-  const avatarUrl = basic_info.photo_url || user?.avatar;
+  const avatarUrl = basic_info.photo_url || profile?.avatar;
   const featuredProjects = projects.filter((p) => p.isFeatured);
   const allProjects = projects;
 
@@ -583,9 +583,9 @@ export default function DashboardHomePage() {
 
               {/* Actions */}
               <div className="flex items-center gap-2 pb-1">
-                {user?.slug && (
+                {profile?.slug && (
                   <Link
-                    to={`/p/${user.slug}`}
+                    to={`/p/${profile.slug}`}
                     target="_blank"
                     className="flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground hover:border-violet-500/40 hover:text-violet-600 dark:hover:text-violet-300 hover:bg-violet-500/5 transition-all duration-200"
                   >

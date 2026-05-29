@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, User, ChevronDown } from 'lucide-react';
+import { X, Upload, User as ProfileIcon, ChevronDown } from 'lucide-react';
 import { Button } from '@/shared/ui';
 import { useAuthStore } from '@/store/authStore';
 
@@ -42,30 +42,30 @@ interface RecruiterProfileEditorModalProps {
 }
 
 export function RecruiterProfileEditorModal({ isOpen, onClose }: RecruiterProfileEditorModalProps) {
-  const { user, updateRecruiterIdentity, loading } = useAuthStore();
+  const { profile, updateRecruiterIdentity, loading } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [countryOpen, setCountryOpen] = useState(false);
   const countryRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState({
-    firstName: user?.name?.split(' ')[0] || '',
-    lastName: user?.name?.split(' ').slice(1).join(' ') || '',
-    avatarPreview: user?.avatar || '',
-    country: user?.location || '',
-    phone: user?.phone || '',
+    firstName: profile?.name?.split(' ')[0] || '',
+    lastName: profile?.name?.split(' ').slice(1).join(' ') || '',
+    avatarPreview: profile?.avatar || '',
+    country: profile?.location || '',
+    phone: profile?.phone || '',
   });
 
   useEffect(() => {
-    if (user) {
+    if (profile) {
       setFormData({
-        firstName: user.name?.split(' ')[0] || '',
-        lastName: user.name?.split(' ').slice(1).join(' ') || '',
-        avatarPreview: user.avatar || '',
-        country: user.location || '',
-        phone: user.phone || '',
+        firstName: profile.name?.split(' ')[0] || '',
+        lastName: profile.name?.split(' ').slice(1).join(' ') || '',
+        avatarPreview: profile.avatar || '',
+        country: profile.location || '',
+        phone: profile.phone || '',
       });
     }
-  }, [user]);
+  }, [profile]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -162,7 +162,7 @@ export function RecruiterProfileEditorModal({ isOpen, onClose }: RecruiterProfil
                     <img src={formData.avatarPreview} className="h-full w-full object-cover" />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-gray-50 dark:bg-white/5">
-                      <User className="h-8 w-8 text-gray-400" />
+                      <ProfileIcon className="h-8 w-8 text-gray-400" />
                     </div>
                   )}
                   <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">

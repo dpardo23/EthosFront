@@ -3,22 +3,38 @@ import { AcademicRecord } from '../types/education';
 
 const ROUTE = '/v1/academic-records';
 
+/**
+ * Normaliza cualquier forma de respuesta a un arreglo seguro de registros.
+ * El backend puede devolver el arreglo directo, o anidado/paginado
+ * (`data`, `records`, `content`, `items`, `results`). Cualquier otra cosa
+ * (null, undefined, objeto suelto) colapsa a `[]` para blindar el render.
+ */
+const toRecordArray = (payload: unknown): AcademicRecord[] => {
+  if (Array.isArray(payload)) return payload as AcademicRecord[];
+  if (payload && typeof payload === 'object') {
+    const obj = payload as Record<string, unknown>;
+    const nested = obj.data ?? obj.records ?? obj.content ?? obj.items ?? obj.results;
+    if (Array.isArray(nested)) return nested as AcademicRecord[];
+  }
+  return [];
+};
+
 export const educationService = {
-  getRecords: async (userId: string): Promise<AcademicRecord[]> => {
-    const response = await apiClient.get(`${ROUTE}/user/${userId}`);
-    return response.data;
+  getRecords: async (profileId: string): Promise<AcademicRecord[]> => {
+    const response = await apiClient.get(`${ROUTE}/profile/${profileId}`);
+    return toRecordArray(response.data);
   },
   
-  addRecord: async (userId: string, data: Partial<AcademicRecord>): Promise<string> => {
-    const response = await apiClient.post(ROUTE, { ...data, userId });
+  addRecord: async (profileId: string, data: Partial<AcademicRecord>): Promise<string> => {
+    const response = await apiClient.post(ROUTE, { ...data, profileId });
     return response.data;
   },
 
-  updateRecord: async (userId: string, id: string, data: Partial<AcademicRecord>): Promise<void> => {
-    await apiClient.put(`${ROUTE}/${id}`, { ...data, userId });
+  updateRecord: async (profileId: string, id: string, data: Partial<AcademicRecord>): Promise<void> => {
+    await apiClient.put(`${ROUTE}/${id}`, { ...data, profileId });
   },
 
-  deleteRecord: async (userId: string, id: string): Promise<void> => {
-    await apiClient.delete(`${ROUTE}/${id}/user/${userId}`);
+  deleteRecord: async (profileId: string, id: string): Promise<void> => {
+    await apiClient.delete(`${ROUTE}/${id}/profile/${profileId}`);
   }
 };

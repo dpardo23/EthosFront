@@ -379,7 +379,7 @@ function ExperienceCard({ exp, reorderMode, deleteConfirmId, isDeleting, onView,
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function ExperiencePage() {
-  const { user: profile } = useAuthStore();
+  const { profile: profile } = useAuthStore();
   const [experiences, setExperiences] = useState<WorkExperience[]>([]);
   const [ordered, setOrdered] = useState<WorkExperience[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -475,7 +475,7 @@ export default function ExperiencePage() {
     if (!validate()) return;
     setIsSaving(true);
     try {
-      const payload: any = { ...form, userId: profile.id, endDate: form.endDate || null, technologies: form.technologies.trim() };
+      const payload: any = { ...form, profileId: profile.id, endDate: form.endDate || null, technologies: form.technologies.trim() };
       if (editingExp?.workExperienceId) {
         await experienceService.updateExperience(profile.id, editingExp.workExperienceId, payload);
       } else {
