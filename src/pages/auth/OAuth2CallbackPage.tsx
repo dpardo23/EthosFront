@@ -3,15 +3,31 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store';
 import type { Profile, ProfileRole } from '@/shared/types';
-import { ROLE_REDIRECT_PATHS } from '@/shared/services/authService';
+import { ROLE_INITIAL_PATHS } from '@/app/router/routes';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import api from '@/shared/api/api';
+
+const PENDING_OAUTH_ROLE_KEY = 'ethoshub_pending_oauth_role';
 
 type JwtPayload = {
-  profileId?: string; 
+  profileId?: string;
   email?: string;
   profileHandle?: string;
-  profileType?: string; 
+  profileType?: string;
   exp?: number;
+};
+
+type BackendSyncData = {
+  profileId: string;
+  email: string;
+  role: string;
+};
+
+type BackendApiResponse<T> = {
+  success: boolean;
+  status: number;
+  message: string;
+  data: T;
 };
 
 function base64UrlDecode(value: string): string {
@@ -25,17 +41,16 @@ function decodeJwtPayload(token: string): JwtPayload | null {
   try {
     const parts = token.split('.');
     if (parts.length < 2) return null;
-    const raw = base64UrlDecode(parts[1]);
-    return JSON.parse(raw) as JwtPayload;
+    return JSON.parse(base64UrlDecode(parts[1])) as JwtPayload;
   } catch {
     return null;
   }
 }
 
-function mapProfileTypeToRole(profileType?: string): ProfileRole {
-  const type = profileType?.toUpperCase();
-  if (type === 'RECLUTADOR' || type === 'RECRUITER') return 'recruiter';
-  if (type === 'ADMINISTRADOR' || type === 'ADMIN') return 'admin';
+function mapRoleStringToProfileRole(roleStr?: string): ProfileRole {
+  const upper = (roleStr || '').toUpperCase();
+  if (upper === 'RECRUITER' || upper === 'RECLUTADOR') return 'recruiter';
+  if (upper === 'ADMIN'     || upper === 'ADMINISTRADOR') return 'admin';
   return 'professional';
 }
 
@@ -45,57 +60,46 @@ function sanitizeSlug(value: string): string {
 }
 
 function buildProfileFromToken(payload: JwtPayload): Profile {
-  if (!payload.profileId) {
-    throw new Error('El token recibido no contiene un identificador válido (UUID).');
-  }
-
-  const email = payload.email || '';
+  if (!payload.profileId) throw new Error('El token no contiene un identificador válido.');
+  const email       = payload.email || '';
   const displayName = payload.profileHandle || (email.includes('@') ? email.split('@')[0] : 'oauth-profile');
-  const role = mapProfileTypeToRole(payload.profileType);
-
+  const role        = mapRoleStringToProfileRole(payload.profileType);
   return {
-    id: payload.profileId, 
-    email,
-    name: displayName,
+    id: payload.profileId, profile_id: payload.profileId,
+    email, name: displayName,
     profileHandle: displayName.toLowerCase().replace(/\s+/g, ''),
     avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(displayName)}`,
-    role,
-    slug: sanitizeSlug(displayName),
+    role, slug: sanitizeSlug(displayName),
     profession: role === 'recruiter' ? 'Reclutador' : role === 'admin' ? 'Administrador' : 'Profesional',
-    bio: '',
-    headline: role === 'recruiter' ? 'Encontrando talento verificado' : 'Construyendo mi perfil profesional',
-    location: '',
-    website: '',
-    createdAt: new Date().toISOString(),
+    bio: '', headline: role === 'recruiter' ? 'Encontrando talento verificado' : 'Construyendo mi perfil profesional',
+    location: '', website: '', createdAt: new Date().toISOString(),
   };
 }
 
-function buildProfileFromSupabase(sbProfile: { id: string; email?: string | null; user_metadata?: Record<string, string> }): Profile {
-  const email = sbProfile.email || '';
-  const fullName = sbProfile.user_metadata?.full_name || sbProfile.user_metadata?.name || '';
+function buildProfileFromSession(
+  user: { id: string; email?: string | null; user_metadata?: Record<string, string> },
+  role: ProfileRole,
+  profileId: string,
+): Profile {
+  const email       = user.email || '';
+  const fullName    = user.user_metadata?.full_name || user.user_metadata?.name || '';
   const displayName = fullName || (email.includes('@') ? email.split('@')[0] : 'usuario');
-  const avatarUrl = sbProfile.user_metadata?.avatar_url || sbProfile.user_metadata?.picture || '';
-
+  const avatarUrl   = user.user_metadata?.avatar_url || user.user_metadata?.picture || '';
   return {
-    id: sbProfile.id,
-    email,
-    name: displayName,
+    id: profileId, profile_id: profileId,
+    email, name: displayName,
     profileHandle: displayName.toLowerCase().replace(/\s+/g, ''),
     avatar: avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(displayName)}`,
-    role: 'professional' as ProfileRole,
-    slug: sanitizeSlug(displayName),
-    profession: 'Profesional',
-    bio: '',
-    headline: 'Construyendo mi perfil profesional',
-    location: '',
-    website: '',
-    createdAt: new Date().toISOString(),
+    role, slug: sanitizeSlug(displayName),
+    profession: role === 'recruiter' ? 'Reclutador' : role === 'admin' ? 'Administrador' : 'Profesional',
+    bio: '', headline: role === 'recruiter' ? 'Encontrando talento verificado' : 'Construyendo mi perfil profesional',
+    location: '', website: '', createdAt: new Date().toISOString(),
   };
 }
 
 export default function OAuth2CallbackPage() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const navigate          = useNavigate();
+  const [searchParams]    = useSearchParams();
   const completeOAuthLogin = useAuthStore((state) => state.completeOAuthLogin);
 
   useEffect(() => {
@@ -106,10 +110,9 @@ export default function OAuth2CallbackPage() {
       return;
     }
 
+    // ── Spring Boot legacy JWT flow ──────────────────────────────────────────
     const token = searchParams.get('token');
-
     if (token) {
-      // Flujo backend JWT (Spring Boot)
       const payload = decodeJwtPayload(token);
       if (!payload) {
         toast.error('Token OAuth inválido');
@@ -119,8 +122,8 @@ export default function OAuth2CallbackPage() {
       try {
         const profile = buildProfileFromToken(payload);
         completeOAuthLogin({ profile, token, tokenType: 'Bearer' });
-        toast.success('Sesión iniciada correctamente', { description: `Bienvenido, ${profile.name}` });
-        navigate(ROLE_REDIRECT_PATHS[profile.role], { replace: true });
+        toast.success('Sesión iniciada', { description: `Bienvenido, ${profile.name}` });
+        navigate(ROLE_INITIAL_PATHS[profile.role], { replace: true });
       } catch (err) {
         toast.error('Error de autenticación', { description: err instanceof Error ? err.message : 'Token corrupto' });
         useAuthStore.getState().logout();
@@ -129,24 +132,54 @@ export default function OAuth2CallbackPage() {
       return;
     }
 
-    if (isSupabaseConfigured && supabase) {
-      // Flujo Supabase OAuth (PKCE — el SDK intercambia el code automáticamente)
-      supabase.auth.getSession().then(({ data: { session }, error }) => {
-        if (error || !session?.user) {
-          toast.error('No se pudo completar el inicio de sesión con Supabase');
-          navigate('/login', { replace: true });
-          return;
-        }
-        const profile = buildProfileFromSupabase(session.user);
-        completeOAuthLogin({ profile, token: session.access_token, tokenType: 'Bearer' });
-        toast.success('Sesión iniciada correctamente', { description: `Bienvenido, ${profile.name}` });
-        navigate(ROLE_REDIRECT_PATHS[profile.role], { replace: true });
-      });
+    // ── Supabase SDK flow ────────────────────────────────────────────────────
+    if (!isSupabaseConfigured || !supabase) {
+      toast.error('Respuesta OAuth incompleta');
+      navigate('/login', { replace: true });
       return;
     }
 
-    toast.error('Respuesta OAuth incompleta');
-    navigate('/login', { replace: true });
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      if (error || !session?.user) {
+        toast.error('No se pudo completar el inicio de sesión');
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      const user        = session.user;
+      const accessToken = session.access_token;
+
+      // Priority: (1) app_metadata.role from Supabase JWT (set by backend on first sync)
+      //           (2) pendingRole saved in localStorage before OAuth redirect (new registration)
+      //           (3) default 'professional'
+      const appMetaRole      = (user.app_metadata as Record<string, string> | undefined)?.role;
+      const pendingRole      = localStorage.getItem(PENDING_OAUTH_ROLE_KEY);
+      const isNewRegistration = pendingRole !== null && !appMetaRole;
+      const roleToSync       = appMetaRole || pendingRole || 'professional';
+      localStorage.removeItem(PENDING_OAUTH_ROLE_KEY);
+
+      try {
+        const response = await api.post<BackendApiResponse<BackendSyncData>>(
+          '/auth/oauth/sync',
+          { role: roleToSync.toUpperCase(), isNewRegistration },
+          { headers: { Authorization: `Bearer ${accessToken}` } },
+        );
+
+        const sync      = response.data.data;
+        const finalRole = mapRoleStringToProfileRole(sync.role);
+        const profile   = buildProfileFromSession(user, finalRole, sync.profileId);
+
+        completeOAuthLogin({ profile, token: accessToken, tokenType: 'Bearer' });
+        toast.success('Sesión iniciada', { description: `Bienvenido, ${profile.name}` });
+        navigate(ROLE_INITIAL_PATHS[finalRole], { replace: true });
+      } catch {
+        // Degraded mode: backend unreachable, use Supabase data directly
+        const finalRole = mapRoleStringToProfileRole(roleToSync);
+        const profile   = buildProfileFromSession(user, finalRole, user.id);
+        completeOAuthLogin({ profile, token: accessToken, tokenType: 'Bearer' });
+        navigate(ROLE_INITIAL_PATHS[finalRole], { replace: true });
+      }
+    });
   }, [completeOAuthLogin, navigate, searchParams]);
 
   return (

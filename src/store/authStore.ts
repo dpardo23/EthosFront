@@ -17,6 +17,7 @@ interface LoginResult {
 interface AuthStore {
   profile: Profile | null;
   isAuthenticated: boolean;
+  isAuthResolved: boolean;
   loading: boolean;
   error: string | null;
   login: (email: string, password: string, role?: ProfileRole) => Promise<LoginResult | null>;
@@ -42,6 +43,7 @@ export const useAuthStore = create<AuthStore>()(
     (set, get) => ({
       profile: null,
       isAuthenticated: false,
+      isAuthResolved: false,
       loading: false,
       error: null,
 
@@ -53,7 +55,7 @@ export const useAuthStore = create<AuthStore>()(
           const token = `mock-token-${mockProfile.role}-${Date.now()}`;
           localStorage.setItem(ACCESS_TOKEN_KEY, token);
           localStorage.setItem(TOKEN_TYPE_KEY, 'Bearer');
-          set({ profile: mockProfile, isAuthenticated: true, loading: false, error: null });
+          set({ profile: mockProfile, isAuthenticated: true, isAuthResolved: true, loading: false, error: null });
           return {
             profile: mockProfile,
             roleDisplayName: ROLE_DISPLAY_NAMES[mockProfile.role] ?? 'Usuario',
@@ -75,17 +77,15 @@ export const useAuthStore = create<AuthStore>()(
           localStorage.setItem(TOKEN_TYPE_KEY, result.tokenType || 'Bearer');
           
           if (typeof result.expiresIn === 'number' && Number.isFinite(result.expiresIn)) {
-            localStorage.setItem(EXPIRES_AT_KEY, String(Date.now() + result.expiresIn));
+            localStorage.setItem(EXPIRES_AT_KEY, String(Math.floor(Date.now() / 1000) + result.expiresIn));
           } else {
             localStorage.removeItem(EXPIRES_AT_KEY);
           }
 
-          set({ profile, isAuthenticated: true, loading: false });
-
-          await get().fetchProfile();
+          set({ profile, isAuthenticated: true, isAuthResolved: true, loading: false });
 
           return {
-            profile: get().profile || profile,
+            profile,
             roleDisplayName: ROLE_DISPLAY_NAMES[normalizedRole] || 'Usuario',
             redirectPath: ROLE_REDIRECT_PATHS[normalizedRole] || '/dashboard',
           };
@@ -117,7 +117,10 @@ export const useAuthStore = create<AuthStore>()(
                 }
               : null,
           }));
-        } catch (error) {
+        } catch (error: any) {
+          // A 401 here is NOT a reason to force-logout: the endpoint may not be
+          // available yet or the JWT is being validated. The api.ts interceptor
+          // already handles genuine session expiry (expired token → auth:unauthorized).
           console.error('Error al sincronizar perfil con la BD', error);
         }
       },
@@ -201,33 +204,47 @@ export const useAuthStore = create<AuthStore>()(
         set({ loading: true });
         try {
           await authService.logout();
+        } finally {
           localStorage.removeItem(ACCESS_TOKEN_KEY);
           localStorage.removeItem(TOKEN_TYPE_KEY);
           localStorage.removeItem(EXPIRES_AT_KEY);
-          set({ profile: null, isAuthenticated: false, loading: false });
-        } catch {
-          set({ loading: false });
+          // Wipe persisted store so BFCache cannot restore a stale authenticated state
+          set({ profile: null, isAuthenticated: false, loading: false, error: null });
         }
       },
 
       checkAuth: async () => {
-        const { profile } = get();
-        if (profile) {
-          set({ isAuthenticated: true });
-          await get().fetchProfile();
+        const token     = localStorage.getItem(ACCESS_TOKEN_KEY);
+        const expiresAt = localStorage.getItem(EXPIRES_AT_KEY);
+
+        // Token absent or expired → treat as unauthenticated
+        if (!token || (expiresAt && Date.now() > Number(expiresAt) * 1000)) {
+          localStorage.removeItem(ACCESS_TOKEN_KEY);
+          localStorage.removeItem(TOKEN_TYPE_KEY);
+          localStorage.removeItem(EXPIRES_AT_KEY);
+          set({ profile: null, isAuthenticated: false, isAuthResolved: true });
+          return;
         }
+
+        const { profile } = get();
+        set({ isAuthenticated: !!profile, isAuthResolved: true });
       },
 
       completeOAuthLogin: ({ profile, token, tokenType = 'Bearer', expiresIn }) => {
         localStorage.setItem(ACCESS_TOKEN_KEY, token);
         localStorage.setItem(TOKEN_TYPE_KEY, tokenType);
-        if (expiresIn) localStorage.setItem(EXPIRES_AT_KEY, String(Date.now() + expiresIn));
-        
+        // Supabase access tokens expire in 3600s; always persist the expiry so
+        // isTokenExpired() can guard stale sessions after browser refresh.
+        const ttl = typeof expiresIn === 'number' && expiresIn > 0 ? expiresIn : 3600;
+        localStorage.setItem(EXPIRES_AT_KEY, String(Math.floor(Date.now() / 1000) + ttl));
+
         const rawRole = (profile.role || '').toLowerCase();
-        const normalizedRole: ProfileRole = rawRole.includes('admin') ? 'admin' : (rawRole as ProfileRole);
-        
-        set({ profile: { ...profile, role: normalizedRole }, isAuthenticated: true, error: null, loading: false });
-        get().fetchProfile();
+        const normalizedRole: ProfileRole =
+          rawRole.includes('admin')                              ? 'admin'
+          : rawRole.includes('rec') || rawRole === 'recruiter'  ? 'recruiter'
+          : 'professional';
+
+        set({ profile: { ...profile, role: normalizedRole }, isAuthenticated: true, isAuthResolved: true, error: null, loading: false });
       },
 
       switchRole: (role: ProfileRole) => {
@@ -247,6 +264,11 @@ export const useAuthStore = create<AuthStore>()(
         return ROLE_REDIRECT_PATHS[profile.role] || '/dashboard';
       },
     }),
-    { name: 'ethoshub_auth' }
+    {
+      name: 'ethoshub_auth',
+      // isAuthResolved must NOT be persisted: it must start as false on every
+      // page load so AuthProvider can complete the async check before guards run.
+      partialize: ({ profile, isAuthenticated }) => ({ profile, isAuthenticated }),
+    }
   )
 );

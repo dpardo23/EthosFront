@@ -41,25 +41,25 @@ type NavItem = {
 
 // CV Studio positioned after Educación, before Conexiones
 const professionalNavItems: NavItem[] = [
-  { path: '/dashboard/portfolio',   icon: LayoutGrid,            label: 'Mi Portafolio' },
-  { path: '/dashboard/skills',      icon: Code2,                 label: 'Habilidades' },
-  { path: '/dashboard/projects',    icon: FolderKanban,          label: 'Proyectos' },
-  { path: '/dashboard/experience',  icon: Briefcase,             label: 'Experiencia' },
-  { path: '/dashboard/education',   icon: GraduationCap,         label: 'Educación' },
-  { path: '/dashboard/cv-studio',   icon: SplitSquareHorizontal, label: 'CV Studio' },
-  { path: '/dashboard/connections', icon: Link2,                 label: 'Conexiones' },
-  { path: '/dashboard/preferences', icon: Settings,              label: 'Configuración' },
+  { path: '/dashboard/portfolio',                   icon: LayoutGrid,            label: 'Mi Portafolio' },
+  { path: '/dashboard/skills',                      icon: Code2,                 label: 'Habilidades' },
+  { path: '/dashboard/projects',                    icon: FolderKanban,          label: 'Proyectos' },
+  { path: '/dashboard/experience',                  icon: Briefcase,             label: 'Experiencia' },
+  { path: '/dashboard/education',                   icon: GraduationCap,         label: 'Educación' },
+  { path: '/dashboard/cv-studio',                   icon: SplitSquareHorizontal, label: 'CV Studio' },
+  { path: '/dashboard/connections',                 icon: Link2,                 label: 'Conexiones' },
+  { path: '/dashboard/profesional/configuracion',   icon: Settings,              label: 'Configuración' },
 ];
 
 const recruiterNavItems: NavItem[] = [
-  { path: '/recruiter/dashboard',        icon: LayoutDashboard, label: 'Panel Principal' },
-  { path: '/recruiter/talent-discovery', icon: Search,          label: 'Buscar Talento' },
-  { path: '/dashboard/preferences',      icon: Settings,        label: 'Configuración' },
+  { path: '/recruiter/dashboard',                   icon: LayoutDashboard, label: 'Panel Principal' },
+  { path: '/recruiter/talent-discovery',            icon: Search,          label: 'Buscar Talento' },
+  { path: '/dashboard/reclutador/configuracion',    icon: Settings,        label: 'Configuración' },
 ];
 
 const adminNavItems: NavItem[] = [
-  { path: '/admin/dashboard',       icon: LayoutDashboard, label: 'Panel Admin' },
-  { path: '/dashboard/preferences', icon: Settings,        label: 'Configuración' },
+  { path: '/admin/dashboard',                       icon: LayoutDashboard, label: 'Panel Admin' },
+  { path: '/dashboard/profesional/configuracion',   icon: Settings,        label: 'Configuración' },
 ];
 
 function getNavItems(role: ProfileRole): NavItem[] {

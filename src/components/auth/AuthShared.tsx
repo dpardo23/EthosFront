@@ -82,11 +82,13 @@ export function SocialAuthButton({
   label,
   onClick,
   disabled,
+  loading,
 }: {
   provider: 'google' | 'github';
   label: string;
   onClick?: (provider: 'google' | 'github') => void;
   disabled?: boolean;
+  loading?: boolean;
 }) {
   const Icon = provider === 'google' ? GoogleIcon : GitHubIcon;
 
@@ -95,8 +97,8 @@ export function SocialAuthButton({
       type="button"
       aria-label={label}
       onClick={() => onClick?.(provider)}
-      disabled={disabled}
-      whileHover={{ scale: 1.015 }}
+      disabled={disabled || loading}
+      whileHover={{ scale: (disabled || loading) ? 1 : 1.015 }}
       whileTap={{ scale: 0.985 }}
       className={cn(
         'inline-flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 disabled:cursor-not-allowed disabled:opacity-50',
@@ -105,7 +107,11 @@ export function SocialAuthButton({
           : 'border-white/12 bg-white/6 text-white/80 hover:border-white/22 hover:bg-white/10 hover:text-white'
       )}
     >
-      <Icon />
+      {loading ? (
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+      ) : (
+        <Icon />
+      )}
       <span>{label}</span>
     </motion.button>
   );
@@ -116,16 +122,31 @@ export function SocialAuthGroup({
   githubLabel,
   onProviderClick,
   disabled,
+  loadingProvider,
 }: {
   googleLabel: string;
   githubLabel: string;
   onProviderClick?: (provider: 'google' | 'github') => void;
   disabled?: boolean;
+  loadingProvider?: 'google' | 'github' | null;
 }) {
+  const anyLoading = loadingProvider != null;
   return (
     <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-      <SocialAuthButton provider="google" label={googleLabel} onClick={onProviderClick} disabled={disabled} />
-      <SocialAuthButton provider="github" label={githubLabel} onClick={onProviderClick} disabled={disabled} />
+      <SocialAuthButton
+        provider="google"
+        label={googleLabel}
+        onClick={onProviderClick}
+        disabled={disabled || (anyLoading && loadingProvider !== 'google')}
+        loading={loadingProvider === 'google'}
+      />
+      <SocialAuthButton
+        provider="github"
+        label={githubLabel}
+        onClick={onProviderClick}
+        disabled={disabled || (anyLoading && loadingProvider !== 'github')}
+        loading={loadingProvider === 'github'}
+      />
     </div>
   );
 }

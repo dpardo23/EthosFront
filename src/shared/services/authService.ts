@@ -51,10 +51,10 @@ export const ROLE_DISPLAY_NAMES: Record<ProfileRole, string> = {
 };
 
 export const ROLE_REDIRECT_PATHS: Record<ProfileRole, string> = {
-  professional: '/dashboard',
-  recruiter: '/recruiter/dashboard', // Asegurado para que no vaya al de profesional
-  admin: '/admin/dashboard',
-  guest: '/',
+  professional: '/dashboard/profesional/configuracion',
+  recruiter:    '/dashboard/reclutador/configuracion',
+  admin:        '/admin/dashboard',
+  guest:        '/',
 };
 
 async function login(email: string, password: string, role?: ProfileRole): Promise<LoginApiResult> {
@@ -109,19 +109,35 @@ async function login(email: string, password: string, role?: ProfileRole): Promi
   };
 }
 
+export type RegisterAuthResult = {
+  token: string | null;
+  profileId: string;
+  email: string;
+  role: string;
+};
+
 async function registerLocal(
   email: string,
   password: string,
   role: ProfileRole,
-  extras?: { firstName?: string; lastName?: string; phoneNumber?: string; countryCode?: string }
-): Promise<void> {
+  extras?: { firstName?: string; lastName?: string; phoneCode?: string; phoneNumber?: string; countryCode?: string }
+): Promise<RegisterAuthResult> {
   const normalizedEmail = email.toLowerCase().trim();
-  await api.post('/auth/register', {
-    email: normalizedEmail,
-    password,
-    role: mapRoleToBackend(role),
-    ...(extras ?? {}),
-  });
+  try {
+    const response = await api.post<BackendApiResponse<RegisterAuthResult>>('/auth/register', {
+      email: normalizedEmail,
+      password,
+      role: mapRoleToBackend(role),
+      ...(extras ?? {}),
+    });
+    return response.data.data;
+  } catch (error: any) {
+    if (error?.response?.status === 409) {
+      const msg: string = error.response.data?.message ?? 'An account with this email already exists';
+      throw new Error(msg);
+    }
+    throw error;
+  }
 }
 
 async function getProfile(profileId: string): Promise<Partial<Profile>> {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react';
 import { toast } from 'sonner';
@@ -11,7 +11,7 @@ import {
   AuthDivider,
   SocialAuthGroup,
 } from '@/components/auth/AuthShared';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { useAuthFlow } from '@/hooks/useAuthFlow';
 
 type RegisterPrefills = {
   email?: string;
@@ -20,9 +20,6 @@ type RegisterPrefills = {
   fullName?: string;
   role?: 'professional' | 'recruiter' | 'admin' | 'guest';
 };
-
-const rawApiUrl = ((import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_API_URL) || '/api';
-const OAUTH_BASE_URL = rawApiUrl.replace(/\/$/, '').replace(/\/api$/, '');
 
 // ─── Premium Input ────────────────────────────────────────────────────
 function PremiumInput({
@@ -81,20 +78,14 @@ function PremiumInput({
 
 export default function LoginPage() {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { login, loading } = useAuthStore();
+  const { loading } = useAuthStore();
+  const { loginWithPassword, loginWithOAuth, oauthLoading } = useAuthFlow();
   const prefills = (location.state as { prefills?: RegisterPrefills } | null)?.prefills;
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
-
-  const shouldStartSkillOnboarding = (emailValue: string) => {
-    const normalizedEmail = emailValue.toLowerCase().trim();
-    const onboardingKey = `ethoshub_skills_onboarding_completed_${normalizedEmail}`;
-    return localStorage.getItem(onboardingKey) !== 'true';
-  };
 
   useEffect(() => {
     if (prefills?.email) setEmail(prefills.email);
@@ -112,19 +103,12 @@ export default function LoginPage() {
     setPasswordError(false);
 
     try {
-      const result = await login(email, password);
-
+      const result = await loginWithPassword(email, password);
       if (result) {
         toast.success(`Bienvenido de nuevo, ${result.roleDisplayName}`, {
           description: 'Has iniciado sesión correctamente',
           duration: 4000,
         });
-
-        if (result.profile.role === 'professional' && shouldStartSkillOnboarding(result.profile.email)) {
-          navigate('/dashboard');
-          return;
-        }
-        navigate(result.redirectPath);
       }
     } catch (error: any) {
       const errorMessage = error?.response?.data?.message || error?.message || '';
@@ -146,17 +130,8 @@ export default function LoginPage() {
     }
   };
 
-  const handleOAuth = async (provider: 'google' | 'github') => {
-    if (isSupabaseConfigured && supabase) {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: { redirectTo: `${window.location.origin}/oauth-success` },
-      });
-      if (error) toast.error('Error al iniciar sesión', { description: error.message });
-      return;
-    }
-    const selectedRole = prefills?.role ? `?role=${prefills.role.toUpperCase()}` : '';
-    window.location.href = `${OAUTH_BASE_URL}/oauth2/authorization/${provider}${selectedRole}`;
+  const handleOAuth = (provider: 'google' | 'github') => {
+    void loginWithOAuth(provider, prefills?.role as 'professional' | 'recruiter' | undefined);
   };
 
   return (
@@ -267,6 +242,8 @@ export default function LoginPage() {
           googleLabel="Google"
           githubLabel="GitHub"
           onProviderClick={handleOAuth}
+          loadingProvider={oauthLoading}
+          disabled={loading}
         />
       </motion.div>
 

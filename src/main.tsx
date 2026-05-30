@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { router } from './app/router';
+import { AuthProvider } from './app/providers/AuthProvider';
 import { useUiStore } from './store/uiStore';
 import './i18n';
 import './index.css';
@@ -39,8 +40,10 @@ useUiStore.getState().initializeTheme();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
-    <Toaster 
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
+    <Toaster
       position="top-right"
       toastOptions={{
         style: {

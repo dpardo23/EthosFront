@@ -90,14 +90,14 @@ export default function SettingsPage() {
     const fetchBasicProfile = async () => {
       try {
         const response = await api.get('/v1/profile/basic');
-        const data = response.data;
+        const data = response.data?.data ?? response.data;
 
         setProfileForm({
-          photoUrl: data.photoUrl || '',
-          firstName: data.firstName || '',
-          lastName: data.lastName || '',
+          photoUrl: data.photoUrl || data.photo_url || '',
+          firstName: data.firstName || data.first_name || '',
+          lastName: data.lastName || data.last_name || '',
           seniority: data.seniority || '',
-          availabilityStatus: data.availabilityStatus || '',
+          availabilityStatus: data.availabilityStatus || data.availability_status || '',
           location: data.location || '',
         });
       } catch (error) {

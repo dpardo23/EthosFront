@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Briefcase, Building2, Check, ChevronDown, Eye, EyeOff, LockKeyhole, Mail, MapPin, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
+import type { ProfileRole } from '@/shared/types';
 import { useAuthStore } from '@/store';
 import { cn } from '@/shared/lib/utils';
 import { authService } from '@/shared/services/authService';
@@ -306,6 +307,7 @@ function RoleCard({
 export default function RegisterPage() {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
+  const completeOAuthLogin = useAuthStore((state) => state.completeOAuthLogin);
   const [selectedRole, setSelectedRole] = useState<'Estandar' | 'Reclutador' | null>(null);
   const [showRoleRequiredMessage, setShowRoleRequiredMessage] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -337,17 +339,22 @@ export default function RegisterPage() {
       return;
     }
 
+    const oauthRole = selectedRole === 'Estandar' ? 'PROFESSIONAL' : 'RECRUITER';
+
     if (isSupabaseConfigured && supabase) {
+      localStorage.setItem('ethoshub_pending_oauth_role', oauthRole);
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: { redirectTo: `${window.location.origin}/oauth-success` },
       });
-      if (error) toast.error('Error al continuar con OAuth', { description: error.message });
+      if (error) {
+        localStorage.removeItem('ethoshub_pending_oauth_role');
+        toast.error('Error al continuar con OAuth', { description: error.message });
+      }
       return;
     }
 
-    const oauthRole = selectedRole === 'Estandar' ? 'PROFESSIONAL' : 'RECRUITER';
-    window.location.href = `http://bytebusters.tis.cs.umss.edu.bo:8080/oauth2/authorization/${provider}?role=${oauthRole}`;
+    window.location.href = `${window.location.origin}/oauth2/authorization/${provider}?role=${oauthRole}`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -378,41 +385,74 @@ export default function RegisterPage() {
 
     try {
       setSubmitting(true);
-      await authService.registerLocal(email, password, selectedFrontendRole, {
+      const authData = await authService.registerLocal(email, password, selectedFrontendRole, {
         firstName,
         lastName,
-        ...(phoneNumber.trim() ? { phoneNumber: `${phoneCountry.dial}${phoneNumber.trim()}` } : {}),
+        ...(phoneNumber.trim() ? {
+          phoneCode: phoneCountry.dial,
+          phoneNumber: phoneNumber.trim(),
+        } : {}),
         ...(phoneCountry.code ? { countryCode: phoneCountry.code } : {}),
       });
 
+      const { ROLE_INITIAL_PATHS } = await import('@/app/router/routes');
+
+      if (authData?.token) {
+        // Backend returned a JWT: store session directly, skip a second POST /auth/login.
+        const rawRole = (authData.role || '').toLowerCase();
+        const normalizedRole: ProfileRole = rawRole.includes('rec') ? 'recruiter' : 'professional';
+        completeOAuthLogin({
+          profile: {
+            id: authData.profileId,
+            profile_id: authData.profileId,
+            email: authData.email,
+            name: `${firstName} ${lastName}`.trim() || authData.email.split('@')[0],
+            role: normalizedRole,
+            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(authData.email)}`,
+            createdAt: new Date().toISOString(),
+          },
+          token: authData.token,
+          expiresIn: 3600,
+        });
+        toast.success('Cuenta creada e iniciada correctamente', {
+          description: `Accediendo como ${normalizedRole === 'recruiter' ? 'Reclutador' : 'Profesional'}.`,
+        });
+        navigate(ROLE_INITIAL_PATHS[normalizedRole] ?? '/dashboard', { replace: true });
+        return;
+      }
+
+      // Auto-login in backend failed: fall back to a separate POST /auth/login.
       const loginResult = await login(email, password, selectedFrontendRole);
       if (loginResult) {
         toast.success('Cuenta creada e iniciada correctamente', {
           description: `Accediendo como ${loginResult.roleDisplayName}.`,
         });
-        navigate(loginResult.redirectPath, { replace: true });
+        navigate(ROLE_INITIAL_PATHS[loginResult.profile.role] ?? '/dashboard', { replace: true });
         return;
       }
 
+      // Both paths failed: redirect to login with prefilled credentials.
       toast.success('Cuenta creada correctamente', {
         description: 'Ahora puedes iniciar sesión con tus credenciales.',
       });
-
       navigate('/login', {
         replace: false,
-        state: {
-          prefills: { email, password, role: selectedFrontendRole, fromRegister: true },
-        },
+        state: { prefills: { email, password, role: selectedFrontendRole, fromRegister: true } },
       });
     } catch (error: any) {
-      const errorMessage = error?.response?.data?.message || error?.message || '';
-      if (error?.response?.status === 403 || errorMessage.toLowerCase().includes('dominio no autorizado')) {
+      const status = error?.response?.status;
+      const errorMessage: string = error?.response?.data?.message || error?.message || '';
+      if (status === 409 || errorMessage.toLowerCase().includes('already exists')) {
+        toast.error('Este correo ya está registrado', {
+          description: 'Ya existe una cuenta con este correo. Intenta iniciar sesión.',
+        });
+      } else if (status === 403 || errorMessage.toLowerCase().includes('dominio no autorizado')) {
         toast.error('Dominio de correo no autorizado', {
           description: 'El dominio de tu correo institucional no está en la lista de instituciones permitidas.',
         });
       } else {
         toast.error('No se pudo crear la cuenta', {
-          description: error instanceof Error ? error.message : 'Intenta nuevamente.',
+          description: errorMessage || 'Intenta nuevamente.',
         });
       }
     } finally {

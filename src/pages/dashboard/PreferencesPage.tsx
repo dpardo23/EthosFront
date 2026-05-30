@@ -275,8 +275,14 @@ export default function PreferencesPage() {
             website: d.website || authProfile.website || '',
           });
         })
-        .catch(() => {
-          setProfile((p) => ({ ...p, bio: authProfile.bio || '', website: authProfile.website || '' }));
+        .catch((error: any) => {
+          if (error?.response?.status !== 401) {
+            // Non-auth errors: use whatever we already have in the store
+            setProfile((p) => ({ ...p, bio: authProfile.bio || '', website: authProfile.website || '' }));
+          }
+          // 401 here means the endpoint may not be available yet or the token
+          // is being validated; the global interceptor in api.ts handles genuine
+          // session expiry. Do NOT logout — just leave the form with empty defaults.
         })
         .finally(() => setLoadingProfile(false));
     }
