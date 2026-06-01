@@ -139,20 +139,21 @@ export const useProjectsStore = create<ProjectsStore>((set) => ({
   // ──────────────────────────────────────────────
 
   deleteProject: async (projectId: string) => {
-    // Optimistic delete: remove immediately from local state so UI responds instantly
+    const { toast } = await import('sonner');
+    const { projects, currentProject } = useProjectsStore.getState();
+    // Optimistic delete
     set((state) => ({
       projects: state.projects.filter((p) => p.id !== projectId),
-      currentProject:
-        state.currentProject?.id === projectId ? null : state.currentProject,
-      loading: true,
+      currentProject: state.currentProject?.id === projectId ? null : state.currentProject,
       error: null,
     }));
     try {
       await projectsService.deleteProject(projectId);
-      set({ loading: false });
-    } catch {
-      // Keep optimistic delete on failure (local-first: works with mock data & offline)
-      set({ loading: false });
+      toast.success('Proyecto eliminado correctamente');
+    } catch (err: any) {
+      // Revert optimistic delete
+      set({ projects, currentProject: currentProject ?? null });
+      toast.error(err?.message || 'Error al eliminar el proyecto');
     }
   },
 

@@ -30,7 +30,6 @@ import {
   mockHardSkills,
   mockLinkedinEducations,
   mockLinkedinExperiences,
-  mockProjects,
   mockRecommendations,
   mockProfiles,
 } from '@/shared/mocks/data';
@@ -105,7 +104,7 @@ type PublicProfile = {
 function buildPublicProfile(slug: string): PublicProfile | null {
   const allProfiles = [...mockProfiles, ...recruiterTalentProfileList];
   const allHardSkills = [...mockHardSkills, ...recruiterTalentHardSkills];
-  const allProjects = [...mockProjects, ...recruiterTalentProjects];
+  const allProjects = [...recruiterTalentProjects];
   const profile = allProfiles.find((item) => item.slug === slug);
   if (!profile) {
     return null;

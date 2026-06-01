@@ -6,6 +6,7 @@ import {
   Sparkles, Loader2, Upload, Link as LinkIcon,
   GripVertical, MapPin, ArrowUpDown, Eye, Check
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/shared/ui';
 import { useAuthStore } from '@/store/authStore';
 import { experienceService } from '@/shared/services/experienceService';
@@ -34,52 +35,6 @@ const EMPTY_FORM: FormData = {
   logoUrl: '', companyImageUrl: '', companyUrl: '',
 };
 
-const MOCK_EXPERIENCES: WorkExperience[] = [
-  {
-    workExperienceId: 'mock-exp-1',
-    companyName: 'TechCorp Solutions',
-    jobTitle: 'Senior Frontend Engineer',
-    location: 'Madrid, España (Remoto)',
-    startDate: '2022-03-01',
-    isCurrent: true,
-    description: 'Lideré el desarrollo de la nueva plataforma SaaS de gestión de clientes con arquitectura de micro-frontends. Reduje el tiempo de carga inicial en un 55% mediante code splitting y lazy loading avanzado. Establecí el sistema de diseño basado en tokens con soporte completo para dark/light mode.\n\nMentoría activa a 4 desarrolladores junior con revisiones de código semanales y sesiones técnicas. Implementé un pipeline de CI/CD con GitHub Actions que redujo los tiempos de deploy de 45 a 8 minutos. Colaboré directamente con el equipo de producto para definir la arquitectura de 3 módulos críticos del producto.',
-    technologies: ['React 18', 'TypeScript', 'Next.js 14', 'Tailwind CSS', 'GraphQL', 'Zustand', 'Vite', 'Playwright', 'Storybook', 'Figma'],
-    isFreelance: false,
-    logoUrl: 'https://ui-avatars.com/api/?name=TC&background=4F46E5&color=fff&size=128&bold=true&rounded=true',
-    companyImageUrl: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=900&auto=format&fit=crop&q=80',
-    companyUrl: 'https://techcorp.io',
-  },
-  {
-    workExperienceId: 'mock-exp-2',
-    companyName: 'StartupX',
-    jobTitle: 'Lead Frontend Developer',
-    location: 'Barcelona, España',
-    startDate: '2019-06-01',
-    endDate: '2022-02-28',
-    isCurrent: false,
-    description: 'Coordiné un equipo de 3 desarrolladores para migrar la aplicación de Vue.js 2 a React + TypeScript, reduciendo la deuda técnica en un 40%. Implementé CI/CD con GitHub Actions, testing automatizado con cobertura >80%, y un sistema de componentes documentado con Storybook.\n\nAumenté la puntuación Core Web Vitals de 52 a 91 (LCP < 1.8s). Diseñé y construí el módulo de analytics en tiempo real que procesaba +200k eventos/día. Participé como technical lead en 3 sprints de lanzamiento de producto con 0 incidentes críticos en producción.',
-    technologies: ['React', 'TypeScript', 'Node.js', 'PostgreSQL', 'Docker', 'AWS S3', 'Redis', 'Storybook', 'GitHub Actions', 'Jest'],
-    isFreelance: false,
-    logoUrl: 'https://ui-avatars.com/api/?name=SX&background=0891B2&color=fff&size=128&bold=true&rounded=true',
-    companyImageUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=900&auto=format&fit=crop&q=80',
-    companyUrl: 'https://startupx.io',
-  },
-  {
-    workExperienceId: 'mock-exp-3',
-    companyName: 'Freelance',
-    jobTitle: 'Frontend Developer & UI Consultant',
-    location: 'Remoto (España / LATAM)',
-    startDate: '2017-09-01',
-    endDate: '2019-05-31',
-    isCurrent: false,
-    description: 'Desarrollé interfaces de alto impacto para 8 clientes de sectores fintech, edtech y e-commerce. Diseñé sistemas de diseño desde cero con Figma y los implementé en código siguiendo los principios de atomic design.\n\nDelivery de proyectos con metodología agile, integración con APIs REST y GraphQL, y optimización de performance con LCP < 2s en todos los proyectos entregados.',
-    technologies: ['React', 'JavaScript', 'CSS Modules', 'Figma', 'Gatsby', 'REST API', 'Stripe', 'Vercel'],
-    isFreelance: true,
-    logoUrl: 'https://ui-avatars.com/api/?name=FL&background=6D28D9&color=fff&size=128&bold=true&rounded=true',
-    companyImageUrl: 'https://images.unsplash.com/photo-1558655146-d09347e92766?w=900&auto=format&fit=crop&q=80',
-    companyUrl: '',
-  },
-];
 
 const toBase64 = (file: File): Promise<string> =>
   new Promise((res, rej) => {
@@ -409,14 +364,13 @@ export default function ExperiencePage() {
     setIsLoading(true);
     try {
       const data = await experienceService.getExperiences(profile.id);
-      const list = data || [];
-      const final = list.length > 0 ? list : MOCK_EXPERIENCES;
-      setExperiences(final);
-      setOrdered([...final]);
+      const list = Array.isArray(data) ? data : [];
+      setExperiences(list);
+      setOrdered([...list]);
     } catch (e) {
       console.error('[ExperiencePage]', e);
-      setExperiences(MOCK_EXPERIENCES);
-      setOrdered([...MOCK_EXPERIENCES]);
+      setExperiences([]);
+      setOrdered([]);
     } finally {
       setIsLoading(false);
     }
@@ -478,13 +432,16 @@ export default function ExperiencePage() {
       const payload: any = { ...form, profileId: profile.id, endDate: form.endDate || null, technologies: form.technologies.trim() };
       if (editingExp?.workExperienceId) {
         await experienceService.updateExperience(profile.id, editingExp.workExperienceId, payload);
+        toast.success('Experiencia actualizada');
       } else {
         await experienceService.addExperience(profile.id, payload);
+        toast.success('Experiencia guardada');
       }
       await load();
       closeForm();
-    } catch (e) {
+    } catch (e: any) {
       console.error('[ExperiencePage]', e);
+      toast.error(e?.response?.data?.message || e?.message || 'Error al guardar');
     } finally {
       setIsSaving(false);
     }
@@ -499,8 +456,10 @@ export default function ExperiencePage() {
       setDeleteConfirmId(null);
       if (detailExp?.workExperienceId === id) setDetailExp(null);
       if (editingExp?.workExperienceId === id) closeForm();
-    } catch (e) {
+      toast.success('Experiencia eliminada');
+    } catch (e: any) {
       console.error('[ExperiencePage]', e);
+      toast.error(e?.response?.data?.message || e?.message || 'Error al eliminar');
     } finally {
       setIsDeleting(false);
     }

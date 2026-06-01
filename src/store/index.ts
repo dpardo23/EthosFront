@@ -7,3 +7,4 @@ export { useVisibilityStore } from './visibilityStore';
 export { useAnalyticsStore } from './analyticsStore';
 export { usePreferencesStore } from './preferencesStore';
 export { useNotificationsStore } from './notificationsStore';
+export { useCvStudioStore } from './cvStudioStore';

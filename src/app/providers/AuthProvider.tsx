@@ -17,9 +17,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const store = useAuthStore.getState();
 
-      if (event === 'TOKEN_REFRESHED' && session?.access_token) {
-        // Keep the stored token in sync with Supabase's refreshed one.
-        // expiresAt is already tracked via expires_in from the session.
+      // Sync stored token whenever Supabase has a valid session.
+      // INITIAL_SESSION fires on every page load with the current (possibly already
+      // refreshed) session — without this, the stored token can lag behind.
+      // TOKEN_REFRESHED fires when Supabase auto-refreshes the access token.
+      if (
+        (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') &&
+        session?.access_token
+      ) {
         localStorage.setItem(ACCESS_TOKEN_KEY, session.access_token);
         if (session.expires_at) {
           localStorage.setItem('ethoshub_access_expires_at', String(session.expires_at));

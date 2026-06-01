@@ -22,6 +22,9 @@ import {
   ChevronRight,
   Layers,
   Activity,
+  Download,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { useProjectsStore } from '@/store';
 import { Skeleton } from '@/shared/ui';
@@ -108,6 +111,95 @@ function InfoTile({
         {label}
       </div>
       <div className="text-[13px] font-medium text-foreground leading-snug">{value}</div>
+    </div>
+  );
+}
+
+// ─── Document Viewer ──────────────────────────────────────────────────────────
+
+const VIEWABLE_EXTS = new Set(['pdf', 'txt', 'md', 'markdown', 'csv', 'log', 'json', 'xml', 'yaml', 'yml', 'html', 'htm']);
+const CODE_EXTS     = new Set(['py', 'js', 'ts', 'tsx', 'jsx', 'java', 'cs', 'go', 'rs', 'cpp', 'c', 'h', 'rb', 'php', 'swift', 'kt', 'tex', 'r', 'sh']);
+
+function getExtension(name: string): string {
+  const parts = name.split('.');
+  return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';
+}
+
+function DocumentViewer({ file }: { file: ProjectFile }) {
+  const [open, setOpen] = useState(false);
+  const ext = getExtension(file.name);
+  const canView = VIEWABLE_EXTS.has(ext);
+  const isCode  = CODE_EXTS.has(ext);
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-muted/10">
+      {/* Header row */}
+      <div className="flex items-center gap-3 p-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/50">
+          <FileText className="h-3.5 w-3.5 text-violet-500 dark:text-violet-400" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[12px] font-medium text-foreground">{file.name}</p>
+          <p className="text-[11px] text-muted-foreground">
+            {ext.toUpperCase() || 'Documento'}
+            {file.size > 0 ? ` · ${(file.size / 1024 / 1024).toFixed(2)} MB` : ''}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <a
+            href={file.url}
+            download={file.name}
+            onClick={e => e.stopPropagation()}
+            title="Descargar"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <Download className="h-3.5 w-3.5" />
+          </a>
+          {canView && (
+            <button
+              onClick={() => setOpen(v => !v)}
+              title={open ? 'Cerrar vista previa' : 'Vista previa'}
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            >
+              {open ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Viewer panel */}
+      {canView && open && (
+        <div className="border-t border-border bg-background">
+          {ext === 'pdf' ? (
+            <iframe
+              src={file.url}
+              title={file.name}
+              className="h-[480px] w-full rounded-b-xl"
+            />
+          ) : (
+            <iframe
+              src={file.url}
+              title={file.name}
+              className="h-[360px] w-full rounded-b-xl font-mono text-xs"
+              sandbox="allow-same-origin"
+            />
+          )}
+        </div>
+      )}
+
+      {/* Download-only message for code / binary files */}
+      {!canView && (isCode || ext) && (
+        <div className="border-t border-border bg-muted/20 px-4 py-2.5 flex items-center gap-2">
+          <Download className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <p className="text-[12px] text-muted-foreground">
+            Este tipo de archivo (.{ext || 'bin'}) no se puede previsualizar.{' '}
+            <a href={file.url} download={file.name}
+              className="text-violet-500 hover:underline font-medium">
+              Descargar para visualizar
+            </a>
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -562,30 +654,9 @@ export default function ProjectDetailPage() {
             {fileItems.length > 0 && (
               <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
                 <SectionLabel icon={FileText}>Documentos</SectionLabel>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {fileItems.map((file) => (
-                    <a
-                      key={file.id}
-                      href={file.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 rounded-xl border border-border bg-muted/20 p-3 hover:bg-muted/40 hover:border-violet-500/20 transition-all group"
-                    >
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/50">
-                        <FileText className="h-3.5 w-3.5 text-violet-500 dark:text-violet-400" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[12px] font-medium text-foreground">
-                          {file.name}
-                        </p>
-                        <p className="text-[11px] text-muted-foreground">
-                          {file.size > 0
-                            ? `${(file.size / 1024 / 1024).toFixed(2)} MB`
-                            : 'Documento'}
-                        </p>
-                      </div>
-                      <ExternalLink className="h-3 w-3 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors shrink-0" />
-                    </a>
+                    <DocumentViewer key={file.id} file={file} />
                   ))}
                 </div>
               </div>

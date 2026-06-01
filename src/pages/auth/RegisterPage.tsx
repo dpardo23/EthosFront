@@ -154,7 +154,7 @@ function PhoneInputField({
       <input
         type="tel"
         value={value}
-        onChange={(e) => onChange(e.target.value.replace(/[^\d\s\-]/g, ''))}
+        onChange={(e) => onChange(e.target.value.replace(/\D/g, ''))}
         placeholder="Número de celular"
         className="h-11 flex-1 rounded-r-xl border border-white/8 bg-white/[0.04] px-4 text-sm text-white placeholder:text-white/22 outline-none transition-all duration-200 focus:border-violet-500/50 focus:bg-white/[0.06] focus:ring-2 focus:ring-violet-500/15"
       />
@@ -385,11 +385,12 @@ export default function RegisterPage() {
 
     try {
       setSubmitting(true);
+      const sanitizedPhoneCode = phoneCountry.dial.replace(/[^+\d]/g, '').slice(0, 10);
       const authData = await authService.registerLocal(email, password, selectedFrontendRole, {
         firstName,
         lastName,
         ...(phoneNumber.trim() ? {
-          phoneCode: phoneCountry.dial,
+          phoneCode: sanitizedPhoneCode,
           phoneNumber: phoneNumber.trim(),
         } : {}),
         ...(phoneCountry.code ? { countryCode: phoneCountry.code } : {}),
@@ -543,7 +544,7 @@ export default function RegisterPage() {
               id="register-name"
               type="text"
               value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
+              onChange={(e) => setFullName(e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚàèìòùÀÈÌÒÙâêîôûÂÊÎÔÛäëïöüÄËÏÖÜñÑçÇ'\- ]/g, ''))}
               placeholder="Tu nombre y apellido"
               autoComplete="name"
               icon={UserRound}
@@ -622,7 +623,7 @@ export default function RegisterPage() {
               id="register-region"
               type="text"
               value={region}
-              onChange={(e) => setRegion(e.target.value)}
+              onChange={(e) => setRegion(e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚàèìòùÀÈÌÒÙâêîôûÂÊÎÔÛäëïöüÄËÏÖÜñÑçÇ ]/g, ''))}
               placeholder="Ej: Bolivia, México..."
               icon={MapPin}
             />

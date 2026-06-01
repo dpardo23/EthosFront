@@ -131,9 +131,10 @@ export default function SkillsPage() {
   const [newTagCategory,   setNewTagCategory]   = useState<SkillCategory>('Frontend');
   const [editingHardSkill, setEditingHardSkill] = useState<HardSkill | null>(null);
   // Soft skill state
-  const [softSkillTitle,   setSoftSkillTitle]   = useState('');
-  const [softSkillDesc,    setSoftSkillDesc]    = useState('');
-  const [editingSoftSkill, setEditingSoftSkill] = useState<string | null>(null);
+  const [softSkillTitle,      setSoftSkillTitle]      = useState('');
+  const [softSkillDesc,       setSoftSkillDesc]       = useState('');
+  const [editingSoftSkill,    setEditingSoftSkill]    = useState<string | null>(null);
+  const [softTitleError,      setSoftTitleError]      = useState(false);
   // Filter + delete
   const [filterCategory,   setFilterCategory]   = useState<string>('all');
   const [deleteConfirm,    setDeleteConfirm]    = useState<{ type: 'hard' | 'soft'; id: string } | null>(null);
@@ -248,10 +249,16 @@ export default function SkillsPage() {
     setSoftSkillTitle('');
     setSoftSkillDesc('');
     setEditingSoftSkill(null);
+    setSoftTitleError(false);
   };
 
   const handleSoftSkill = async () => {
-    if (!profile || !softSkillTitle.trim()) return;
+    if (!softSkillTitle.trim()) {
+      setSoftTitleError(true);
+      return;
+    }
+    if (!profile) return;
+    setSoftTitleError(false);
     if (editingSoftSkill) {
       await updateSoftSkill(editingSoftSkill, softSkillTitle, softSkillDesc);
       addToast({ type: 'success', title: 'Soft skill actualizada' });
@@ -814,14 +821,19 @@ export default function SkillsPage() {
             </div>
             <div className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Título</label>
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                  Título <span className="text-destructive">*</span>
+                </label>
                 <input
-                  className={inputCls}
+                  className={cn(inputCls, softTitleError && 'border-destructive focus:border-destructive')}
                   value={softSkillTitle}
-                  onChange={e => setSoftSkillTitle(e.target.value)}
+                  onChange={e => { setSoftSkillTitle(e.target.value); if (e.target.value.trim()) setSoftTitleError(false); }}
                   placeholder="Ej: Liderazgo técnico"
                   autoFocus
                 />
+                {softTitleError && (
+                  <p className="mt-1 text-xs text-destructive">El título es obligatorio</p>
+                )}
               </div>
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
@@ -845,8 +857,7 @@ export default function SkillsPage() {
                 </button>
                 <button
                   onClick={handleSoftSkill}
-                  disabled={!softSkillTitle.trim()}
-                  className="rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 px-4 py-2 text-sm font-semibold text-white transition-colors"
+                  className="rounded-xl bg-violet-600 hover:bg-violet-500 px-4 py-2 text-sm font-semibold text-white transition-colors"
                 >
                   {editingSoftSkill ? 'Actualizar' : t('common.add', 'Agregar')}
                 </button>

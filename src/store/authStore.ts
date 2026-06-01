@@ -22,7 +22,7 @@ interface AuthStore {
   error: string | null;
   login: (email: string, password: string, role?: ProfileRole) => Promise<LoginResult | null>;
   updateProfile: (data: ProfileUpdatePayload) => Promise<void>;
-  updateRecruiterIdentity: (data: { firstName: string; lastName: string; country?: string; countryId?: number; phone?: string; photoUrl?: string }) => Promise<void>;
+  updateRecruiterIdentity: (data: { firstName: string; lastName: string; country?: string; phone?: string; photoUrl?: string }) => Promise<void>;
   syncProfile: (data: Partial<Profile>) => void;
   fetchProfile: () => Promise<void>;
   logout: () => Promise<void>;
@@ -108,14 +108,9 @@ export const useAuthStore = create<AuthStore>()(
           return;
         }
         try {
-          const dbData = await authService.getProfile(profile.profile_id);
+          const dbData = await authService.getProfile(profile.profile_id, profile.role);
           set((state) => ({
-            profile: state.profile
-              ? {
-                  ...state.profile,
-                  ...dbData,
-                }
-              : null,
+            profile: state.profile ? { ...state.profile, ...dbData } : null,
           }));
         } catch (error: any) {
           // A 401 here is NOT a reason to force-logout: the endpoint may not be
@@ -169,11 +164,11 @@ export const useAuthStore = create<AuthStore>()(
         set({ loading: true, error: null });
         try {
           await authService.updateRecruiterIdentity(profile.profile_id, {
-            firstName: data.firstName,
-            lastName: data.lastName,
-            countryId: data.countryId,
+            firstName:   data.firstName,
+            lastName:    data.lastName,
+            countryCode: data.country,
             phoneNumber: data.phone,
-            photoUrl: data.photoUrl,
+            photoUrl:    data.photoUrl,
           });
           
           set({ 

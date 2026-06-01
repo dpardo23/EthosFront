@@ -172,8 +172,21 @@ export default function OAuth2CallbackPage() {
         completeOAuthLogin({ profile, token: accessToken, tokenType: 'Bearer' });
         toast.success('Sesión iniciada', { description: `Bienvenido, ${profile.name}` });
         navigate(ROLE_INITIAL_PATHS[finalRole], { replace: true });
-      } catch {
-        // Degraded mode: backend unreachable, use Supabase data directly
+      } catch (error: any) {
+        const status: number | undefined = error.response?.status;
+
+        // Backend rejected — sign out to avoid ghost sessions
+        if (status !== undefined) {
+          await supabase.auth.signOut();
+          toast.error('Error al iniciar sesión', {
+            description: error.response?.data?.message ?? 'No se pudo completar el registro. Por favor inténtalo de nuevo.',
+          });
+          navigate('/register', { replace: true });
+          return;
+        }
+
+        // Network/infra unreachable only — degrade gracefully
+        console.warn('Fallback: backend no disponible', error);
         const finalRole = mapRoleStringToProfileRole(roleToSync);
         const profile   = buildProfileFromSession(user, finalRole, user.id);
         completeOAuthLogin({ profile, token: accessToken, tokenType: 'Bearer' });

@@ -90,7 +90,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         )}
         {...props}
       >
-        {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        {options.map((o) => <option key={o.value} value={o.value} className="bg-background text-foreground">{o.label}</option>)}
       </select>
       {error && <p className="mt-1 text-sm text-destructive">{error}</p>}
     </div>

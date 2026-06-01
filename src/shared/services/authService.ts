@@ -1,5 +1,5 @@
 import type { Profile, ProfileRole } from '@/shared/types';
-import api from '@/shared/api/api'; 
+import api from '@/shared/api/api';
 
 export type ProfileUpdatePayload = Partial<Profile> & {
   firstName?: string;
@@ -60,22 +60,21 @@ export const ROLE_REDIRECT_PATHS: Record<ProfileRole, string> = {
 async function login(email: string, password: string, role?: ProfileRole): Promise<LoginApiResult> {
   const normalizedEmail = email.toLowerCase().trim();
 
-  const response = await api.post<BackendApiResponse<BackendAuthResponse>>('/auth/login', { 
-    email: normalizedEmail, 
-    password 
+  const response = await api.post<BackendApiResponse<BackendAuthResponse>>('/auth/login', {
+    email: normalizedEmail,
+    password
   });
 
   const authResponse = response.data.data;
   if (!authResponse?.token) {
     throw new Error('La respuesta de login no incluyó token');
   }
-  
+
   let finalRole: ProfileRole = 'professional';
 
-  // 🔥 AQUI ESTABA EL BUG PRINCIPAL DEL FRONTEND
   if (authResponse.role) {
     const backendRole = authResponse.role.toUpperCase();
-    
+
     if (backendRole.includes('ADMIN')) {
       finalRole = 'admin';
     } else if (backendRole.includes('RECRUITER') || backendRole.includes('RECLUTADOR')) {
@@ -140,28 +139,62 @@ async function registerLocal(
   }
 }
 
-async function getProfile(profileId: string): Promise<Partial<Profile>> {
-  const response = await api.get(`/v1/recruiter/profile/${profileId}`);
-  const profile = response.data.data;
+// ─── Profile fetch (role-aware) ──────────────────────────────────────────────
 
-  // Mapa inverso de countryId → nombre del país
-  const COUNTRY_NAME_MAP: Record<number, string> = {
-    1: 'Argentina', 2: 'Bolivia', 3: 'Brasil', 4: 'Chile',
-    5: 'Colombia', 6: 'Costa Rica', 7: 'Cuba', 8: 'Ecuador',
-    9: 'El Salvador', 10: 'España', 11: 'Guatemala', 12: 'Honduras',
-    13: 'México', 14: 'Nicaragua', 15: 'Panamá', 16: 'Paraguay',
-    17: 'Perú', 18: 'República Dominicana', 19: 'Uruguay', 20: 'Venezuela',
-  };
+type BasicProfileData = {
+  profileId: string;
+  firstName: string;
+  lastName: string;
+  photoUrl?: string;
+  phoneNumber?: string;
+  bio?: string;
+  location?: string;
+  website?: string;
+};
 
+type RecruiterProfileData = {
+  profileId: string;
+  firstName: string;
+  lastName: string;
+  companyName?: string;
+  photoUrl?: string;
+  countryCode?: string;
+  industry?: string;
+  companyWebsite?: string;
+  companySize?: string;
+  companyDescription?: string;
+};
+
+async function getBasicProfile(): Promise<Partial<Profile>> {
+  const response = await api.get<BackendApiResponse<BasicProfileData>>('/v1/profile/basic');
+  const p = response.data.data;
   return {
-    name: `${profile.firstName || ''} ${profile.lastName || ''}`.trim(),
-    avatar: profile.photoUrl || '',
-    location: profile.countryId ? COUNTRY_NAME_MAP[profile.countryId] || '' : '', // ✅ countryId → nombre
-    phone: profile.phoneNumber || '',   // ✅ phoneNumber, no phone
-    bio: profile.bio || '',
-    status: profile.availabilityStatus || 'Disponible',
-    seniority: profile.seniority || 'Junior',
+    name:     `${p.firstName || ''} ${p.lastName || ''}`.trim(),
+    avatar:   p.photoUrl   || '',
+    phone:    p.phoneNumber || '',
+    bio:      p.bio        || '',
+    location: p.location   || '',
+    website:  p.website    || '',
   };
+}
+
+async function getRecruiterProfile(profileId: string): Promise<Partial<Profile>> {
+  const response = await api.get<BackendApiResponse<RecruiterProfileData>>(
+    `/v1/recruiter/profile/${profileId}`
+  );
+  const p = response.data.data;
+  return {
+    name:     `${p.firstName || ''} ${p.lastName || ''}`.trim(),
+    avatar:   p.photoUrl    || '',
+    location: p.countryCode || '',
+    bio:      '',
+  };
+}
+
+/** Kept for backward compatibility — routes to the correct endpoint by role. */
+async function getProfile(profileId: string, role?: ProfileRole): Promise<Partial<Profile>> {
+  if (role === 'recruiter') return getRecruiterProfile(profileId);
+  return getBasicProfile();
 }
 
 async function updateProfile(
@@ -171,33 +204,27 @@ async function updateProfile(
   const response = await api.put(
     `/v1/recruiter/profile/${profileId}`,
     {
-      firstName: data.firstName || data.name?.split(' ')[0] || '',
-      lastName: data.lastName || data.name?.split(' ').slice(1).join(' ') || '',
-      bio: data.bio || '',
-      photoUrl: data.photoUrl || data.avatar || '',
-      country: data.country || data.location || '',
-      phone: data.phone || '',
-      availabilityStatus:
-        data.availabilityStatus || data.status || 'Disponible',
-      seniority: data.seniority || 'Junior',
+      firstName:   data.firstName || data.name?.split(' ')[0] || '',
+      lastName:    data.lastName  || data.name?.split(' ').slice(1).join(' ') || '',
+      photoUrl:    data.photoUrl  || data.avatar || '',
+      countryCode: data.country   || data.location || '',
+      phoneNumber: data.phone     || '',
     }
   );
 
   const profile = response.data.data;
 
   return {
-    id: profile.profileId ?? profileId,
+    id:         profile.profileId ?? profileId,
     profile_id: profile.profileId ?? profileId,
-    name: `${profile.firstName || ''} ${profile.lastName || ''}`.trim(),
-    firstName: profile.firstName,
-    lastName: profile.lastName,
-    email: data.email || '',
-    avatar: profile.photoUrl || '',
-    location: profile.country || '',
-    phone: profile.phone || '',
-    bio: profile.bio || '',
-    status: profile.availabilityStatus || 'Disponible',
-    seniority: profile.seniority || 'Junior',
+    name:       `${profile.firstName || ''} ${profile.lastName || ''}`.trim(),
+    firstName:  profile.firstName,
+    lastName:   profile.lastName,
+    email:      data.email || '',
+    avatar:     profile.photoUrl || '',
+    location:   profile.countryCode || '',
+    phone:      profile.phoneNumber || '',
+    bio:        profile.bio || '',
     ...data,
   } as Profile;
 }
@@ -206,31 +233,19 @@ async function logout(): Promise<void> {
   // Aquí podrías llamar a un endpoint de logout si fuera necesario
 }
 
-// ============ FUNCIONES ESPECÍFICAS PARA PERFIL DE EMPRESA DEL RECLUTADOR ============
+// ─── Recruiter-specific company endpoints ────────────────────────────────────
 
 type CompanyProfileRequest = {
   companyName: string;
   industry: string;
-  companySize: number;
-  nit: string;
-  contactFirstName: string;
-  contactLastName: string;
-  websiteUrl?: string;
+  companySize: string;
+  companyWebsite?: string;
+  companyDescription?: string;
+  countryCode?: string;
 };
 
-type CompanyProfileResponse = {
-  profileId: string;
-  nit: string;
-  companyName: string;
-  industry: string;
-  contactFirstName: string;
-  contactLastName: string;
-  websiteUrl?: string;
-  companySize: number;
-};
-
-async function getCompanyProfile(profileId: string): Promise<CompanyProfileResponse> {
-  const response = await api.get<BackendApiResponse<CompanyProfileResponse>>(
+async function getCompanyProfile(profileId: string): Promise<RecruiterProfileData> {
+  const response = await api.get<BackendApiResponse<RecruiterProfileData>>(
     `/v1/recruiter/profile/company/${profileId}`
   );
   return response.data.data;
@@ -239,8 +254,8 @@ async function getCompanyProfile(profileId: string): Promise<CompanyProfileRespo
 async function updateCompanyProfile(
   profileId: string,
   companyData: CompanyProfileRequest
-): Promise<CompanyProfileResponse> {
-  const response = await api.put<BackendApiResponse<CompanyProfileResponse>>(
+): Promise<RecruiterProfileData> {
+  const response = await api.put<BackendApiResponse<RecruiterProfileData>>(
     `/v1/recruiter/profile/company/${profileId}`,
     companyData
   );
@@ -250,16 +265,7 @@ async function updateCompanyProfile(
 type UpdateRecruiterIdentityRequest = {
   firstName: string;
   lastName: string;
-  countryId?: number;
-  phoneNumber?: string;
-  photoUrl?: string;
-};
-
-type RecruiterIdentityResponse = {
-  profileId: string;
-  firstName: string;
-  lastName: string;
-  countryId?: number;
+  countryCode?: string;
   phoneNumber?: string;
   photoUrl?: string;
 };
@@ -267,8 +273,8 @@ type RecruiterIdentityResponse = {
 async function updateRecruiterIdentity(
   profileId: string,
   identityData: UpdateRecruiterIdentityRequest
-): Promise<RecruiterIdentityResponse> {
-  const response = await api.put<BackendApiResponse<RecruiterIdentityResponse>>(
+): Promise<RecruiterProfileData> {
+  const response = await api.put<BackendApiResponse<RecruiterProfileData>>(
     `/v1/recruiter/profile/${profileId}`,
     identityData
   );
@@ -280,6 +286,8 @@ export const authService = {
   registerLocal,
   updateProfile,
   getProfile,
+  getBasicProfile,
+  getRecruiterProfile,
   logout,
   getCompanyProfile,
   updateCompanyProfile,

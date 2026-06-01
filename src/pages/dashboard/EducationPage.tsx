@@ -6,6 +6,7 @@ import {
   Sparkles, Loader2, Upload, Link as LinkIcon, FileText,
   GripVertical, MapPin, ArrowUpDown, Eye, Check, Award, BookOpen, Percent
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/shared/ui';
 import { useAuthStore } from '@/store/authStore';
 import { educationService } from '@/shared/services/educationService';
@@ -32,53 +33,6 @@ const EMPTY_FORM: FormData = {
   verificationUrl: '', institutionLogoUrl: '', isVisible: true,
 };
 
-const MOCK_EDUCATION: AcademicRecord[] = [
-  {
-    academicRecordId: 'mock-edu-1',
-    institutionName: 'Universidad Politécnica de Madrid',
-    degree: 'Grado en Ingeniería en Sistemas de Información',
-    fieldOfStudy: 'Ingeniería del Software y Sistemas Distribuidos',
-    startDate: '2015-09-01',
-    endDate: '2020-07-15',
-    isCurrent: false,
-    educationType: 'university',
-    gpa: 8.7,
-    credentialUrl: 'https://images.unsplash.com/photo-1589330694653-ded6df03f754?w=900&auto=format&fit=crop&q=80',
-    verificationUrl: 'https://www.upm.es/institucional/verificacion-titulos',
-    institutionLogoUrl: 'https://ui-avatars.com/api/?name=UPM&background=003DA5&color=fff&size=128&bold=true&rounded=true',
-    isVisible: true,
-  },
-  {
-    academicRecordId: 'mock-edu-2',
-    institutionName: 'Amazon Web Services',
-    degree: 'AWS Certified Solutions Architect – Associate',
-    fieldOfStudy: 'Cloud Computing, Arquitectura de Soluciones e Infraestructura',
-    startDate: '2023-02-01',
-    endDate: '2023-03-15',
-    isCurrent: false,
-    educationType: 'certification',
-    gpa: null,
-    credentialUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=900&auto=format&fit=crop&q=80',
-    verificationUrl: 'https://aws.amazon.com/certification/certified-solutions-architect-associate/',
-    institutionLogoUrl: 'https://ui-avatars.com/api/?name=AWS&background=FF9900&color=232F3E&size=128&bold=true&rounded=true',
-    isVisible: true,
-  },
-  {
-    academicRecordId: 'mock-edu-3',
-    institutionName: 'Platzi',
-    degree: 'Escuela de JavaScript: Fullstack Development',
-    fieldOfStudy: 'JavaScript, TypeScript, React, Node.js',
-    startDate: '2021-01-10',
-    endDate: '2021-08-30',
-    isCurrent: false,
-    educationType: 'bootcamp',
-    gpa: null,
-    credentialUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=900&auto=format&fit=crop&q=80',
-    verificationUrl: 'https://platzi.com/p/carlos-mendoza/',
-    institutionLogoUrl: 'https://ui-avatars.com/api/?name=PL&background=98CA3F&color=1a1a1a&size=128&bold=true&rounded=true',
-    isVisible: true,
-  },
-];
 
 const EDU_TYPES: Record<string, string> = {
   university: 'Universidad',
@@ -393,15 +347,13 @@ export default function EducationPage() {
     setIsLoading(true);
     try {
       const data = await educationService.getRecords(profile.id);
-      // Fallback defensivo: nunca confiamos en que la API devuelva un arreglo.
       const list = Array.isArray(data) ? data : [];
-      const final = list.length > 0 ? list : MOCK_EDUCATION;
-      setRecords(final);
-      setOrdered([...final]);
+      setRecords(list);
+      setOrdered([...list]);
     } catch (e) {
       console.error('[EducationPage]', e);
-      setRecords(MOCK_EDUCATION);
-      setOrdered([...MOCK_EDUCATION]);
+      setRecords([]);
+      setOrdered([]);
     } finally {
       setIsLoading(false);
     }
@@ -468,13 +420,16 @@ export default function EducationPage() {
       };
       if (editingRec?.academicRecordId) {
         await educationService.updateRecord(profile.id, editingRec.academicRecordId, payload);
+        toast.success('Registro académico actualizado');
       } else {
         await educationService.addRecord(profile.id, payload);
+        toast.success('Registro académico guardado');
       }
       await load();
       closeForm();
-    } catch (e) {
+    } catch (e: any) {
       console.error('[EducationPage]', e);
+      toast.error(e?.response?.data?.message || e?.message || 'Error al guardar');
     } finally {
       setIsSaving(false);
     }
@@ -489,8 +444,10 @@ export default function EducationPage() {
       setDeleteConfirmId(null);
       if (detailRec?.academicRecordId === id) setDetailRec(null);
       if (editingRec?.academicRecordId === id) closeForm();
-    } catch (e) {
+      toast.success('Registro eliminado');
+    } catch (e: any) {
       console.error('[EducationPage]', e);
+      toast.error(e?.response?.data?.message || e?.message || 'Error al eliminar');
     } finally {
       setIsDeleting(false);
     }

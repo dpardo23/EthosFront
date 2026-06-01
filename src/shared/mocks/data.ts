@@ -4,7 +4,6 @@ import type {
   HardSkill,
   SoftSkill,
   Endorsement,
-  Project,
   OAuthConnection,
   GithubRepository,
   GithubHeatmapDay,
@@ -164,105 +163,6 @@ export const mockSoftSkills: SoftSkill[] = [
   { id: 'ss1', profileId: '1', title: 'Liderazgo técnico', description: 'Lideré un equipo de 5 desarrolladores en la migración exitosa de un monolito a microservicios, reduciendo el tiempo de despliegue en un 70%.', createdAt: '2023-06-01T10:00:00Z' },
   { id: 'ss2', profileId: '1', title: 'Comunicación efectiva', description: 'Facilité sesiones de refinamiento y retrospectivas, mejorando la colaboración entre equipos de desarrollo y producto.', createdAt: '2023-06-02T10:00:00Z' },
   { id: 'ss3', profileId: '1', title: 'Resolución de problemas', description: 'Identifiqué y resolví un cuello de botella en producción que afectaba a 10,000 usuarios diarios.', createdAt: '2023-06-03T10:00:00Z' },
-];
-
-// =============================================
-// PROJECTS
-// =============================================
-export const mockProjects: Project[] = [
-  {
-    id: 'p1',
-    profileId: '1',
-    title: 'E-Commerce Platform',
-    description: 'Plataforma de comercio electrónico completa con carrito de compras, pasarela de pagos y panel de administración. Desarrollada con arquitectura de microservicios para alta escalabilidad.',
-    category: 'Web',
-    status: 'completed',
-    isPublic: true,
-    isFeatured: true,
-    thumbnail: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=400&fit=crop',
-    technicalInfo: {
-      role: 'Lead Developer',
-      technologies: ['React', 'Node.js', 'PostgreSQL', 'Redis', 'Docker', 'AWS'],
-      startDate: '2023-01-01',
-      endDate: '2023-06-30',
-      results: 'Incremento del 40% en conversiones y reducción del 60% en tiempo de carga.',
-    },
-    media: [
-      { id: 'm1', projectId: 'p1', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', type: 'youtube', title: 'Demo del proyecto' },
-    ],
-    files: [
-      { id: 'f1', projectId: 'p1', name: 'arquitectura.pdf', type: 'application/pdf', size: 2500000, url: '#' },
-    ],
-    createdAt: '2023-01-15T10:00:00Z',
-    updatedAt: '2023-07-01T14:30:00Z',
-  },
-  {
-    id: 'p2',
-    profileId: '1',
-    title: 'Task Management App',
-    description: 'Aplicación de gestión de tareas con funcionalidades de colaboración en tiempo real, notificaciones push y sincronización offline.',
-    category: 'Mobile',
-    status: 'completed',
-    isPublic: true,
-    isFeatured: false,
-    thumbnail: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=600&h=400&fit=crop',
-    technicalInfo: {
-      role: 'Full Stack Developer',
-      technologies: ['React Native', 'Firebase', 'TypeScript'],
-      startDate: '2023-03-01',
-      endDate: '2023-05-15',
-      results: 'Más de 5,000 descargas en el primer mes con rating de 4.8 estrellas.',
-    },
-    media: [],
-    files: [],
-    createdAt: '2023-03-01T09:00:00Z',
-    updatedAt: '2023-05-20T11:00:00Z',
-  },
-  {
-    id: 'p3',
-    profileId: '1',
-    title: 'Analytics Dashboard',
-    description: 'Dashboard de analíticas en tiempo real para monitoreo de métricas de negocio con visualizaciones interactivas.',
-    category: 'Data',
-    status: 'in_progress',
-    isPublic: true,
-    isFeatured: true,
-    thumbnail: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop',
-    technicalInfo: {
-      role: 'Frontend Developer',
-      technologies: ['React', 'D3.js', 'WebSocket', 'GraphQL'],
-      startDate: '2023-08-01',
-      results: 'En desarrollo - 80% completado.',
-    },
-    media: [
-      { id: 'm2', projectId: 'p3', url: 'https://www.figma.com/file/example', type: 'figma', title: 'Diseño en Figma' },
-    ],
-    files: [],
-    createdAt: '2023-08-01T10:00:00Z',
-    updatedAt: '2024-01-10T16:00:00Z',
-  },
-  {
-    id: 'p4',
-    profileId: '1',
-    title: 'API Gateway Service',
-    description: 'Servicio de API Gateway con autenticación JWT, rate limiting y logging centralizado.',
-    category: 'API',
-    status: 'completed',
-    isPublic: false,
-    isFeatured: false,
-    thumbnail: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&h=400&fit=crop',
-    technicalInfo: {
-      role: 'Backend Developer',
-      technologies: ['Node.js', 'Express', 'Redis', 'Kong'],
-      startDate: '2022-10-01',
-      endDate: '2022-12-31',
-      results: 'Procesamiento de más de 1 millón de requests diarios.',
-    },
-    media: [],
-    files: [],
-    createdAt: '2022-10-01T08:00:00Z',
-    updatedAt: '2023-01-05T10:00:00Z',
-  },
 ];
 
 // =============================================

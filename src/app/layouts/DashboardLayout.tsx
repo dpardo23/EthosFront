@@ -248,7 +248,6 @@ function SidebarContent({
         {!collapsed && profile?.role === 'professional' && profile?.slug && (
           <Link
             to={`/p/${profile.slug}`}
-            target="_blank"
             className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs text-muted-foreground hover:text-violet-500 hover:bg-violet-500/5 transition-colors"
           >
             <ExternalLink className="h-3.5 w-3.5" />
@@ -513,7 +512,6 @@ export function DashboardLayout() {
                       {profile?.role === 'professional' && profile?.slug && (
                         <Link
                           to={`/p/${profile.slug}`}
-                          target="_blank"
                           className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                           onClick={() => setShowProfileMenu(false)}
                         >

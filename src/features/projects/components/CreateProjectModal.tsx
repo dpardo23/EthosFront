@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 
 import { useAuthStore, useProjectsStore, useUiStore } from '@/store';
-import { isValidMediaUrl, getMediaType } from '@/shared/lib/utils';
+import { isValidMediaUrl, getMediaType, getYoutubeEmbedUrl, getVimeoEmbedUrl } from '@/shared/lib/utils';
 import type {
   Project,
   ProjectCategory,
@@ -245,21 +245,18 @@ function DarkSelect({
     <select
       value={value}
       onChange={onChange}
-      className="w-full px-3 py-[9px] text-[13px] rounded-xl
-        bg-muted/40 border border-input text-foreground
-        focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
+      className="w-full px-3 py-[9px] text-[13px] rounded-xl bg-background border border-input text-foreground focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
     >
       {options.map((o) => {
         if (typeof o === 'string') {
           return (
-            <option key={o} value={o}>
+            <option key={o} value={o} className="bg-background text-foreground">
               {o}
             </option>
           );
         }
-
         return (
-          <option key={o.value} value={o.value}>
+          <option key={o.value} value={o.value} className="bg-background text-foreground">
             {o.label}
           </option>
         );
@@ -521,22 +518,17 @@ function FileUpload({ files, setFiles }: {
 
   const handle = async (file: File | null | undefined) => {
     if (!file) return;
-
-    const fileName = file.name.toLowerCase();
-    const isPdf = fileName.endsWith('.pdf') || file.type === 'application/pdf';
-    const isDoc = fileName.match(/\.(doc|docx)$/) || file.type.includes('word');
-
-    if (!isPdf && !isDoc) {
-      addToast({ type: 'error', title: 'Archivo inválido', message: 'Solo se permiten documentos PDF o Word.' });
+    const MAX_BYTES = 20 * 1024 * 1024;
+    if (file.size > MAX_BYTES) {
+      addToast({ type: 'error', title: 'Archivo demasiado grande', message: 'El tamaño máximo es 20 MB.' });
       return;
     }
-
     try {
       setIsUploading(true);
       const uploaded = await uploadProjectFile(file);
       setFiles([...files, { name: file.name, size: file.size, url: uploaded.url }]);
     } catch (error: any) {
-      addToast({ type: 'error', title: 'Error al subir', message: error.message || 'Hubo un problema al subir el documento.' });
+      addToast({ type: 'error', title: 'Error al subir', message: error.message || 'Hubo un problema al subir el archivo.' });
     } finally {
       setIsUploading(false);
     }
@@ -591,9 +583,9 @@ function FileUpload({ files, setFiles }: {
         <p className="text-[13px] font-medium text-muted-foreground">
           {isUploading ? 'Subiendo archivo...' : <><span className="text-violet-500 dark:text-violet-400">Selecciona un archivo</span> o arrástralo</>}
         </p>
-        <p className="text-[11px] text-muted-foreground/60 mt-1">PDF, DOC, DOCX · máx 10 MB</p>
+        <p className="text-[11px] text-muted-foreground/60 mt-1">PDF, DOCX, CSV, PY, JAVA y más · máx 20 MB</p>
       </div>
-      <input ref={ref} type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="hidden" onChange={(e) => { void handle(e.target.files?.[0]); e.target.value = ''; }} />
+      <input ref={ref} type="file" className="hidden" onChange={(e) => { void handle(e.target.files?.[0]); e.target.value = ''; }} />
     </div>
   );
 }
@@ -851,26 +843,30 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
     videos.forEach((url, i) => {
       const type = getMediaType(url);
       if (type) {
+        const embedUrl =
+          type === 'youtube' ? getYoutubeEmbedUrl(url) :
+          type === 'vimeo'   ? getVimeoEmbedUrl(url)   : url;
         mediaList.push({
           id: Date.now().toString() + i,
           projectId: '',
-          url,
+          url: embedUrl,
           type,
           title: url,
         });
       }
     });
     docs.forEach((doc, i) => {
-      const type = doc.name.toLowerCase().endsWith('.pdf') ? 'pdf' : 'document';
-      if (type) {
-        mediaList.push({
-          id: Date.now().toString() + videos.length + i,
-          projectId: '',
-          url: doc.url,
-          type,
-          title: doc.name,
-        });
-      }
+      const ext = doc.name.toLowerCase().split('.').pop() ?? '';
+      const type = ext === 'pdf' ? 'pdf' : 'document';
+      const entry = {
+        id: Date.now().toString() + videos.length + i,
+        projectId: '',
+        url: doc.url,
+        type,
+        title: doc.name,
+        size: doc.size,
+      } as ProjectMedia & { size: number };
+      mediaList.push(entry);
     });
 
     const sanitizedPayload = {

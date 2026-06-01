@@ -2,7 +2,6 @@ import { delay, generateId } from '../lib/utils';
 import {
   mockProfiles,
   mockSoftSkills,
-  mockProjects,
   mockConnections,
   mockGithubRepos,
   mockGithubHeatmap,
@@ -44,7 +43,7 @@ import type {
 } from '../types';
 
 const DELAY_MS = 500;
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const API_BASE_URL = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '') as string;
 
 function getAuthHeaders(extraHeaders: Record<string, string> = {}): Record<string, string> {
   const headers: Record<string, string> = { ...extraHeaders };
@@ -150,6 +149,13 @@ export const skillsService = {
     return apiRequest<GlobalSkillTag>('/api/skills/tags', {
       method: 'POST',
       body: JSON.stringify({ name, category }),
+    });
+  },
+
+  async updateHardSkill(skillId: string, level: SkillLevel): Promise<HardSkill> {
+    return apiRequest<HardSkill>(`/api/skills/hard/${skillId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ level }),
     });
   },
 
@@ -270,6 +276,7 @@ function toRawStatus(value: string | undefined | null): string {
 
 function resolveAssetUrl(url: string | null | undefined): string | undefined {
   if (!url) return undefined;
+  if (url.startsWith('gradient:')) return url;
   if (/^https?:\/\//i.test(url) || url.startsWith('//')) return url;
   const base = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
   return url.startsWith('/') ? `${base}${url}` : `${base}/${url}`;
@@ -355,7 +362,8 @@ export const projectsService = {
       headers: getAuthHeaders(),
     });
     if (!response.ok) throw new Error('No se pudieron cargar los proyectos');
-    const rows = (await response.json().catch(() => [])) as BackendProjectDTO[];
+    const body = (await response.json()) as ApiResponse<BackendProjectDTO[]>;
+    const rows = body.data ?? [];
     projectsData = rows.map(mapBackendProject);
     return projectsData;
   },
@@ -366,8 +374,8 @@ export const projectsService = {
     });
     if (response.status === 404) return null;
     if (!response.ok) throw new Error('No se pudo cargar el proyecto');
-    const row = (await response.json()) as BackendProjectDTO;
-    return mapBackendProject(row);
+    const body = (await response.json()) as ApiResponse<BackendProjectDTO>;
+    return mapBackendProject(body.data);
   },
 
   async getPublicProjects(profileId: string): Promise<Project[]> {
@@ -465,7 +473,7 @@ function buildPayload(
 
   const normalizedMedia = [
     ...(thumbnail ? [{ type: 'image', url: normalizeUploadedUrl(thumbnail), title: null, size: null }] : []),
-    ...media.map((m) => ({ type: m.type, url: normalizeUploadedUrl(m.url) ?? m.url, title: (m as any).title ?? null, size: null })),
+    ...media.map((m) => ({ type: m.type, url: normalizeUploadedUrl(m.url) ?? m.url, title: (m as any).title ?? null, size: (m as any).size ?? null })),
   ];
   const normalizedFiles = files.map((f) => ({
     type: 'document',

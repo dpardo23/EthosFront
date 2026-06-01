@@ -45,7 +45,6 @@ type SectionId =
   | 'identidad'
   | 'visibilidad'
   | 'personalizacion'
-  | 'notificaciones'
   | 'privacidad'
   | 'seguridad';
 
@@ -249,6 +248,9 @@ export default function PreferencesPage() {
   const [showDelete, setShowDelete] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [showExportLoading, setShowExportLoading] = useState(false);
+  const [deleteStep, setDeleteStep] = useState<1 | 2>(1);
+  const [deleteOtp, setDeleteOtp] = useState('');
+  const [sendingDeleteOtp, setSendingDeleteOtp] = useState(false);
 
   // Crop modal
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -263,7 +265,7 @@ export default function PreferencesPage() {
       api
         .get('/v1/profile/basic')
         .then((r) => {
-          const d = r.data;
+          const d = r.data?.data ?? r.data;
           setProfile({
             photoUrl: d.photoUrl || '',
             firstName: d.firstName || '',
@@ -441,10 +443,21 @@ export default function PreferencesPage() {
 
   async function handleRequestEmailOtp() {
     setSendingEmailOtp(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    setSendingEmailOtp(false);
-    setEmailStep(2);
-    addToast({ type: 'success', title: 'Código enviado', message: 'Revisa tu correo actual.' });
+    try {
+      await api.post('/v1/auth/request-email-change');
+      setEmailStep(2);
+      addToast({ type: 'success', title: 'Código enviado', message: 'Revisa tu correo actual.' });
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const msg    = err?.response?.data?.message;
+      if (status === 429) {
+        addToast({ type: 'error', title: msg || 'Solo puedes cambiar tu correo una vez al mes' });
+      } else {
+        addToast({ type: 'error', title: 'Error al enviar código de verificación' });
+      }
+    } finally {
+      setSendingEmailOtp(false);
+    }
   }
 
   async function handleVerifyEmailOtp() {
@@ -453,14 +466,25 @@ export default function PreferencesPage() {
       return;
     }
     setVerifyingEmailOtp(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    setVerifyingEmailOtp(false);
-    setEmailStep(3);
+    try {
+      await api.post('/v1/auth/verify-otp', { otpCode: emailOtp, purpose: 'change_email' });
+      setEmailStep(3);
+    } catch {
+      addToast({ type: 'error', title: 'Código inválido o expirado', message: 'Verifica el código e inténtalo de nuevo.' });
+    } finally {
+      setVerifyingEmailOtp(false);
+    }
   }
 
   async function handleChangeEmail() {
     if (!emailNew || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNew)) {
       addToast({ type: 'error', title: 'Ingresa un correo válido' });
+      return;
+    }
+    // Client-side check: new email can't be same as current
+    const currentEmail = authProfile?.email || '';
+    if (emailNew.trim().toLowerCase() === currentEmail.trim().toLowerCase()) {
+      addToast({ type: 'error', title: 'El nuevo correo no puede ser igual al actual' });
       return;
     }
     setSavingEmail(true);
@@ -470,9 +494,10 @@ export default function PreferencesPage() {
       setEmailNew('');
       setEmailOtp('');
       setEmailStep(1);
-      addToast({ type: 'success', title: 'Correo actualizado' });
-    } catch {
-      addToast({ type: 'error', title: 'Error al cambiar correo' });
+      addToast({ type: 'success', title: 'Correo actualizado correctamente' });
+    } catch (err: any) {
+      const msg = err?.response?.data?.message;
+      addToast({ type: 'error', title: msg || 'Error al cambiar correo' });
     } finally {
       setSavingEmail(false);
     }
@@ -480,10 +505,21 @@ export default function PreferencesPage() {
 
   async function handleRequestOtp() {
     setSendingOtp(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    setSendingOtp(false);
-    setPassStep(2);
-    addToast({ type: 'success', title: 'Código enviado', message: 'Revisa tu correo electrónico.' });
+    try {
+      await api.post('/v1/auth/request-password-change');
+      setPassStep(2);
+      addToast({ type: 'success', title: 'Código enviado', message: 'Revisa tu correo electrónico.' });
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const msg    = err?.response?.data?.message;
+      if (status === 429) {
+        addToast({ type: 'error', title: msg || 'Solo puedes cambiar tu contraseña una vez por semana' });
+      } else {
+        addToast({ type: 'error', title: 'Error al enviar código de verificación' });
+      }
+    } finally {
+      setSendingOtp(false);
+    }
   }
 
   async function handleVerifyOtp() {
@@ -492,9 +528,14 @@ export default function PreferencesPage() {
       return;
     }
     setVerifyingOtp(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    setVerifyingOtp(false);
-    setPassStep(3);
+    try {
+      await api.post('/v1/auth/verify-otp', { otpCode, purpose: 'change_password' });
+      setPassStep(3);
+    } catch {
+      addToast({ type: 'error', title: 'Código inválido o expirado', message: 'Verifica el código e inténtalo de nuevo.' });
+    } finally {
+      setVerifyingOtp(false);
+    }
   }
 
   async function handleChangePassword() {
@@ -515,9 +556,10 @@ export default function PreferencesPage() {
       setPassForm({ next: '', confirm: '' });
       setOtpCode('');
       setPassStep(1);
-      addToast({ type: 'success', title: 'Contraseña actualizada' });
-    } catch {
-      addToast({ type: 'error', title: 'Error al cambiar contraseña' });
+      addToast({ type: 'success', title: 'Contraseña actualizada correctamente' });
+    } catch (err: any) {
+      const msg = err?.response?.data?.message;
+      addToast({ type: 'error', title: msg || 'Error al cambiar contraseña' });
     } finally {
       setSavingPass(false);
     }
@@ -525,16 +567,35 @@ export default function PreferencesPage() {
 
   async function handleExportData() {
     setShowExportLoading(true);
-    await new Promise((r) => setTimeout(r, 3000));
-    setShowExportLoading(false);
-    const blob = new Blob([JSON.stringify({ profile: authProfile, exported: new Date().toISOString() }, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'ethoshub-profile-data.json';
-    a.click();
-    URL.revokeObjectURL(url);
-    addToast({ type: 'success', title: 'Datos exportados', message: 'Archivo JSON descargado.' });
+    try {
+      const response = await api.get('/v1/auth/export-data');
+      const exportData = response.data?.data ?? response.data;
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ethoshub-datos-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      addToast({ type: 'success', title: 'Datos exportados', message: 'Archivo JSON descargado.' });
+    } catch {
+      addToast({ type: 'error', title: 'Error al exportar datos' });
+    } finally {
+      setShowExportLoading(false);
+    }
+  }
+
+  async function handleRequestDeleteOtp() {
+    setSendingDeleteOtp(true);
+    try {
+      await api.post('/v1/auth/request-account-delete');
+      setDeleteStep(2);
+      addToast({ type: 'success', title: 'Código enviado', message: 'Revisa tu correo electrónico.' });
+    } catch {
+      addToast({ type: 'error', title: 'Error al enviar código de verificación' });
+    } finally {
+      setSendingDeleteOtp(false);
+    }
   }
 
   const handleAvatarClick = () => fileInputRef.current?.click();
@@ -572,12 +633,16 @@ export default function PreferencesPage() {
   };
 
   async function handleDeleteAccount() {
+    if (deleteOtp.length < 6) {
+      addToast({ type: 'error', title: 'Ingresa el código de 6 dígitos' });
+      return;
+    }
     setDeletingAccount(true);
     try {
-      await new Promise((r) => setTimeout(r, 1000));
+      await api.delete('/v1/auth/account', { data: { otpCode: deleteOtp } });
       await useAuthStore.getState().logout();
     } catch {
-      addToast({ type: 'error', title: 'Error al eliminar cuenta' });
+      addToast({ type: 'error', title: 'Código inválido o expirado. Intenta de nuevo.' });
       setDeletingAccount(false);
     }
   }
@@ -592,7 +657,6 @@ export default function PreferencesPage() {
     { id: 'identidad', label: 'Identidad', icon: UserCircle2 },
     { id: 'visibilidad', label: 'Visibilidad', icon: Eye },
     { id: 'personalizacion', label: 'Personalización', icon: Palette },
-    { id: 'notificaciones', label: 'Notificaciones', icon: Bell },
     { id: 'privacidad', label: 'Privacidad', icon: Shield },
     { id: 'seguridad', label: 'Seguridad', icon: Lock },
   ];
@@ -1341,111 +1405,6 @@ export default function PreferencesPage() {
               </motion.div>
             )}
 
-            {/* ══ NOTIFICACIONES ═══════════════════════════════════════ */}
-            {activeSection === 'notificaciones' && (
-              <motion.div
-                key="notificaciones"
-                variants={SECTION_VARIANTS}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                className="space-y-4"
-              >
-                <SectionCard
-                  title="Notificaciones por email"
-                  description="Controla qué emails recibes de EthosHub."
-                  icon={Bell}
-                  iconColor="amber"
-                >
-                  <ToggleRow
-                    label="Solicitudes de conexión"
-                    description="Cuando alguien quiera conectar contigo."
-                    checked={safePrefs.notifications.connections}
-                    onChange={(v) =>
-                      updatePreferences({
-                        notifications: { ...safePrefs.notifications, connections: v },
-                      })
-                    }
-                  />
-                  <ToggleRow
-                    label="Nuevos mensajes"
-                    description="Cuando recibas un mensaje directo."
-                    checked={safePrefs.notifications.messages}
-                    onChange={(v) =>
-                      updatePreferences({
-                        notifications: { ...safePrefs.notifications, messages: v },
-                      })
-                    }
-                  />
-                  <ToggleRow
-                    label="Visitas a proyectos"
-                    description="Resumen de visitas a tus proyectos."
-                    checked={safePrefs.notifications.projectViews}
-                    onChange={(v) =>
-                      updatePreferences({
-                        notifications: { ...safePrefs.notifications, projectViews: v },
-                      })
-                    }
-                  />
-                  <ToggleRow
-                    label="Resumen semanal"
-                    description="Estadísticas y actividad de la semana."
-                    checked={safePrefs.notifications.weeklyDigest}
-                    onChange={(v) =>
-                      updatePreferences({
-                        notifications: { ...safePrefs.notifications, weeklyDigest: v },
-                      })
-                    }
-                  />
-                  <ToggleRow
-                    label="Marketing y novedades"
-                    description="Actualizaciones y ofertas de la plataforma."
-                    checked={safePrefs.notifications.marketing}
-                    onChange={(v) =>
-                      updatePreferences({
-                        notifications: { ...safePrefs.notifications, marketing: v },
-                      })
-                    }
-                  />
-                </SectionCard>
-
-                <SectionCard
-                  title="Notificaciones push"
-                  description="Notificaciones en tiempo real en el navegador."
-                  icon={Zap}
-                  iconColor="amber"
-                >
-                  <ToggleRow
-                    label="Nuevas conexiones"
-                    checked={safePrefs.notifications.push_connections}
-                    onChange={(v) =>
-                      updatePreferences({
-                        notifications: { ...safePrefs.notifications, push_connections: v },
-                      })
-                    }
-                  />
-                  <ToggleRow
-                    label="Mensajes directos"
-                    checked={safePrefs.notifications.push_messages}
-                    onChange={(v) =>
-                      updatePreferences({
-                        notifications: { ...safePrefs.notifications, push_messages: v },
-                      })
-                    }
-                  />
-                  <ToggleRow
-                    label="Menciones"
-                    checked={safePrefs.notifications.push_mentions}
-                    onChange={(v) =>
-                      updatePreferences({
-                        notifications: { ...safePrefs.notifications, push_mentions: v },
-                      })
-                    }
-                  />
-                </SectionCard>
-              </motion.div>
-            )}
-
             {/* ══ PRIVACIDAD ═══════════════════════════════════════════ */}
             {activeSection === 'privacidad' && (
               <motion.div
@@ -2174,7 +2133,7 @@ export default function PreferencesPage() {
         )}
       </AnimatePresence>
 
-      {/* ── Delete confirmation modal ────────────────────────────────── */}
+      {/* ── Delete confirmation modal (OTP flow) ───────────────────── */}
       <AnimatePresence>
         {showDelete && (
           <>
@@ -2183,49 +2142,102 @@ export default function PreferencesPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
-              onClick={() => !deletingAccount && setShowDelete(false)}
+              onClick={() => {
+                if (!deletingAccount && !sendingDeleteOtp) {
+                  setShowDelete(false);
+                  setDeleteStep(1);
+                  setDeleteOtp('');
+                }
+              }}
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.96, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 16 }}
               transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-              className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-card p-6 shadow-2xl"
+              className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-red-500/20 bg-card p-6 shadow-2xl"
             >
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/10 text-red-400">
                 <AlertTriangle className="h-6 w-6" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground">
-                ¿Eliminar tu cuenta?
-              </h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Esta acción es irreversible. Se eliminarán permanentemente tu perfil,
-                proyectos, habilidades y toda la información asociada a tu cuenta.
-              </p>
-              <div className="mt-4 rounded-xl bg-red-500/10 p-3 text-xs text-red-400">
-                No podrás recuperar tu cuenta una vez eliminada.
-              </div>
-              <div className="mt-5 flex justify-end gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowDelete(false)}
-                  disabled={deletingAccount}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={handleDeleteAccount}
-                  disabled={deletingAccount}
-                >
-                  {deletingAccount ? (
-                    <LoadingSpinner size="sm" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
-                  Sí, eliminar
-                </Button>
-              </div>
+              <h3 className="text-lg font-semibold text-foreground">Eliminar cuenta</h3>
+
+              {deleteStep === 1 ? (
+                <>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Esta acción es <strong>irreversible</strong>. Se eliminarán permanentemente
+                    tu perfil, proyectos, habilidades y toda la información de tu cuenta.
+                  </p>
+                  <div className="mt-3 rounded-xl bg-red-500/10 p-3 text-xs text-red-400">
+                    ⚠️ No podrás recuperar tu cuenta una vez eliminada.
+                  </div>
+                  <p className="mt-4 text-sm text-muted-foreground">
+                    Para confirmar, te enviaremos un código de verificación a{' '}
+                    <span className="font-medium text-foreground">{authProfile?.email}</span>.
+                  </p>
+                  <div className="mt-5 flex justify-end gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => { setShowDelete(false); setDeleteStep(1); setDeleteOtp(''); }}
+                      disabled={sendingDeleteOtp}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleRequestDeleteOtp}
+                      disabled={sendingDeleteOtp}
+                    >
+                      {sendingDeleteOtp ? <LoadingSpinner size="sm" /> : <Mail className="h-4 w-4" />}
+                      {sendingDeleteOtp ? 'Enviando...' : 'Enviar código'}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="mt-2 flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                      Código enviado a <span className="font-semibold">{authProfile?.email}</span>
+                    </p>
+                  </div>
+                  <div className="mt-4">
+                    <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                      Código de verificación (6 dígitos)
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={deleteOtp}
+                      onChange={(e) => setDeleteOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="000000"
+                      className={cn(inputCls, 'text-center font-mono text-xl tracking-[0.5em]')}
+                      autoFocus
+                    />
+                  </div>
+                  <div className="mt-3 rounded-xl bg-red-500/10 p-3 text-xs text-red-400">
+                    ⚠️ Al confirmar, tu cuenta y todos tus datos serán eliminados permanentemente.
+                  </div>
+                  <div className="mt-5 flex justify-end gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => { setDeleteStep(1); setDeleteOtp(''); }}
+                      disabled={deletingAccount}
+                    >
+                      ← Volver
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleDeleteAccount}
+                      disabled={deletingAccount || deleteOtp.length < 6}
+                    >
+                      {deletingAccount ? <LoadingSpinner size="sm" /> : <Trash2 className="h-4 w-4" />}
+                      Confirmar eliminación
+                    </Button>
+                  </div>
+                </>
+              )}
             </motion.div>
           </>
         )}

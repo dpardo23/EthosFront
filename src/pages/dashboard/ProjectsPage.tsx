@@ -2,8 +2,7 @@
  * ProjectsPage.tsx — Premium refactor v5
  * - createPortal overlays contained in #portal-root (not full viewport)
  * - ProjectDetailModal: Edit + Delete actions in header and footer
- * - INITIAL_MOCK_PROJECTS: Project[] — exact Project interface; seeded into Zustand store on mount
- * - Optimistic CRUD: store updates local state before API call (works offline / with mock data)
+ * - Optimistic CRUD: store updates local state before API call
  */
 
 import { useEffect, useState } from 'react';
@@ -97,107 +96,6 @@ const SORT_OPTIONS: { value: ProjectSortOrder; label: string }[] = [
   { value: 'name_desc',       label: 'Nombre Z–A'         },
 ];
 
-// ─── Initial mock data — exact Project interface, seeded into store on mount ──
-//     hydrateForm() reads: technicalInfo.{role,technologies,startDate,endDate,results}
-//     media[] and files[] — all fields required by CreateProjectModal
-
-const INITIAL_MOCK_PROJECTS: Project[] = [
-  {
-    id:          'mock-1',
-    profileId:      'mock-profile',
-    title:       'NexusAI Platform',
-    category:    'Web',
-    status:      'completed',
-    isPublic:    true,
-    isFeatured:  true,
-    description:
-      'Plataforma SaaS de inteligencia artificial para análisis predictivo empresarial. Integra pipelines de ML en tiempo real con dashboards adaptativos, API RESTful documentada con OpenAPI 3.1, y modelos fine-tuned sobre GPT-4 para procesamiento de lenguaje natural aplicado a datos corporativos estructurados y no estructurados.',
-    /** gradient:<id> — resolveGradient() + CoverPresetSelector pre-select */
-    thumbnail:     'gradient:violet-space',
-    repositoryUrl: 'https://github.com/dpardo/nexusai-platform',
-    technicalInfo: {
-      role:         'Lead Full-Stack Engineer & ML Architect',
-      technologies: ['Next.js 14', 'TypeScript', 'PostgreSQL', 'Docker', 'OpenAI', 'TailwindCSS', 'Prisma', 'Redis', 'FastAPI', 'Python 3.12'],
-      startDate:    '2024-01-15',
-      endDate:      '2024-09-30',
-      results:
-        'Reducción del 40% en tiempo de análisis predictivo vs. solución previa. Onboarding de 12 empresas en beta cerrada con NPS de 72. Cobertura de tests > 85%. Procesamiento de 450k llamadas API/día con p99 < 180ms. Reducción de costos de infraestructura del 28% mediante caching inteligente con Redis.',
-    },
-    media: [
-      {
-        id:        'mock-media-1',
-        projectId: 'mock-1',
-        url:       'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        type:      'youtube',
-        title:     'Demo: NexusAI Dashboard Overview',
-      },
-    ],
-    files: [
-      {
-        id:        'mock-file-1',
-        projectId: 'mock-1',
-        name:      'NexusAI_TechSpec_v2.pdf',
-        type:      'pdf',
-        size:      2457600,
-        url:       'https://example.com/nexusai-spec.pdf',
-      },
-    ],
-    createdAt: '2024-01-15T00:00:00.000Z',
-    updatedAt: '2024-09-30T00:00:00.000Z',
-  },
-  {
-    id:         'mock-2',
-    profileId:     'mock-profile',
-    title:      'InfraEdge Orchestrator',
-    category:   'DevOps',
-    status:     'in_progress',
-    isPublic:   true,
-    isFeatured: false,
-    description:
-      'Plataforma de observabilidad distribuida para infraestructura cloud-native multi-región. Agrega métricas de AWS, GCP y Azure con alertas ML-driven, dashboards Grafana embebidos y correlación automática de incidentes. Incluye runbooks auto-generados con IA que reducen el MTTR de 45 a 8 minutos en producción.',
-    /** gradient:<id> — resolveGradient() + CoverPresetSelector pre-select */
-    thumbnail:     'gradient:cyber-teal',
-    repositoryUrl: 'https://github.com/dpardo/infraedge-orchestrator',
-    technicalInfo: {
-      role:         'Platform Engineer & SRE Lead',
-      technologies: ['Kubernetes', 'Go 1.22', 'Prometheus', 'Grafana', 'AWS', 'Terraform', 'ClickHouse', 'gRPC', 'Istio', 'ArgoCD'],
-      startDate:    '2024-03-01',
-      endDate:      '',
-      results:
-        'MTTR reducido de 45 min a 8 min en producción. Integración con 4 cloud providers (AWS, GCP, Azure, OCI). Alertas predictivas con 92% de precisión sobre 50k events/sec. Gestión activa de 38 clusters Kubernetes con SLA 99.95%.',
-    },
-    media: [
-      {
-        id:        'mock-media-2',
-        projectId: 'mock-2',
-        url:       'https://player.vimeo.com/video/123456789',
-        type:      'vimeo',
-        title:     'InfraEdge: Live Architecture Walkthrough',
-      },
-    ],
-    files: [
-      {
-        id:        'mock-file-2a',
-        projectId: 'mock-2',
-        name:      'InfraEdge_Architecture_v3.pdf',
-        type:      'pdf',
-        size:      3670016,
-        url:       'https://example.com/infraedge-arch.pdf',
-      },
-      {
-        id:        'mock-file-2b',
-        projectId: 'mock-2',
-        name:      'SRE_Runbook_Playbook.pdf',
-        type:      'pdf',
-        size:      1536000,
-        url:       'https://example.com/infraedge-runbook.pdf',
-      },
-    ],
-    createdAt: '2024-03-01T00:00:00.000Z',
-    updatedAt: '2025-05-27T00:00:00.000Z',
-  },
-];
-
 // ─── Gradient cover map (mirrors CreateProjectModal PREDEFINED_COVERS) ─────────
 
 const GRADIENT_MAP: Record<string, string> = {
@@ -244,16 +142,8 @@ export default function ProjectsPage() {
   const [filterStatus, setFilterStatus]         = useState<string>('all');
   const [sortOrder, setSortOrder]               = useState<ProjectSortOrder>('featured_recent');
 
-  // Fetch real projects; if API returns empty, seed store with typed mock data
   useEffect(() => {
-    const init = async () => {
-      if (profile?.profile_id) await fetchProjects(profile.profile_id);
-      // After fetch (success or fail) — seed with mock data when store is still empty
-      if (useProjectsStore.getState().projects.length === 0) {
-        useProjectsStore.setState({ projects: INITIAL_MOCK_PROJECTS, loading: false });
-      }
-    };
-    void init();
+    if (profile?.profile_id) void fetchProjects(profile.profile_id);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.profile_id]);
 
