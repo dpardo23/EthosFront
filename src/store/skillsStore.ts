@@ -99,13 +99,18 @@ export const useSkillsStore = create<SkillsStore>((set, get) => ({
     return skillsService.createTag(name, category);
   },
 
-  removeHardSkill: async (_profileId: string, skillId: string) => {
+  removeHardSkill: async (profileId: string, skillId: string) => {
     const { toast } = await import('sonner');
     const snapshot = useSkillsStore.getState().hardSkills;
+    const wasTop = snapshot.find(h => h.id === skillId)?.isTop ?? false;
     set(s => ({ hardSkills: s.hardSkills.filter(h => h.id !== skillId) }));
     try {
       await skillsService.removeHardSkill(skillId);
       toast.success('Habilidad eliminada');
+      if (wasTop) {
+        const skills = await skillsService.getHardSkills(profileId);
+        set({ hardSkills: skills });
+      }
     } catch (e: any) {
       set({ hardSkills: snapshot });
       toast.error(e?.message || 'Error al eliminar habilidad');
@@ -140,24 +145,22 @@ export const useSkillsStore = create<SkillsStore>((set, get) => ({
 
   removeSoftSkill: async (_profileId: string, skillId: string) => {
     const { toast } = await import('sonner');
-    const snapshot = useSkillsStore.getState().softSkills;
-    set(s => ({ softSkills: s.softSkills.filter(sk => sk.id !== skillId) }));
     try {
       await skillsService.removeSoftSkill(skillId);
+      set(s => ({ softSkills: s.softSkills.filter(sk => sk.id !== skillId) }));
       toast.success('Habilidad eliminada');
     } catch (e: any) {
-      set({ softSkills: snapshot });
       toast.error(e?.message || 'Error al eliminar habilidad');
+      throw e;
     }
   },
 
-  toggleTopSkill: async (_profileId: string, skillId: string) => {
+  toggleTopSkill: async (profileId: string, skillId: string) => {
     const { toast } = await import('sonner');
     try {
-      const updated = await skillsService.toggleTopSkill(skillId);
-      set(s => ({
-        hardSkills: s.hardSkills.map(h => h.id === skillId ? { ...h, ...updated } : h),
-      }));
+      await skillsService.toggleTopSkill(skillId);
+      const skills = await skillsService.getHardSkills(profileId);
+      set({ hardSkills: skills });
     } catch (e: any) {
       toast.error(e?.message || 'No se pudo actualizar. Máximo 3 habilidades destacadas.');
     }

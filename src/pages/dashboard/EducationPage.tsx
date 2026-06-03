@@ -10,7 +10,16 @@ import { toast } from 'sonner';
 import { Button } from '@/shared/ui';
 import { useAuthStore } from '@/store/authStore';
 import { educationService } from '@/shared/services/educationService';
+import { fileService } from '@/shared/services/fileService';
 import type { AcademicRecord } from '@/shared/types/education';
+
+const API_BASE_URL = (import.meta.env.VITE_API_URL as string) || '';
+const getFullUrl = (url: string | undefined | null): string => {
+  if (!url) return '';
+  if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
+  const base = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+  return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
+};
 
 interface FormData {
   institutionName: string;
@@ -44,14 +53,6 @@ const EDU_TYPES: Record<string, string> = {
   high_school: 'Secundaria',
 };
 
-const toBase64 = (file: File): Promise<string> =>
-  new Promise((res, rej) => {
-    const r = new FileReader();
-    r.readAsDataURL(file);
-    r.onload = () => res(r.result as string);
-    r.onerror = rej;
-  });
-
 const fmtDate = (d?: string) => {
   if (!d) return '';
   const dt = new Date(d);
@@ -59,8 +60,8 @@ const fmtDate = (d?: string) => {
     .toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
 };
 
-const isImg = (s?: string) => !!s && (s.startsWith('data:image/') || s.startsWith('http'));
-const isPdf = (s?: string) => !!s?.startsWith('data:application/pdf');
+const isPdf = (s?: string) => !!s && (s.startsWith('data:application/pdf') || /\.pdf(\?.*)?$/i.test(s));
+const isImg = (s?: string) => !!s && (s.startsWith('data:image/') || (s.startsWith('http') && !isPdf(s)));
 
 const SPRING = { type: 'spring' as const, stiffness: 380, damping: 30 };
 const SPRING_MODAL = { type: 'spring' as const, stiffness: 320, damping: 32 };
@@ -330,6 +331,7 @@ export default function EducationPage() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
   const [form, setForm] = useState<FormData>(EMPTY_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -347,7 +349,18 @@ export default function EducationPage() {
     setIsLoading(true);
     try {
       const data = await educationService.getRecords(profile.id);
-      const list = Array.isArray(data) ? data : [];
+      let list = Array.isArray(data) ? data : [];
+      // Restore saved custom order from localStorage
+      const savedOrder = localStorage.getItem(`ethoshub_edu_order_${profile.id}`);
+      if (savedOrder) {
+        try {
+          const ids: string[] = JSON.parse(savedOrder);
+          const map = new Map(list.map(r => [r.academicRecordId, r]));
+          const sorted = ids.map(id => map.get(id)).filter(Boolean) as typeof list;
+          const remaining = list.filter(r => !ids.includes(r.academicRecordId ?? ''));
+          list = [...sorted, ...remaining];
+        } catch { /* ignore malformed storage */ }
+      }
       setRecords(list);
       setOrdered([...list]);
     } catch (e) {
@@ -390,13 +403,40 @@ export default function EducationPage() {
 
   const closeForm = () => { setIsFormOpen(false); setEditingRec(null); };
 
+  const MAX_DATE = new Date().toISOString().split('T')[0];
+
+  const REORDER_KEY = profile?.id ? `ethoshub_edu_order_${profile.id}` : null;
+
+  const saveOrder = async () => {
+    if (!profile?.id || !REORDER_KEY) return;
+    setIsSavingOrder(true);
+    try {
+      const ids = ordered.map(r => r.academicRecordId).filter(Boolean);
+      localStorage.setItem(REORDER_KEY, JSON.stringify(ids));
+      await educationService.reorderRecords?.(profile.id, ids as string[]);
+      setRecords([...ordered]);
+      toast.success('Orden guardado');
+    } catch {
+      setRecords([...ordered]);
+      toast.success('Orden guardado localmente');
+    } finally {
+      setIsSavingOrder(false);
+      setIsReorderMode(false);
+    }
+  };
+
   const validate = () => {
     const e: Record<string, string> = {};
     if (!form.institutionName.trim()) e.institutionName = 'Obligatorio';
+    else if (form.institutionName.trim().length < 3) e.institutionName = 'Mínimo 3 caracteres';
     if (!form.degree.trim()) e.degree = 'Obligatorio';
+    else if (form.degree.trim().length < 3) e.degree = 'Mínimo 3 caracteres';
+    if (!form.fieldOfStudy.trim()) e.fieldOfStudy = 'Obligatorio';
     if (!form.startDate) e.startDate = 'Obligatorio';
+    else if (form.startDate > MAX_DATE) e.startDate = 'No puede ser una fecha futura';
     if (!form.isCurrent) {
       if (!form.endDate) e.endDate = 'Obligatorio';
+      else if (form.endDate > MAX_DATE) e.endDate = 'No puede ser una fecha futura';
       else if (form.startDate && new Date(form.endDate) < new Date(form.startDate))
         e.endDate = 'Anterior al inicio';
     }
@@ -458,19 +498,19 @@ export default function EducationPage() {
     if (!ok.includes(file.type)) { setErrors(p => ({ ...p, logo: 'JPG, PNG, SVG o WEBP' })); return; }
     setUploadingLogo(true);
     try {
-      const b64 = await toBase64(file);
-      setForm(p => ({ ...p, institutionLogoUrl: b64 }));
-    } catch (e) { console.error(e); } finally { setUploadingLogo(false); }
+      const url = await fileService.uploadFile(file);
+      setForm(p => ({ ...p, institutionLogoUrl: url }));
+    } catch { toast.error('Error al subir el logo'); } finally { setUploadingLogo(false); }
   };
 
   const mkCredHandler = async (file: File) => {
-    const ok = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
-    if (!ok.includes(file.type)) { setErrors(p => ({ ...p, cred: 'PDF, JPG o PNG' })); return; }
+    const ok = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
+    if (!ok.includes(file.type)) { setErrors(p => ({ ...p, cred: 'PDF o imagen (JPG, PNG, WEBP, GIF, SVG)' })); return; }
     setUploadingCred(true);
     try {
-      const b64 = await toBase64(file);
-      setForm(p => ({ ...p, credentialUrl: b64 }));
-    } catch (e) { console.error(e); } finally { setUploadingCred(false); }
+      const url = await fileService.uploadFile(file);
+      setForm(p => ({ ...p, credentialUrl: url }));
+    } catch { toast.error('Error al subir el certificado'); } finally { setUploadingCred(false); }
   };
 
   // Blindaje final del render: aunque el estado quede corrupto por una
@@ -569,12 +609,13 @@ export default function EducationPage() {
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                      <BookOpen className="h-3 w-3" /> Área de estudio
+                      <BookOpen className="h-3 w-3" /> Área de estudio *
                     </label>
                     <input type="text" value={form.fieldOfStudy}
                       onChange={e => setForm(p => ({ ...p, fieldOfStudy: e.target.value }))}
-                      className={inputCls()}
+                      className={inputCls(errors.fieldOfStudy)}
                     />
+                    {errors.fieldOfStudy && <p className="text-xs text-destructive">{errors.fieldOfStudy}</p>}
                   </div>
                 </div>
 
@@ -584,7 +625,7 @@ export default function EducationPage() {
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                       <Calendar className="h-3 w-3" /> Inicio *
                     </label>
-                    <input type="date" value={form.startDate}
+                    <input type="date" value={form.startDate} max={MAX_DATE}
                       onChange={e => setForm(p => ({ ...p, startDate: e.target.value }))}
                       onClick={e => (e.currentTarget as any).showPicker?.()}
                       className={`${inputCls(errors.startDate)} cursor-pointer`}
@@ -593,9 +634,9 @@ export default function EducationPage() {
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                      <Calendar className="h-3 w-3" /> Fin
+                      <Calendar className="h-3 w-3" /> Fin {!form.isCurrent && '*'}
                     </label>
-                    <input type="date" value={form.endDate} min={form.startDate}
+                    <input type="date" value={form.endDate} min={form.startDate} max={MAX_DATE}
                       disabled={form.isCurrent}
                       onChange={e => setForm(p => ({ ...p, endDate: e.target.value }))}
                       onClick={e => (e.currentTarget as any).showPicker?.()}
@@ -660,7 +701,7 @@ export default function EducationPage() {
                       <p className="text-xs font-medium text-foreground">Certificado / Título</p>
                       <UploadZone
                         value={form.credentialUrl} uploading={uploadingCred} isDragging={isDragCred}
-                        hint="JPG, PNG, PDF" accept=".pdf,.jpg,.jpeg,.png" inputRef={credRef}
+                        hint="PDF o imagen (JPG, PNG, WEBP, GIF, SVG...)" accept="application/pdf,image/*" inputRef={credRef}
                         onDragOver={e => { e.preventDefault(); setIsDragCred(true); }}
                         onDragLeave={e => { e.preventDefault(); setIsDragCred(false); }}
                         onDrop={e => { e.preventDefault(); setIsDragCred(false); if (e.dataTransfer.files[0]) mkCredHandler(e.dataTransfer.files[0]); }}
@@ -868,19 +909,20 @@ export default function EducationPage() {
                     </p>
                     {isImg(detailRec.credentialUrl) ? (
                       <div className="rounded-xl border border-border overflow-hidden shadow-sm">
-                        <img src={detailRec.credentialUrl} alt="Certificado" className="w-full object-cover max-h-56" />
+                        <img src={getFullUrl(detailRec.credentialUrl)} alt="Certificado" className="w-full object-cover max-h-56" />
                       </div>
                     ) : isPdf(detailRec.credentialUrl) ? (
                       <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-muted/30 p-6">
                         <FileText className="h-10 w-10 text-primary" />
                         <p className="text-sm font-medium text-foreground">Documento PDF</p>
                         <a
-                          href={detailRec.credentialUrl}
-                          download="certificado.pdf"
+                          href={getFullUrl(detailRec.credentialUrl)}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           onClick={e => e.stopPropagation()}
                           className="rounded-xl bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
                         >
-                          Descargar PDF
+                          Ver / Descargar PDF
                         </a>
                       </div>
                     ) : null}
@@ -965,12 +1007,22 @@ export default function EducationPage() {
           </h2>
           <div className="flex gap-2">
             {safeRecords.length > 1 && (
-              <Button variant="ghost" size="sm"
-                onClick={() => { setIsReorderMode(r => !r); if (!isReorderMode) setOrdered([...safeRecords]); }}
-                className={`gap-1.5 text-xs ${isReorderMode ? 'bg-primary/10 text-primary border border-primary/20' : 'text-muted-foreground'}`}>
-                <ArrowUpDown className="h-3.5 w-3.5" />
-                {isReorderMode ? 'Guardar orden' : 'Reordenar'}
-              </Button>
+              isReorderMode ? (
+                <Button variant="ghost" size="sm"
+                  onClick={saveOrder}
+                  disabled={isSavingOrder}
+                  className="gap-1.5 text-xs bg-primary/10 text-primary border border-primary/20">
+                  {isSavingOrder ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowUpDown className="h-3.5 w-3.5" />}
+                  Guardar orden
+                </Button>
+              ) : (
+                <Button variant="ghost" size="sm"
+                  onClick={() => { setIsReorderMode(true); setOrdered([...safeRecords]); }}
+                  className="gap-1.5 text-xs text-muted-foreground">
+                  <ArrowUpDown className="h-3.5 w-3.5" />
+                  Reordenar
+                </Button>
+              )
             )}
             <Button variant="primary" size="sm" onClick={openAdd}
               className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 text-xs">

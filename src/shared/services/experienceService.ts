@@ -30,5 +30,9 @@ export const experienceService = {
 
   deleteExperience: async (profileId: string, id: string): Promise<void> => {
     await apiClient.delete(`${ROUTE}/${id}/profile/${profileId}`);
-  }
+  },
+
+  reorderExperiences: async (profileId: string, orderedIds: string[]): Promise<void> => {
+    await apiClient.patch(`${ROUTE}/profile/${profileId}/reorder`, { orderedIds });
+  },
 };

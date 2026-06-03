@@ -26,6 +26,7 @@ import type {
   GlobalSkillTag,
   SkillLevel,
   Project,
+  ProjectMedia,
   ProjectCategory,
   ProjectStatus,
   OAuthConnection,
@@ -257,7 +258,7 @@ interface BackendProjectDTO {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const allowedMediaTypes = new Set(['youtube', 'vimeo', 'figma', 'slides']);
+const allowedMediaTypes = new Set(['youtube', 'vimeo', 'figma', 'slides', 'document', 'link']);
 
 /** Convierte el label visible al valor raw que espera la BD */
 const STATUS_LABEL_TO_RAW: Record<string, string> = {
@@ -300,13 +301,26 @@ function normalizeUploadedUrl(url: string | null | undefined): string | null {
 // ── Mapeador principal ────────────────────────────────────────────────────────
 
 function mapBackendProject(dto: BackendProjectDTO): Project {
+  const detectMediaType = (m: BackendMediaDTO): string => {
+    const raw = (m.type || '').toLowerCase();
+    if (raw === 'youtube' || /youtube\.com|youtu\.be/i.test(m.url || '')) return 'youtube';
+    if (raw === 'vimeo'   || /vimeo\.com/i.test(m.url || ''))             return 'vimeo';
+    if (raw === 'figma'   || /figma\.com/i.test(m.url || ''))             return 'figma';
+    // Google Slides: docs.google.com/presentation OR /slides
+    if (raw === 'slides'  || /docs\.google\.com\/(presentation|.*slide)/i.test(m.url || '')) return 'slides';
+    // Google Docs: docs.google.com/document
+    if (/docs\.google\.com\/document/i.test(m.url || ''))                  return 'document';
+    if (allowedMediaTypes.has(raw)) return raw;
+    return 'link';
+  };
+
   const mappedMedia = (dto.media || [])
-    .filter((m) => m?.url && allowedMediaTypes.has((m.type || '').toLowerCase()))
+    .filter((m) => m?.url && !['pdf', 'document', 'image'].includes((m.type || '').toLowerCase()))
     .map((m, index) => ({
       id: `${dto.projectId}-${index}`,
       projectId: dto.projectId,
       url: m.url,
-      type: m.type.toLowerCase() as 'youtube' | 'vimeo' | 'figma' | 'slides',
+      type: detectMediaType(m) as ProjectMedia['type'],
       title: m.title || m.url,
     }));
 

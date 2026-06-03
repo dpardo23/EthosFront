@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, ChevronRight, ChevronLeft, Check, Upload, Plus, Trash2,
-  Github, Video, FileText, Image as ImageIcon,
+  Github, Video, FileText, Image as ImageIcon, Link2,
 } from 'lucide-react';
 
 import { useAuthStore, useProjectsStore, useUiStore } from '@/store';
@@ -22,6 +22,14 @@ import type {
 // Helpers
 // ─────────────────────────────────────────────
 
+const API_BASE = (import.meta.env.VITE_API_URL as string) || '';
+const resolvePreviewUrl = (url: string | null): string | null => {
+  if (!url) return null;
+  if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('blob:')) return url;
+  const base = API_BASE.endsWith('/') ? API_BASE.slice(0, -1) : API_BASE;
+  return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
 function urlBadge(url: string) {
   if (url.includes('youtube') || url.includes('youtu.be'))
     return { label: 'YouTube', cls: 'bg-red-500/10 text-red-600 dark:text-red-300 border-red-500/20' };
@@ -30,9 +38,15 @@ function urlBadge(url: string) {
   if (url.includes('figma'))
     return { label: 'Figma', cls: 'bg-violet-500/10 text-violet-600 dark:text-violet-300 border-violet-500/20' };
   if (url.includes('github'))
-    return { label: 'GitHub', cls: 'bg-violet-500/10 text-violet-600 dark:text-violet-300 border-violet-500/20' };
-  if (url.includes('docs.google'))
-    return { label: 'Google Doc', cls: 'bg-blue-500/10 text-blue-600 dark:text-blue-300 border-blue-500/20' };
+    return { label: 'GitHub', cls: 'bg-gray-500/10 text-gray-600 dark:text-gray-300 border-gray-500/20' };
+  // Google Slides: docs.google.com/presentation
+  if (/docs\.google\.com\/(presentation|.*slide)/i.test(url))
+    return { label: 'Google Slides', cls: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-300 border-yellow-500/20' };
+  // Google Docs: docs.google.com/document
+  if (/docs\.google\.com\/document/i.test(url))
+    return { label: 'Google Docs', cls: 'bg-blue-500/10 text-blue-600 dark:text-blue-300 border-blue-500/20' };
+  if (/docs\.google\.com/i.test(url))
+    return { label: 'Google Drive', cls: 'bg-blue-500/10 text-blue-600 dark:text-blue-300 border-blue-500/20' };
   return { label: 'Enlace', cls: 'bg-muted/50 text-muted-foreground border-border' };
 }
 
@@ -157,11 +171,10 @@ async function uploadProjectFile(file: File): Promise<{ url: string; name: strin
   formData.append('file', file);
 
   try {
-    // Al usar api.post, el token y la URL base ya se inyectan automáticamente
+    // Al usar api.post, el token y la URL base ya se inyectan automáticamente.
+    // No se fija Content-Type manualmente: el navegador lo hace con el boundary correcto.
     const response = await api.post('/uploads', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      headers: { 'Content-Type': undefined },
     });
 
     const payload = response.data;
@@ -454,11 +467,17 @@ function ImageUpload({ preview, setPreview }: {
       addToast({ type: 'error', title: 'Archivo inválido', message: 'Por favor selecciona una imagen.' });
       return;
     }
+    // Mostrar preview local inmediatamente sin esperar al upload
+    const localUrl = URL.createObjectURL(file);
+    setPreview(localUrl);
     try {
       setIsUploading(true);
       const uploaded = await uploadProjectFile(file);
+      URL.revokeObjectURL(localUrl);
       setPreview(uploaded.url);
     } catch (error: any) {
+      URL.revokeObjectURL(localUrl);
+      setPreview(null);
       addToast({ type: 'error', title: 'Error al subir', message: error.message || 'Hubo un problema al subir tu imagen.' });
     } finally {
       setIsUploading(false);
@@ -469,7 +488,7 @@ function ImageUpload({ preview, setPreview }: {
     <div>
       {preview ? (
         <div className="relative rounded-xl overflow-hidden border border-input">
-          <img src={preview ?? ''} alt="preview" className="w-full h-48 object-contain bg-muted/20" />
+          <img src={resolvePreviewUrl(preview) ?? ''} alt="preview" className="w-full h-48 object-contain bg-muted/20" />
           <button
             type="button"
             onClick={() => setPreview(null)}
@@ -502,12 +521,98 @@ function ImageUpload({ preview, setPreview }: {
   );
 }
 
+function CoverUrlInput({
+  value,
+  onChange,
+  onApply,
+  onClear,
+  currentPreview,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onApply: (url: string) => void;
+  onClear: () => void;
+  currentPreview: string | null;
+}) {
+  const { addToast } = useUiStore();
+  const [loadError, setLoadError] = useState(false);
+
+  const handleApply = () => {
+    const url = value.trim();
+    if (!url) return;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      addToast({ type: 'error', title: 'URL inválida', message: 'La URL debe comenzar con http:// o https://' });
+      return;
+    }
+    setLoadError(false);
+    onApply(url);
+  };
+
+  const displayPreview = currentPreview?.startsWith('http') ? currentPreview : null;
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Link2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 pointer-events-none" />
+          <DarkInput
+            type="url"
+            value={value}
+            onChange={(e) => { onChange(e.target.value); setLoadError(false); }}
+            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleApply())}
+            placeholder="https://ejemplo.com/imagen.jpg"
+            className="pl-9"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={handleApply}
+          disabled={!value.trim()}
+          className="flex items-center gap-1.5 px-3 h-10 rounded-xl border border-input bg-muted/40
+            text-[12px] font-semibold text-muted-foreground hover:border-violet-500/50 hover:text-violet-500 dark:hover:text-violet-400
+            hover:bg-violet-500/10 transition-all shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <ImageIcon size={13} /> Previsualizar
+        </button>
+      </div>
+
+      {displayPreview && !loadError && (
+        <div className="relative rounded-xl overflow-hidden border border-input">
+          <img
+            src={displayPreview}
+            alt="preview portada"
+            className="w-full h-48 object-contain bg-muted/20"
+            onError={() => { setLoadError(true); onClear(); }}
+          />
+          <button
+            type="button"
+            onClick={() => { onChange(''); onClear(); setLoadError(false); }}
+            className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/40 dark:bg-black/70 text-white/80
+              flex items-center justify-center hover:bg-black/60 dark:hover:bg-black/90 transition-colors"
+          >
+            <X size={12} strokeWidth={2.5} />
+          </button>
+        </div>
+      )}
+
+      {loadError && (
+        <p className="text-[11px] text-red-400">No se pudo cargar la imagen. Verifica que la URL sea directa a un archivo de imagen.</p>
+      )}
+
+      <p className="text-[11px] text-muted-foreground/60">
+        Ingresa la URL directa de una imagen (JPG, PNG, WebP, GIF...). Presiona Enter o el botón para previsualizar.
+      </p>
+    </div>
+  );
+}
+
 function FileUpload({ files, setFiles }: {
   files: { name: string; size: number; url: string }[];
   setFiles: React.Dispatch<React.SetStateAction<{ name: string; size: number; url: string }[]>>;
 }) {
   const { addToast } = useUiStore();
   const [isUploading, setIsUploading] = useState(false);
+  const [pendingFile, setPendingFile] = useState<{ name: string; size: number } | null>(null);
   const ref = useRef<HTMLInputElement>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
@@ -518,25 +623,31 @@ function FileUpload({ files, setFiles }: {
 
   const handle = async (file: File | null | undefined) => {
     if (!file) return;
-    const MAX_BYTES = 20 * 1024 * 1024;
+    const MAX_BYTES = 5 * 1024 * 1024;
     if (file.size > MAX_BYTES) {
-      addToast({ type: 'error', title: 'Archivo demasiado grande', message: 'El tamaño máximo es 20 MB.' });
+      addToast({ type: 'error', title: 'Archivo demasiado grande', message: 'El tamaño máximo es 5 MB.' });
       return;
     }
+    // Mostrar el archivo inmediatamente en la lista mientras se sube
+    setPendingFile({ name: file.name, size: file.size });
     try {
       setIsUploading(true);
       const uploaded = await uploadProjectFile(file);
-      setFiles([...files, { name: file.name, size: file.size, url: uploaded.url }]);
+      // Usar update funcional para evitar closure stale
+      setFiles((prev) => [...prev, { name: file.name, size: file.size, url: uploaded.url }]);
     } catch (error: any) {
       addToast({ type: 'error', title: 'Error al subir', message: error.message || 'Hubo un problema al subir el archivo.' });
     } finally {
+      setPendingFile(null);
       setIsUploading(false);
     }
   };
 
+  const hasItems = files.length > 0 || pendingFile !== null;
+
   return (
     <div>
-      {files.length > 0 && (
+      {hasItems && (
         <div className="flex flex-col gap-2 mb-3">
           {files.map((file, i) => (
             <div
@@ -560,13 +671,24 @@ function FileUpload({ files, setFiles }: {
               </div>
               <button
                 type="button"
-                onClick={() => setFiles(files.filter((_, j) => j !== i))}
+                onClick={() => setFiles((prev) => prev.filter((_, j) => j !== i))}
                 className="text-muted-foreground/60 hover:text-destructive transition-colors shrink-0"
               >
                 <Trash2 size={13} />
               </button>
             </div>
           ))}
+          {/* Fila de archivo en proceso de subida */}
+          {pendingFile && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-violet-500/30 bg-violet-500/5 animate-pulse">
+              <span className="text-[11px] text-muted-foreground/30 select-none">⋮⋮</span>
+              <FileText size={14} className="text-violet-400/60 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-medium text-foreground/60 truncate">{pendingFile.name}</p>
+                <p className="text-[10px] text-muted-foreground/40">{formatFileSize(pendingFile.size)} · subiendo...</p>
+              </div>
+            </div>
+          )}
         </div>
       )}
       <div
@@ -583,16 +705,16 @@ function FileUpload({ files, setFiles }: {
         <p className="text-[13px] font-medium text-muted-foreground">
           {isUploading ? 'Subiendo archivo...' : <><span className="text-violet-500 dark:text-violet-400">Selecciona un archivo</span> o arrástralo</>}
         </p>
-        <p className="text-[11px] text-muted-foreground/60 mt-1">PDF, DOCX, CSV, PY, JAVA y más · máx 20 MB</p>
+        <p className="text-[11px] text-muted-foreground/60 mt-1">Imágenes y PDF · máx 5 MB</p>
       </div>
-      <input ref={ref} type="file" className="hidden" onChange={(e) => { void handle(e.target.files?.[0]); e.target.value = ''; }} />
+      <input ref={ref} type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => { void handle(e.target.files?.[0]); e.target.value = ''; }} />
     </div>
   );
 }
 
 function SectionCard({ icon: Icon, title, children }: {
   icon: React.ElementType;
-  title: string;
+  title: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -697,13 +819,22 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
   const [results, setResults] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedCover, setSelectedCover] = useState<CoverId | null>(null);
+  const [coverTab, setCoverTab] = useState<'upload' | 'url'>('upload');
+  const [coverUrlInput, setCoverUrlInput] = useState('');
   const [videos, setVideos] = useState<string[]>([]);
   const [docs, setDocs] = useState<{ name: string; size: number; url: string }[]>([]);
+
+  const MAX_DATE = new Date().toISOString().split('T')[0]; // año actual como tope
 
   const [errors, setErrors] = useState({
     title: '',
     description: '',
     role: '',
+    startDate: '',
+    techs: '',
+    thumbnail: '',
+    videos: '',
+    docs: '',
   });
 
   const isSubmittingRef = useRef(false);
@@ -724,14 +855,12 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
     setResults('');
     setImagePreview(null);
     setSelectedCover(null);
+    setCoverTab('upload');
+    setCoverUrlInput('');
     setVideos([]);
     setDocs([]);
 
-    setErrors({
-      title: '',
-      description: '',
-      role: '',
-    });
+    setErrors({ title: '', description: '', role: '', startDate: '', techs: '', thumbnail: '', videos: '', docs: '' });
   };
 
   const hydrateForm = (currentProject: Project) => {
@@ -749,8 +878,24 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
     setGithubUrl((currentProject as Project & { repositoryUrl?: string }).repositoryUrl || '');
     setResults(currentProject.technicalInfo.results);
     const thumb = currentProject.thumbnail || null;
-    setImagePreview(thumb);
-    setSelectedCover(thumb ? decodeCover(thumb) : null);
+    const coverId = thumb ? decodeCover(thumb) : null;
+    setSelectedCover(coverId);
+    if (coverId) {
+      // Thumbnail is a gradient preset — keep imagePreview/coverUrlInput clean
+      setImagePreview(null);
+      setCoverTab('upload');
+      setCoverUrlInput('');
+    } else if (thumb?.startsWith('http')) {
+      // Thumbnail is an external URL entered by the user
+      setImagePreview(thumb);
+      setCoverTab('url');
+      setCoverUrlInput(thumb);
+    } else {
+      // Thumbnail is an uploaded file path or null
+      setImagePreview(thumb);
+      setCoverTab('upload');
+      setCoverUrlInput('');
+    }
     setVideos(currentProject.media.map((media) => media.url));
     setDocs(currentProject.files.map((file) => ({ name: file.name, size: file.size, url: file.url })));
 
@@ -786,49 +931,57 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
     resetForm();
   }, [isOpen, project]);
 
+  useEffect(() => {
+    if (videos.length > 0) setErrors((prev) => ({ ...prev, videos: '' }));
+  }, [videos.length]);
+
+  useEffect(() => {
+    if (docs.length > 0) setErrors((prev) => ({ ...prev, docs: '' }));
+  }, [docs.length]);
+
   // ── Validation ───────────────────────────────
 
-  const validate = (): boolean => {
-    const newErrors = {
-      title: '',
-      description: '',
-      role: '',
-    };
-
-    let valid = true;
-
-    if (!title.trim()) {
-      newErrors.title = 'El título es obligatorio';
-      valid = false;
-    } else if (title.length > MAX_TITLE) {
-      newErrors.title = `Máximo ${MAX_TITLE} caracteres`;
-      valid = false;
-    } else {
-      const duplicate = projects.some(
-        (p) =>
-          p.title.toLowerCase() === title.toLowerCase() &&
-          p.id !== project?.id
-      );
-
-      if (duplicate) {
-        newErrors.title = 'Ya tienes un proyecto con este título';
-        valid = false;
-      }
+  const validateStep1 = (): boolean => {
+    const e = { ...errors, title: '', description: '', role: '' };
+    let ok = true;
+    if (!title.trim()) { e.title = 'El título es obligatorio'; ok = false; }
+    else if (title.trim().length < 5) { e.title = 'El título debe tener al menos 5 caracteres'; ok = false; }
+    else if (title.length > MAX_TITLE) { e.title = `Máximo ${MAX_TITLE} caracteres`; ok = false; }
+    else {
+      const dup = projects.some(p => p.title.toLowerCase() === title.toLowerCase() && p.id !== project?.id);
+      if (dup) { e.title = 'Ya tienes un proyecto con este título'; ok = false; }
     }
-
-    if (!description.trim()) {
-      newErrors.description = 'La descripción es obligatoria';
-      valid = false;
-    }
-
-    if (!role.trim()) {
-      newErrors.role = 'El rol es obligatorio';
-      valid = false;
-    }
-
-    setErrors(newErrors);
-    return valid;
+    if (!description.trim()) { e.description = 'La descripción es obligatoria'; ok = false; }
+    else if (description.trim().length < 20) { e.description = 'La descripción debe tener al menos 20 caracteres'; ok = false; }
+    if (!role.trim()) { e.role = 'El rol es obligatorio'; ok = false; }
+    else if (role.trim().length < 3) { e.role = 'Mínimo 3 caracteres'; ok = false; }
+    setErrors(e);
+    return ok;
   };
+
+  const validateStep2 = (): boolean => {
+    const e = { ...errors, startDate: '', techs: '' };
+    let ok = true;
+    if (!startDate) { e.startDate = 'La fecha de inicio es obligatoria'; ok = false; }
+    else if (startDate > MAX_DATE) { e.startDate = 'No puede ser una fecha futura'; ok = false; }
+    if (endDate && endDate > MAX_DATE) { e.startDate = e.startDate || 'La fecha de fin no puede ser futura'; ok = false; }
+    if (techs.length === 0) { e.techs = 'Agrega al menos una tecnología'; ok = false; }
+    setErrors(e);
+    return ok;
+  };
+
+  const validateStep3 = (): boolean => {
+    const e = { ...errors, thumbnail: '', videos: '', docs: '' };
+    let ok = true;
+    const hasThumbnail = selectedCover !== null || (imagePreview !== null && !imagePreview.startsWith('gradient:'));
+    if (!hasThumbnail) { e.thumbnail = 'Selecciona una portada predeterminada o sube una imagen'; ok = false; }
+    if (videos.length === 0) { e.videos = 'Agrega al menos un video o enlace'; ok = false; }
+    if (docs.length === 0) { e.docs = 'Sube al menos un documento'; ok = false; }
+    setErrors(e);
+    return ok;
+  };
+
+  const validate = (): boolean => validateStep1() && validateStep2() && validateStep3();
 
   // ── Submit handler ───────────────────────────
 
@@ -1080,12 +1233,15 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
             <div key="s2" className="flex flex-col gap-4" style={{ animation: 'fadeUp .28s ease both' }}>
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <Label>Fecha de inicio</Label>
-                  <DarkInput type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                  <Label>Fecha de inicio <Req /></Label>
+                  <DarkInput type="date" value={startDate} max={MAX_DATE}
+                    onChange={(e) => { setStartDate(e.target.value); if (errors.startDate) setErrors(p => ({ ...p, startDate: '' })); }} />
+                  {errors.startDate && <p className="text-[11px] text-red-400 mt-1">{errors.startDate}</p>}
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label>Fecha de fin</Label>
-                  <DarkInput type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                  <DarkInput type="date" value={endDate} min={startDate} max={MAX_DATE}
+                    onChange={(e) => setEndDate(e.target.value)} />
                 </div>
               </div>
 
@@ -1099,8 +1255,9 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label>Tecnologías utilizadas</Label>
-                <TagInput tags={techs} setTags={setTechs} />
+                <Label>Tecnologías utilizadas <Req /></Label>
+                <TagInput tags={techs} setTags={(t) => { setTechs(t); if (t.length > 0 && errors.techs) setErrors(p => ({ ...p, techs: '' })); }} />
+                {errors.techs && <p className="text-[11px] text-red-400 mt-1">{errors.techs}</p>}
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -1114,15 +1271,16 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
           {/* STEP 3 */}
           {step === 3 && (
             <div key="s3" className="flex flex-col gap-4" style={{ animation: 'fadeUp .28s ease both' }}>
-              <SectionCard icon={ImageIcon} title="Portada del proyecto">
+              <SectionCard icon={ImageIcon} title={<>Portada del proyecto <Req /></>}>
                 {/* ── Predefined cover grid ── */}
                 <CoverPresetSelector
                   selectedId={selectedCover}
                   onSelect={(id) => {
                     setSelectedCover(id);
-                    // Clear any custom upload when a preset is chosen
-                    if (id && imagePreview && !imagePreview.startsWith('gradient:')) {
+                    if (id) {
                       setImagePreview(null);
+                      setCoverUrlInput('');
+                      setErrors((prev) => ({ ...prev, thumbnail: '' }));
                     }
                   }}
                 />
@@ -1134,29 +1292,81 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
                   </div>
                   <div className="relative flex justify-center">
                     <span className="bg-muted/15 px-3 text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
-                      o sube una imagen personalizada
+                      o imagen personalizada
                     </span>
                   </div>
                 </div>
 
-                {/* ── Custom image upload ── */}
-                <ImageUpload
-                  preview={imagePreview && !imagePreview.startsWith('gradient:') ? imagePreview : null}
-                  setPreview={(url) => {
-                    setImagePreview(url);
-                    // Clear preset when uploading custom image
-                    if (url) setSelectedCover(null);
-                  }}
+                {/* ── Mode tabs: Upload vs URL ── */}
+                <div className="flex gap-1 rounded-xl border border-input bg-muted/30 p-1 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setCoverTab('upload')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[12px] font-medium transition-all
+                      ${coverTab === 'upload' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    <Upload size={12} /> Subir archivo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCoverTab('url')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[12px] font-medium transition-all
+                      ${coverTab === 'url' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    <Link2 size={12} /> URL de imagen
+                  </button>
+                </div>
+
+                {coverTab === 'upload' ? (
+                  <ImageUpload
+                    preview={imagePreview && !imagePreview.startsWith('gradient:') ? imagePreview : null}
+                    setPreview={(url) => {
+                      setImagePreview(url);
+                      if (url) {
+                        setSelectedCover(null);
+                        setCoverUrlInput('');
+                        setErrors((prev) => ({ ...prev, thumbnail: '' }));
+                      }
+                    }}
+                  />
+                ) : (
+                  <CoverUrlInput
+                    value={coverUrlInput}
+                    onChange={setCoverUrlInput}
+                    onApply={(url) => {
+                      setImagePreview(url);
+                      setSelectedCover(null);
+                      setErrors((prev) => ({ ...prev, thumbnail: '' }));
+                    }}
+                    onClear={() => setImagePreview(null)}
+                    currentPreview={imagePreview && !imagePreview.startsWith('gradient:') ? imagePreview : null}
+                  />
+                )}
+                {errors.thumbnail && (
+                  <p className="mt-2 text-[11px] text-red-400">{errors.thumbnail}</p>
+                )}
+              </SectionCard>
+
+              <SectionCard icon={Video} title={<>Videos <Req /></>}>
+                <UrlListInput
+                  items={videos}
+                  setItems={setVideos}
+                  placeholder="https://youtube.com/watch?v=..."
                 />
-              </SectionCard>
-
-              <SectionCard icon={Video} title="Videos">
-                <UrlListInput items={videos} setItems={setVideos} placeholder="https://youtube.com/watch?v=..." />
                 <p className="text-[11px] text-muted-foreground/60 mt-2">YouTube, Vimeo, Figma o Google Slides</p>
+                {errors.videos && (
+                  <p className="mt-1 text-[11px] text-red-400">{errors.videos}</p>
+                )}
               </SectionCard>
 
-              <SectionCard icon={FileText} title="Documentos">
-                <FileUpload files={docs} setFiles={setDocs} />
+              <SectionCard icon={FileText} title={<>Documentos <Req /></>}>
+                <FileUpload
+                  files={docs}
+                  setFiles={setDocs}
+                />
+                {errors.docs && (
+                  <p className="mt-2 text-[11px] text-red-400">{errors.docs}</p>
+                )}
               </SectionCard>
             </div>
           )}
@@ -1182,7 +1392,8 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
               <button
                 type="button"
                 onClick={() => {
-                  if (step === 1 && !validate()) return;
+                  if (step === 1 && !validateStep1()) return;
+                  if (step === 2 && !validateStep2()) return;
                   setStep(step + 1);
                 }}
                 className="flex items-center gap-1.5 px-5 h-9 rounded-xl bg-violet-500 hover:bg-violet-600

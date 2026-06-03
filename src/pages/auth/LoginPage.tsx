@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, LockKeyhole, Mail, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store';
 import { cn } from '@/shared/lib/utils';
@@ -12,6 +12,41 @@ import {
   SocialAuthGroup,
 } from '@/components/auth/AuthShared';
 import { useAuthFlow } from '@/hooks/useAuthFlow';
+
+// ── Rate limit helpers ────────────────────────────────────────────────────────
+const RL_KEY = 'ethoshub_login_rl';
+const MAX_ATTEMPTS  = 15; // total antes del bloqueo IP (frontend)
+const WARN_ATTEMPTS = 5;  // umbral para empezar a bloquear temporalmente
+
+interface RLData {
+  attempts: number;       // intentos fallidos acumulados
+  blockedUntil: number;   // timestamp hasta el que está bloqueado (ms)
+  blockCount: number;     // número de bloqueos temporales anteriores
+}
+
+function getRLData(): RLData {
+  try {
+    const raw = localStorage.getItem(RL_KEY);
+    if (raw) return JSON.parse(raw) as RLData;
+  } catch { /* ignore */ }
+  return { attempts: 0, blockedUntil: 0, blockCount: 0 };
+}
+
+function saveRLData(d: RLData) {
+  localStorage.setItem(RL_KEY, JSON.stringify(d));
+}
+
+function getBlockDuration(blockCount: number): number {
+  // 1er bloqueo: 3 min, luego +3 min por cada bloqueo extra (máx 30 min)
+  return Math.min(3 + blockCount * 3, 30) * 60 * 1000;
+}
+
+function formatTimeLeft(ms: number): string {
+  const secs = Math.ceil(ms / 1000);
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+}
 
 type RegisterPrefills = {
   email?: string;
@@ -86,14 +121,79 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0); // ms restantes de bloqueo
+  const [attempts, setAttempts] = useState(() => getRLData().attempts);
 
   useEffect(() => {
     if (prefills?.email) setEmail(prefills.email);
     if (prefills?.password) setPassword(prefills.password);
   }, [prefills]);
 
+  // Countdown ticker para el bloqueo temporal
+  useEffect(() => {
+    const rl = getRLData();
+    const remaining = rl.blockedUntil - Date.now();
+    if (remaining > 0) setTimeLeft(remaining);
+  }, []);
+
+  useEffect(() => {
+    if (timeLeft <= 0) return;
+    const id = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1000) { clearInterval(id); return 0; }
+        return prev - 1000;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [timeLeft]);
+
+  const isBlocked = timeLeft > 0;
+  const attemptsLeft = Math.max(0, WARN_ATTEMPTS - attempts);
+
+  const recordFailure = useCallback(() => {
+    const rl = getRLData();
+    rl.attempts += 1;
+    setAttempts(rl.attempts);
+
+    if (rl.attempts >= MAX_ATTEMPTS) {
+      // Bloqueo permanente (frontend) — sugiere al usuario que contacte soporte
+      saveRLData(rl);
+      return;
+    }
+
+    // Bloqueo temporal cada WARN_ATTEMPTS intentos fallidos
+    if (rl.attempts % WARN_ATTEMPTS === 0) {
+      const duration = getBlockDuration(rl.blockCount);
+      rl.blockedUntil = Date.now() + duration;
+      rl.blockCount += 1;
+      setTimeLeft(duration);
+      toast.error(`Cuenta bloqueada temporalmente`, {
+        description: `Demasiados intentos. Intenta de nuevo en ${formatTimeLeft(duration)}.`,
+      });
+    }
+
+    saveRLData(rl);
+  }, []);
+
+  const recordSuccess = useCallback(() => {
+    saveRLData({ attempts: 0, blockedUntil: 0, blockCount: 0 });
+    setAttempts(0);
+    setTimeLeft(0);
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isBlocked) {
+      toast.error(`Cuenta bloqueada`, { description: `Espera ${formatTimeLeft(timeLeft)} antes de intentar de nuevo.` });
+      return;
+    }
+
+    const rl = getRLData();
+    if (rl.attempts >= MAX_ATTEMPTS) {
+      toast.error('Acceso bloqueado', { description: 'Has superado el máximo de intentos. Contacta soporte.' });
+      return;
+    }
 
     if (!password.trim()) {
       setPasswordError(true);
@@ -105,12 +205,14 @@ export default function LoginPage() {
     try {
       const result = await loginWithPassword(email, password);
       if (result) {
+        recordSuccess();
         toast.success(`Bienvenido de nuevo, ${result.roleDisplayName}`, {
           description: 'Has iniciado sesión correctamente',
           duration: 4000,
         });
       }
     } catch (error: any) {
+      recordFailure();
       const errorMessage = error?.response?.data?.message || error?.message || '';
       const status = error?.response?.status;
 
@@ -123,8 +225,12 @@ export default function LoginPage() {
           description: 'Has intentado iniciar sesión demasiadas veces. Intenta más tarde.',
         });
       } else {
+        const newAttempts = getRLData().attempts;
+        const left = Math.max(0, WARN_ATTEMPTS - newAttempts % WARN_ATTEMPTS);
         toast.error('No se pudo iniciar sesión', {
-          description: 'Verifica tus credenciales e intenta nuevamente.',
+          description: left > 0 && left < WARN_ATTEMPTS
+            ? `Credenciales incorrectas. Te quedan ${left} intentos antes del bloqueo temporal.`
+            : 'Verifica tus credenciales e intenta nuevamente.',
         });
       }
     }
@@ -161,6 +267,29 @@ export default function LoginPage() {
         transition={{ duration: 0.55, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
         className="space-y-5 rounded-2xl border border-white/8 bg-white/[0.025] p-6 backdrop-blur-sm"
       >
+        {/* Bloqueo temporal */}
+        {isBlocked && (
+          <div className="flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
+            <div>
+              <p className="text-xs font-semibold text-red-300">Cuenta bloqueada temporalmente</p>
+              <p className="text-xs text-red-400/80 mt-0.5">Podrás intentarlo de nuevo en <span className="font-bold text-red-300">{formatTimeLeft(timeLeft)}</span></p>
+            </div>
+          </div>
+        )}
+
+        {/* Advertencia de intentos restantes */}
+        {!isBlocked && attempts > 0 && attempts < MAX_ATTEMPTS && (
+          <div className="flex items-center gap-3 rounded-xl border border-amber-500/25 bg-amber-500/8 px-4 py-3">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
+            <p className="text-xs text-amber-300/90">
+              {attemptsLeft > 0
+                ? `${attemptsLeft} intento${attemptsLeft !== 1 ? 's' : ''} restante${attemptsLeft !== 1 ? 's' : ''} antes del bloqueo temporal`
+                : 'Muchos intentos fallidos. Verifica bien tus credenciales.'}
+            </p>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Email */}
           <div className="space-y-1.5">
@@ -220,8 +349,8 @@ export default function LoginPage() {
           {/* Submit */}
           <motion.button
             type="submit"
-            disabled={loading}
-            whileHover={{ scale: loading ? 1 : 1.015, boxShadow: loading ? 'none' : '0 0 40px rgba(168,85,247,0.35)' }}
+            disabled={loading || isBlocked || getRLData().attempts >= MAX_ATTEMPTS}
+            whileHover={{ scale: (loading || isBlocked) ? 1 : 1.015, boxShadow: (loading || isBlocked) ? 'none' : '0 0 40px rgba(168,85,247,0.35)' }}
             whileTap={{ scale: 0.985 }}
             className="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition-all disabled:cursor-not-allowed disabled:opacity-60"
           >
@@ -230,6 +359,8 @@ export default function LoginPage() {
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                 Iniciando sesión...
               </>
+            ) : isBlocked ? (
+              `Bloqueado — ${formatTimeLeft(timeLeft)}`
             ) : (
               'Iniciar sesión'
             )}

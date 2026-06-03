@@ -1,696 +1,637 @@
-import { useMemo, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { EthosLogoIcon } from '@/components/brand/EthosCoreLogo';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  PortfolioBentoView,
-  PORTFOLIO_MOCK_DASHBOARD,
-  PORTFOLIO_MOCK_PROJECTS,
-} from '@/pages/dashboard/PortfolioPage';
-import {
-  ArrowUpRight,
-  BadgeCheck,
-  Briefcase,
-  Building2,
-  Eye,
-  FolderKanban,
-  Globe,
-  GraduationCap,
-  Link2,
-  Mail,
-  MapPin,
-  MessageSquare,
-  Sparkles,
-  Star,
-  Users,
+  ArrowUpRight, Award, BadgeCheck, Briefcase, Building2, Calendar,
+  ChevronRight, CircleDot, Code2, ExternalLink, Eye, FolderKanban,
+  Globe, GraduationCap, Link2, Lock, Mail, MapPin, MessageSquare,
+  Sparkles, Star,
 } from 'lucide-react';
-import { Badge, Button, Card, EmptyState, Progress } from '@/shared/ui';
+import { EthosLogoIcon } from '@/components/brand/EthosCoreLogo';
 import { useAuthStore } from '@/store/authStore';
-import {
-  mockConnections,
-  mockHardSkills,
-  mockLinkedinEducations,
-  mockLinkedinExperiences,
-  mockRecommendations,
-  mockProfiles,
-} from '@/shared/mocks/data';
-import {
-  recruiterTalentHardSkills,
-  recruiterTalentProjects,
-  recruiterTalentProfileList,
-} from '@/shared/mocks/recruiterTalent';
+import { portfolioService, type PublicPortfolio } from '@/shared/services/portfolioService';
+import { cn } from '@/shared/lib/utils';
 
-type PublicProfile = {
-  id: string;
-  slug: string;
-  name: string;
-  profession: string;
-  bio: string;
-  location: string;
-  website: string;
-  email: string;
-  avatar: string;
-  headline: string;
-  company: string;
-  about: string;
-  skills: Array<{
-    id: string;
-    name: string;
-    category: string;
-    levelLabel: string;
-    levelValue: number;
-    endorsements: number;
-    featured: boolean;
-  }>;
-  projects: Array<{
-    id: string;
-    title: string;
-    description: string;
-    image?: string;
-    technologies: string[];
-    role: string;
-    result: string;
-    liveUrl?: string;
-  }>;
-  experiences: Array<{
-    id: string;
-    title: string;
-    company: string;
-    location: string;
-    period: string;
-    description: string;
-  }>;
-  education: Array<{
-    id: string;
-    title: string;
-    school: string;
-    period: string;
-    description: string;
-  }>;
-  highlights: string[];
-  recommendations: Array<{
-    id: string;
-    author: string;
-    role: string;
-    text: string;
-  }>;
-  stats: {
-    profileViews: number;
-    projectCount: number;
-    recommendations: number;
-    connections: number;
-  };
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+function fmt(d: string) {
+  return new Date(d + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'short' });
+}
+function fmtPeriod(start: string, end: string | null, isCurrent: boolean) {
+  return `${fmt(start)} – ${isCurrent || !end ? 'Actualidad' : fmt(end)}`;
+}
+
+const LEVEL_COLOR: Record<string, string> = {
+  Junior: 'bg-emerald-500/10 border-emerald-500/25 text-emerald-600 dark:text-emerald-400',
+  Mid:    'bg-blue-500/10 border-blue-500/25 text-blue-600 dark:text-blue-400',
+  Senior: 'bg-violet-500/10 border-violet-500/25 text-violet-600 dark:text-violet-400',
 };
 
-function buildPublicProfile(slug: string): PublicProfile | null {
-  const allProfiles = [...mockProfiles, ...recruiterTalentProfileList];
-  const allHardSkills = [...mockHardSkills, ...recruiterTalentHardSkills];
-  const allProjects = [...recruiterTalentProjects];
-  const profile = allProfiles.find((item) => item.slug === slug);
-  if (!profile) {
-    return null;
-  }
+const STATUS_INFO: Record<string, { dot: string; label: string }> = {
+  draft:       { dot: 'bg-zinc-400',    label: 'Borrador' },
+  in_progress: { dot: 'bg-amber-400',   label: 'En progreso' },
+  completed:   { dot: 'bg-emerald-400', label: 'Completado' },
+  archived:    { dot: 'bg-zinc-600',    label: 'Archivado' },
+};
 
-  const hardSkills = allHardSkills.filter((item) => item.profileId === profile.id);
-  const projects = allProjects.filter((item) => item.profileId === profile.id && item.isPublic);
-  const experiences = mockLinkedinExperiences.slice(0, 3);
-  const education = mockLinkedinEducations.slice(0, 2);
-  const recommendations = mockRecommendations.filter((item) => item.isPublic).slice(0, 3);
-  const connections = mockConnections.filter((item) => item.profileId === profile.id);
+// ── Animations ─────────────────────────────────────────────────────────────────
 
-  const headlineBySlug: Record<string, string> = {
-    'carlos-mendoza': 'Senior Full Stack Developer | React, Node.js y Cloud Architecture',
-    'maria-lopez': 'UX/UI Designer | Product thinking, systems y experiencias digitales',
-    'pedro-ramirez': 'Backend Engineer | APIs, sistemas distribuidos y microservicios',
-  };
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 200, damping: 26 } },
+};
+const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
 
-  const companyBySlug: Record<string, string> = {
-    'carlos-mendoza': 'TechCorp Solutions',
-    'maria-lopez': 'Independent Product Designer',
-    'pedro-ramirez': 'ScaleStack Labs',
-  };
+// ── Protected section (for guests) ────────────────────────────────────────────
 
-  const aboutBySlug: Record<string, string> = {
-    'carlos-mendoza':
-      'Ingeniero enfocado en producto con experiencia construyendo aplicaciones web escalables, dashboards internos y experiencias publicas cuidadas de punta a punta. Combino criterio tecnico con una mirada fuerte en claridad, performance y comunicacion.',
-    'maria-lopez':
-      'Disenadora de producto centrada en interfaces claras, accesibles y expresivas. Trabajo entre investigacion, definicion visual y sistemas de diseno para llevar ideas complejas a experiencias simples.',
-    'pedro-ramirez':
-      'Backend engineer especializado en arquitectura de servicios, integraciones y observabilidad. Me interesa que la base tecnica sea robusta, sostenible y facil de evolucionar con el tiempo.',
-  };
-
-  const highlightsBySlug: Record<string, string[]> = {
-    'carlos-mendoza': [
-      '8+ anos construyendo productos digitales con impacto real.',
-      'Experiencia liderando migraciones frontend y decisiones de arquitectura.',
-      'Fuerte enfoque en performance, DX y coherencia visual entre equipos.',
-    ],
-    'maria-lopez': [
-      'Sistemas de diseno adaptados a producto y marca.',
-      'Experiencia en UX para portfolios, dashboards y herramientas B2B.',
-      'Trabajo cercano con producto, contenido y desarrollo.',
-    ],
-    'pedro-ramirez': [
-      'Diseno de servicios backend confiables y observables.',
-      'Automatizacion de flujos, integraciones y procesos de despliegue.',
-      'Capacidad para convertir requisitos difusos en soluciones mantenibles.',
-    ],
-  };
-
-  const profileSlug = profile.slug || '';
-
-  return {
-    id: profile.id,
-    slug: profile?.slug || '',
-    name: profile.name || '',
-    profession: profile.profession || '',
-    bio: profile?.bio || '',
-    location: profile.location || '',
-    website: profile.website || '',
-    email: profile.email || '',
-    avatar: profile.avatar || '',
-    headline: headlineBySlug[profileSlug] ?? profile.profession ?? '',
-    company: companyBySlug[profileSlug] ?? profile.company ?? 'Professional Profile',
-    about: aboutBySlug[profileSlug] ?? profile.bio ?? '',
-    skills: hardSkills.slice(0, 6).map((skill) => ({
-      id: skill.id,
-      name: skill.skillTag.name,
-      category: skill.skillTag.category,
-      levelLabel: skill.level,
-      levelValue: skill.level === 'Senior' ? 92 : skill.level === 'Mid' ? 76 : 58,
-      endorsements: skill.endorsements.length,
-      featured: skill.isTop,
-    })),
-    projects: projects.slice(0, 3).map((project) => ({
-      id: project.id,
-      title: project.title,
-      description: project.description,
-      image: project.thumbnail,
-      technologies: project.technicalInfo.technologies.slice(0, 5),
-      role: project.technicalInfo.role,
-      result: project.technicalInfo.results,
-      liveUrl: project.media[0]?.url,
-    })),
-    experiences: experiences.map((item) => ({
-      id: item.id,
-      title: item.position,
-      company: item.company,
-      location: item.location,
-      period: item.isCurrent ? `${item.startDate} - Actualidad` : `${item.startDate} - ${item.endDate}`,
-      description: item.description,
-    })),
-    education: education.map((item) => ({
-      id: item.id,
-      title: `${item.degree} en ${item.field}`,
-      school: item.institution,
-      period: `${item.startDate} - ${item.endDate}`,
-      description: 'Formacion orientada a fundamentos, criterio tecnico y crecimiento profesional.',
-    })),
-    highlights: (profile.slug && highlightsBySlug[profile.slug]) ? highlightsBySlug[profile.slug] : ['Perfil profesional en construcción.'],
-    recommendations: recommendations.map((item) => ({
-      id: item.id,
-      author: item.authorName,
-      role: item.authorPosition,
-      text: item.content,
-    })),
-    stats: {
-      profileViews:
-        profile.slug === 'carlos-mendoza' ? 18420 : profile.slug === 'maria-lopez' ? 9630 : 7240,
-      projectCount: projects.length,
-      recommendations: recommendations.length,
-      connections: connections.length * 78,
-    },
-  };
+function ProtectedSection({
+  isLocked, title, description, children,
+}: {
+  isLocked: boolean; title: string; description: string; children: ReactNode;
+}) {
+  if (!isLocked) return <>{children}</>;
+  return (
+    <div className="relative overflow-hidden rounded-2xl">
+      <div className="pointer-events-none select-none blur-sm saturate-50 opacity-60">{children}</div>
+      <div className="absolute inset-0 flex items-center justify-center bg-background/70 backdrop-blur-sm">
+        <div className="mx-4 w-full max-w-xs rounded-2xl border border-border bg-card/95 p-5 text-center shadow-2xl">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10 border border-violet-500/20 mx-auto mb-3">
+            <Lock className="h-4 w-4 text-violet-500" />
+          </div>
+          <p className="text-sm font-semibold text-foreground">{title}</p>
+          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{description}</p>
+          <Link to="/login" className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 px-4 py-2 text-xs font-semibold text-white transition-colors">
+            Crear cuenta o iniciar sesión
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
 }
+
+// ── Section title ──────────────────────────────────────────────────────────────
+
+function SectionTitle({ title, icon: Icon, accent = 'violet' }: { title: string; icon: React.ElementType; accent?: string }) {
+  const accentMap: Record<string, string> = {
+    violet:  'bg-violet-500/10 border-violet-500/20 text-violet-600 dark:text-violet-400',
+    blue:    'bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400',
+    emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400',
+    amber:   'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400',
+    rose:    'bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400',
+  };
+  return (
+    <div className="flex items-center gap-3 mb-5">
+      <div className={cn('flex h-8 w-8 items-center justify-center rounded-xl border', accentMap[accent] ?? accentMap.violet)}>
+        <Icon className="h-4 w-4" />
+      </div>
+      <h2 className="text-base font-semibold text-foreground">{title}</h2>
+    </div>
+  );
+}
+
+// ── Skeletons / fallbacks ──────────────────────────────────────────────────────
+
+function PublicPortfolioSkeleton() {
+  return (
+    <div className="min-h-screen bg-background pt-20">
+      <div className="mx-auto max-w-5xl px-4 py-8 space-y-6">
+        <div className="h-64 rounded-2xl bg-muted/40 animate-pulse" />
+        <div className="grid lg:grid-cols-[1.4fr_0.6fr] gap-6">
+          <div className="space-y-4">
+            {[1, 2, 3].map(i => <div key={i} className="h-40 rounded-2xl bg-muted/40 animate-pulse" />)}
+          </div>
+          <div className="space-y-4">
+            {[1, 2].map(i => <div key={i} className="h-48 rounded-2xl bg-muted/40 animate-pulse" />)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PortfolioNotFound({ slug }: { slug?: string }) {
+  return (
+    <div className="min-h-screen bg-background pt-20">
+      <div className="mx-auto max-w-lg px-4 py-20 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/60 border border-border mx-auto mb-5">
+          <FolderKanban className="h-7 w-7 text-muted-foreground/40" />
+        </div>
+        <h1 className="text-2xl font-bold text-foreground mb-2">Portafolio no encontrado</h1>
+        <p className="text-muted-foreground text-sm leading-relaxed mb-6">
+          {slug ? `El portafolio "@${slug}" no existe o no está publicado.` : 'Este portafolio no está disponible.'}
+        </p>
+        <Link to="/" className="inline-flex items-center gap-2 rounded-xl bg-violet-600 hover:bg-violet-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors">
+          Ir al inicio
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// ── PortfolioPublicView — reusable exported component ─────────────────────────
+
+export function PortfolioPublicView({
+  portfolio,
+  isPreview = false,
+  isGuest = false,
+}: {
+  portfolio: PublicPortfolio;
+  isPreview?: boolean;
+  isGuest?: boolean;
+}) {
+  const {
+    name, professionalTitle, bio, location, email, website, photoUrl,
+    accentColor, viewsCount, projects, experiences, education, hardSkills, softSkills,
+  } = portfolio;
+
+  const hasContent = bio || experiences.length > 0 || projects.length > 0
+    || hardSkills.length > 0 || softSkills.length > 0 || education.length > 0;
+
+  return (
+    <div className={cn('bg-background', !isPreview && 'min-h-screen pt-20')}>
+
+      {/* Preview banner */}
+      {isPreview && (
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 pt-4 pb-2">
+          <div className="flex items-center gap-3 rounded-2xl border border-blue-500/20 bg-blue-500/5 px-4 py-3">
+            <Eye className="h-4 w-4 text-blue-500 shrink-0" />
+            <p className="text-xs text-blue-700 dark:text-blue-400 leading-relaxed">
+              <strong>Vista previa</strong> — así es como ven tu portafolio los visitantes.
+              Los cambios en tu perfil se reflejarán aquí automáticamente.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── HERO ──────────────────────────────────────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}
+        className="relative overflow-hidden"
+      >
+        <div
+          className="h-44 sm:h-52"
+          style={{
+            background: `linear-gradient(135deg, ${accentColor}33 0%, ${accentColor}15 40%, transparent 70%), linear-gradient(220deg, rgba(139,92,246,0.12) 0%, transparent 50%)`,
+            backgroundColor: 'hsl(var(--background))',
+          }}
+        >
+          <div
+            className="absolute inset-0 opacity-[0.035]"
+            style={{ backgroundImage: `radial-gradient(circle at 25% 50%, ${accentColor} 0%, transparent 60%)` }}
+          />
+          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
+        </div>
+
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
+          <div className="-mt-16 sm:-mt-20 pb-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-6">
+
+              {/* Avatar */}
+              {photoUrl ? (
+                <img
+                  src={photoUrl} alt={name}
+                  className="h-24 w-24 sm:h-28 sm:w-28 rounded-2xl border-4 border-background object-cover shadow-xl shrink-0 ring-2 ring-white/10"
+                />
+              ) : (
+                <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-2xl border-4 border-background bg-gradient-to-br from-violet-500/30 to-violet-600/20 shadow-xl shrink-0 flex items-center justify-center">
+                  <span className="text-3xl font-bold text-violet-600/60 dark:text-violet-400/60">
+                    {name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+
+              {/* Name + meta */}
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">{name}</h1>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-violet-500/30 bg-violet-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-violet-600 dark:text-violet-400">
+                    <BadgeCheck className="h-3 w-3" />Verificado
+                  </span>
+                </div>
+                {professionalTitle && (
+                  <p className="text-base sm:text-lg text-muted-foreground font-medium leading-snug">{professionalTitle}</p>
+                )}
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5">
+                  {location && (
+                    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <MapPin className="h-3.5 w-3.5" />{location}
+                    </span>
+                  )}
+                  {email && !isGuest && (
+                    <a href={`mailto:${email}`} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-violet-500 transition-colors">
+                      <Mail className="h-3.5 w-3.5" />{email}
+                    </a>
+                  )}
+                  {website && (
+                    <a href={website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-violet-500 transition-colors">
+                      <Globe className="h-3.5 w-3.5" />{website.replace(/^https?:\/\//, '')}
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* Contact button — public view only */}
+              {!isPreview && (
+                <div className="flex gap-2.5 shrink-0">
+                  {isGuest ? (
+                    <Link to="/login" className="flex items-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors shadow-lg shadow-violet-500/20">
+                      <MessageSquare className="h-4 w-4" />Contactar
+                    </Link>
+                  ) : email ? (
+                    <a href={`mailto:${email}`} className="flex items-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors shadow-lg shadow-violet-500/20">
+                      <Mail className="h-4 w-4" />Contactar
+                    </a>
+                  ) : null}
+                </div>
+              )}
+            </div>
+
+            {/* Stats bar */}
+            <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label: 'Visualizaciones', value: viewsCount.toLocaleString('es-ES'), icon: Eye },
+                { label: 'Proyectos',        value: String(projects.length),             icon: FolderKanban },
+                { label: 'Experiencias',     value: String(experiences.length),          icon: Briefcase },
+                { label: 'Habilidades',      value: String(hardSkills.length + softSkills.length), icon: Sparkles },
+              ].map(({ label, value, icon: Icon }) => (
+                <motion.div
+                  key={label} variants={fadeUp} initial="hidden" animate="show"
+                  className="rounded-xl border border-border bg-card px-4 py-3 flex items-center justify-between gap-3"
+                >
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">{label}</p>
+                    <p className="text-xl font-bold text-foreground mt-0.5">{value}</p>
+                  </div>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/10 border border-violet-500/15">
+                    <Icon className="h-4 w-4 text-violet-500" />
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Guest banner — public view only */}
+      {!isPreview && (
+        <AnimatePresence>
+          {isGuest && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+              className="mx-auto max-w-5xl px-4 sm:px-6 mb-4"
+            >
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-violet-500/20 bg-violet-500/5 px-5 py-4">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Estás en modo invitado</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Crea una cuenta para ver el perfil completo y contactar a este profesional.</p>
+                </div>
+                <Link to="/login" className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 px-4 py-2 text-xs font-semibold text-white transition-colors">
+                  Crear cuenta <ChevronRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
+
+      {/* ── MAIN CONTENT ──────────────────────────────────────────────────── */}
+      <motion.div
+        variants={stagger} initial="hidden" animate="show"
+        className="mx-auto max-w-5xl px-4 sm:px-6 pb-16 mt-2"
+      >
+        {!hasContent && isPreview ? (
+          /* Empty state for preview when no data */
+          <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-12 text-center">
+            <Sparkles className="h-9 w-9 text-muted-foreground/25 mx-auto mb-3" />
+            <p className="text-sm font-semibold text-foreground mb-1">Tu portafolio está vacío</p>
+            <p className="text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">
+              Completa tu bio, agrega experiencias, proyectos y habilidades para que aparezcan aquí.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr] lg:gap-8">
+
+            {/* ── LEFT COLUMN ───────────────────────────────────────────── */}
+            <div className="space-y-6">
+
+              {/* BIO */}
+              {bio && (
+                <ProtectedSection
+                  isLocked={!isPreview && isGuest}
+                  title="Desbloquea el resumen completo"
+                  description="Crea tu cuenta para ver el contexto profesional completo."
+                >
+                  <motion.div variants={fadeUp} className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+                    <SectionTitle title="Acerca de" icon={Sparkles} />
+                    <p className="text-sm leading-7 text-muted-foreground">{bio}</p>
+                  </motion.div>
+                </ProtectedSection>
+              )}
+
+              {/* EXPERIENCE */}
+              {experiences.length > 0 && (
+                <ProtectedSection
+                  isLocked={!isPreview && isGuest}
+                  title="Experiencia reservada"
+                  description="Inicia sesión para ver empresas, roles y trayectoria profesional."
+                >
+                  <motion.div variants={fadeUp} className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+                    <SectionTitle title="Experiencia" icon={Briefcase} accent="blue" />
+                    <div className="space-y-4">
+                      {experiences.map((exp, idx) => (
+                        <motion.article
+                          key={exp.id} variants={fadeUp}
+                          className={cn('flex gap-4', idx < experiences.length - 1 && 'pb-4 border-b border-border/50')}
+                        >
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-muted/50">
+                            {exp.logoUrl
+                              ? <img src={exp.logoUrl} alt={exp.companyName} className="h-6 w-6 rounded-lg object-contain" />
+                              : <Building2 className="h-4 w-4 text-muted-foreground" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                              <div>
+                                <p className="text-sm font-semibold text-foreground">{exp.jobTitle}</p>
+                                <p className="text-xs text-violet-600 dark:text-violet-400 font-medium mt-0.5">{exp.companyName}</p>
+                              </div>
+                              {exp.isCurrent && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400 shrink-0">
+                                  <CircleDot className="h-2.5 w-2.5" />Actual
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {fmtPeriod(exp.startDate, exp.endDate, exp.isCurrent)}
+                            </p>
+                            {exp.description && (
+                              <p className="mt-2 text-xs text-muted-foreground leading-relaxed line-clamp-3">{exp.description}</p>
+                            )}
+                          </div>
+                        </motion.article>
+                      ))}
+                    </div>
+                  </motion.div>
+                </ProtectedSection>
+              )}
+
+              {/* PROJECTS */}
+              {projects.length > 0 && (
+                <ProtectedSection
+                  isLocked={!isPreview && isGuest}
+                  title="Proyectos visibles al registrarte"
+                  description="Crea una cuenta para ver el detalle de proyectos, stack y resultados."
+                >
+                  <motion.div variants={fadeUp} className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+                    <SectionTitle title="Proyectos" icon={FolderKanban} accent="emerald" />
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {projects.map((project) => {
+                        const status = STATUS_INFO[project.status] ?? STATUS_INFO.draft;
+                        return (
+                          <motion.article
+                            key={project.id} variants={fadeUp}
+                            className="group overflow-hidden rounded-xl border border-border bg-background hover:border-violet-500/25 hover:shadow-[0_0_20px_rgba(139,92,246,0.07)] transition-all duration-300"
+                          >
+                            {project.thumbnail ? (
+                              <div className="relative h-36 overflow-hidden">
+                                <img
+                                  src={project.thumbnail} alt={project.title}
+                                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                                {project.isFeatured && (
+                                  <span className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 rounded-full bg-amber-500/90 backdrop-blur-sm px-2 py-0.5 text-[10px] font-semibold text-white">
+                                    <Star className="h-2.5 w-2.5 fill-white" />Destacado
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="flex h-20 items-center justify-center bg-gradient-to-br from-muted/60 to-muted/30 border-b border-border relative">
+                                {project.isFeatured && (
+                                  <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-amber-500/90 px-2 py-0.5 text-[10px] font-semibold text-white">
+                                    <Star className="h-2.5 w-2.5 fill-white" />Destacado
+                                  </span>
+                                )}
+                                <FolderKanban className="h-8 w-8 text-muted-foreground/25" />
+                              </div>
+                            )}
+                            <div className="p-4">
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <h3 className="text-sm font-semibold text-foreground line-clamp-1 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+                                  {project.title}
+                                </h3>
+                                {project.repositoryUrl && (
+                                  <a href={project.repositoryUrl} target="_blank" rel="noreferrer" className="shrink-0 text-muted-foreground hover:text-violet-500 transition-colors">
+                                    <ExternalLink className="h-3.5 w-3.5" />
+                                  </a>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1.5 mb-2">
+                                <span className={cn('h-1.5 w-1.5 rounded-full shrink-0', status.dot)} />
+                                <span className="text-[10px] text-muted-foreground">{status.label}</span>
+                                {project.role && (
+                                  <><span className="text-muted-foreground/30">·</span><span className="text-[10px] text-muted-foreground">{project.role}</span></>
+                                )}
+                              </div>
+                              {project.description && (
+                                <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed mb-3">{project.description}</p>
+                              )}
+                              {project.technologies.length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                  {project.technologies.slice(0, 4).map(t => (
+                                    <span key={t} className="rounded-full bg-muted/70 border border-border/50 px-2 py-0.5 text-[10px] text-muted-foreground">{t}</span>
+                                  ))}
+                                  {project.technologies.length > 4 && (
+                                    <span className="rounded-full bg-muted/70 border border-border/50 px-2 py-0.5 text-[10px] text-muted-foreground/60">
+                                      +{project.technologies.length - 4}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                              {project.results && (
+                                <div className="mt-3 rounded-xl bg-emerald-500/5 border border-emerald-500/15 px-3 py-2">
+                                  <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-0.5">Resultado</p>
+                                  <p className="text-[11px] text-muted-foreground line-clamp-2">{project.results}</p>
+                                </div>
+                              )}
+                            </div>
+                          </motion.article>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                </ProtectedSection>
+              )}
+            </div>
+
+            {/* ── RIGHT COLUMN ──────────────────────────────────────────── */}
+            <div className="space-y-5 lg:sticky lg:top-24 lg:self-start">
+
+              {/* HARD SKILLS */}
+              {hardSkills.length > 0 && (
+                <ProtectedSection
+                  isLocked={!isPreview && isGuest}
+                  title="Skills protegidas"
+                  description="Regístrate para ver habilidades técnicas y niveles."
+                >
+                  <motion.div variants={fadeUp} className="rounded-2xl border border-border bg-card p-5">
+                    <SectionTitle title="Habilidades técnicas" icon={Code2} accent="violet" />
+                    <div className="flex flex-wrap gap-2">
+                      {hardSkills.map((skill) => {
+                        const cls = LEVEL_COLOR[skill.level ?? ''] ?? 'bg-muted/60 border-border text-muted-foreground';
+                        return (
+                          <span key={skill.id} className={cn('inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold', cls)}>
+                            <Code2 className="h-3 w-3 opacity-60" />
+                            {skill.name}
+                            {skill.level && <span className="opacity-55">· {skill.level}</span>}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                </ProtectedSection>
+              )}
+
+              {/* SOFT SKILLS */}
+              {softSkills.length > 0 && (
+                <ProtectedSection
+                  isLocked={!isPreview && isGuest}
+                  title="Habilidades blandas"
+                  description="Inicia sesión para ver las habilidades interpersonales."
+                >
+                  <motion.div variants={fadeUp} className="rounded-2xl border border-border bg-card p-5">
+                    <SectionTitle title="Habilidades blandas" icon={Sparkles} accent="rose" />
+                    <div className="flex flex-wrap gap-2">
+                      {softSkills.map((skill) => (
+                        <span
+                          key={skill.id}
+                          className="inline-flex items-center rounded-full border border-rose-500/20 bg-rose-500/[0.08] px-3 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400"
+                        >
+                          {skill.name}
+                        </span>
+                      ))}
+                    </div>
+                  </motion.div>
+                </ProtectedSection>
+              )}
+
+              {/* EDUCATION */}
+              {education.length > 0 && (
+                <ProtectedSection
+                  isLocked={!isPreview && isGuest}
+                  title="Educación privada"
+                  description="Inicia sesión para ver formación e instituciones."
+                >
+                  <motion.div variants={fadeUp} className="rounded-2xl border border-border bg-card p-5">
+                    <SectionTitle title="Educación" icon={GraduationCap} accent="amber" />
+                    <div className="space-y-4">
+                      {education.map((edu, idx) => (
+                        <div
+                          key={edu.id}
+                          className={cn('flex gap-3', idx < education.length - 1 && 'pb-4 border-b border-border/50')}
+                        >
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border bg-muted/50">
+                            {edu.logoUrl
+                              ? <img src={edu.logoUrl} alt={edu.institution} className="h-5 w-5 rounded object-contain" />
+                              : <GraduationCap className="h-3.5 w-3.5 text-muted-foreground" />}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-semibold text-foreground line-clamp-1">
+                              {edu.degree}{edu.fieldOfStudy ? ` en ${edu.fieldOfStudy}` : ''}
+                            </p>
+                            <p className="text-[11px] text-violet-600 dark:text-violet-400 mt-0.5">{edu.institution}</p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">
+                              {fmtPeriod(edu.startDate, edu.endDate, edu.inProgress)}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              {edu.inProgress && (
+                                <span className="rounded-full bg-violet-500/10 border border-violet-500/20 px-1.5 py-0.5 text-[9px] font-semibold text-violet-600 dark:text-violet-400">
+                                  EN CURSO
+                                </span>
+                              )}
+                              {edu.credentialUrl && (
+                                <a href={edu.credentialUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-violet-500 transition-colors">
+                                  <Award className="h-3 w-3" />Ver credencial
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                </ProtectedSection>
+              )}
+
+              {/* CONTACT LINKS */}
+              {(email || website) && (
+                <ProtectedSection
+                  isLocked={!isPreview && isGuest}
+                  title="Contacto disponible al iniciar sesión"
+                  description="Entra para ver y usar los enlaces de contacto."
+                >
+                  <motion.div variants={fadeUp} className="rounded-2xl border border-border bg-card p-5">
+                    <SectionTitle title="Contacto" icon={Link2} accent="violet" />
+                    <div className="space-y-2">
+                      {email && (
+                        <a
+                          href={`mailto:${email}`}
+                          className="flex items-center justify-between rounded-xl border border-border bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 hover:border-violet-500/25 group"
+                        >
+                          <span className="inline-flex items-center gap-2 text-xs font-medium">
+                            <Mail className="h-4 w-4 text-violet-500" />Correo profesional
+                          </span>
+                          <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-violet-500 transition-colors" />
+                        </a>
+                      )}
+                      {website && (
+                        <a
+                          href={website} target="_blank" rel="noreferrer"
+                          className="flex items-center justify-between rounded-xl border border-border bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/40 hover:border-violet-500/25 group"
+                        >
+                          <span className="inline-flex items-center gap-2 text-xs font-medium">
+                            <Globe className="h-4 w-4 text-violet-500" />Sitio personal
+                          </span>
+                          <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-violet-500 transition-colors" />
+                        </a>
+                      )}
+                    </div>
+                  </motion.div>
+                </ProtectedSection>
+              )}
+
+              {/* EthosHub badge */}
+              <motion.div variants={fadeUp} className="flex items-center justify-center gap-2 py-2">
+                <EthosLogoIcon size={14} animate={false} />
+                <span className="text-[10px] text-muted-foreground/50 font-medium">Portafolio creado en EthosHub</span>
+              </motion.div>
+            </div>
+          </div>
+        )}
+      </motion.div>
+    </div>
+  );
+}
+
+// ── Route component ────────────────────────────────────────────────────────────
 
 export default function PublicPortfolioPage() {
   const { slug } = useParams<{ slug: string }>();
   const { isAuthenticated } = useAuthStore();
+  const [portfolio, setPortfolio] = useState<PublicPortfolio | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
-  const profile = useMemo(() => {
-    if (!slug) {
-      return null;
-    }
-    return buildPublicProfile(slug);
+  useEffect(() => {
+    if (!slug) { setLoading(false); setNotFound(true); return; }
+    portfolioService.getPublicPortfolio(slug)
+      .then(setPortfolio)
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false));
   }, [slug]);
 
-  if (!profile) {
-    return (
-      <div className="min-h-screen bg-background pt-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8">
-          <div className="mb-5 flex items-center gap-2.5">
-            <EthosLogoIcon size={18} animate={false} />
-            <span className="text-[11px] font-semibold tracking-wide text-muted-foreground/70">EthosHub</span>
-            <span className="text-[11px] text-muted-foreground/35">·</span>
-            <span className="text-[11px] text-muted-foreground/50">Portafolio Profesional</span>
-            <div className="flex-1" />
-            <Link to="/login">
-              <Button size="sm" variant="outline" className="h-7 text-xs px-3">Entrar</Button>
-            </Link>
-          </div>
-          <PortfolioBentoView
-            data={PORTFOLIO_MOCK_DASHBOARD}
-            projects={PORTFOLIO_MOCK_PROJECTS}
-            isPublicView={true}
-            profileGithub="@alex-ramirez"
-          />
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <PublicPortfolioSkeleton />;
+  if (notFound || !portfolio) return <PortfolioNotFound slug={slug} />;
 
-  const isGuestPreview = !isAuthenticated;
-
-  return (
-    <div className="min-h-screen pt-20 bg-[linear-gradient(180deg,rgba(59,130,246,0.08),transparent_22%),linear-gradient(135deg,rgba(15,23,42,0.02),transparent_30%)]">
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-        <section className="overflow-hidden rounded-[2rem] border border-border bg-card shadow-sm">
-          <div className="h-36 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.35),transparent_34%),radial-gradient(circle_at_top_right,rgba(16,185,129,0.18),transparent_24%),linear-gradient(120deg,#eff6ff_0%,#ffffff_50%,#f8fafc_100%)] sm:h-40" />
-          <div className="px-5 pb-5 sm:px-8 sm:pb-8">
-            <div className="-mt-12 flex flex-col gap-5 sm:-mt-16 lg:flex-row lg:items-end lg:justify-between">
-              <div className="min-w-0 flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-5">
-                <img
-                  src={profile.avatar}
-                  alt={profile.name}
-                  className="h-24 w-24 rounded-3xl border-4 border-background object-cover shadow-lg sm:h-28 sm:w-28"
-                />
-                <div className="min-w-0 max-w-2xl">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-                      {profile.name}
-                    </h1>
-                    <Badge variant="outline" className="border-primary/30 bg-primary/5 text-primary">
-                      <BadgeCheck className="mr-1 h-3.5 w-3.5" />
-                      Profesional
-                    </Badge>
-                  </div>
-                  <p className="mt-2 max-w-xl text-base leading-7 text-foreground/90 sm:text-lg">
-                    {profile.headline}
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
-                    <span className="inline-flex items-center gap-2">
-                      <Building2 className="h-4 w-4" />
-                      {profile.company}
-                    </span>
-                    <span className="inline-flex items-center gap-2">
-                      <MapPin className="h-4 w-4" />
-                      {profile.location}
-                    </span>
-                    <span className="inline-flex items-center gap-2">
-                      <Mail className="h-4 w-4" />
-                      {isGuestPreview ? 'correo oculto para invitados' : profile.email}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3 lg:justify-end">
-                <Link to="/login">
-                  <Button>
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    {isGuestPreview ? 'Crear cuenta para contactar' : 'Contactar'}
-                  </Button>
-                </Link>
-                {profile.website && (
-                  <a href={profile.website} target="_blank" rel="noreferrer">
-                    <Button variant="outline">
-                      <Globe className="mr-2 h-4 w-4" />
-                      Sitio web
-                    </Button>
-                  </a>
-                )}
-              </div>
-            </div>
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <StatCard
-                label="Visualizaciones"
-                value={profile.stats.profileViews.toLocaleString()}
-                icon={Eye}
-              />
-              <StatCard
-                label="Proyectos publicos"
-                value={String(profile.stats.projectCount)}
-                icon={FolderKanban}
-              />
-              <StatCard
-                label="Recomendaciones"
-                value={String(profile.stats.recommendations)}
-                icon={Star}
-              />
-              <StatCard
-                label="Red profesional"
-                value={profile.stats.connections.toLocaleString()}
-                icon={Users}
-              />
-            </div>
-          </div>
-        </section>
-
-        {isGuestPreview && (
-          <div className="mt-5 rounded-[1.75rem] border border-primary/20 bg-primary/5 px-5 py-4 sm:px-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="max-w-2xl">
-                <p className="text-sm font-semibold text-foreground">Vista previa para invitados</p>
-                <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                  Puedes ver la estructura del perfil, pero la informacion detallada esta protegida.
-                  Crea una cuenta o inicia sesion para desbloquear el perfil completo y contactar a
-                  este profesional.
-                </p>
-              </div>
-              <Link to="/login" className="shrink-0">
-                <Button>Crear cuenta o iniciar sesion</Button>
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {isGuestPreview && (
-          <div className="mt-4 rounded-[1.5rem] border border-amber-200 bg-amber-50/80 px-5 py-4">
-            <p className="text-sm font-semibold text-amber-900">Modo invitado</p>
-            <p className="mt-1 text-sm leading-6 text-amber-800">
-              Estas viendo una version restringida del perfil. La informacion detallada aparece
-              difuminada para demostrar que un invitado no puede consultar experiencia, proyectos,
-              skills ni contacto completo hasta iniciar sesion o crear cuenta.
-            </p>
-          </div>
-        )}
-
-        <div className="mt-8 grid gap-6 xl:gap-8 lg:grid-cols-[1.35fr_0.65fr]">
-          <main className="space-y-6 xl:space-y-8">
-            <ProtectedPreview
-              isLocked={isGuestPreview}
-              title="Desbloquea el resumen completo"
-              description="Crea tu cuenta para ver el detalle profesional, logros y contexto completo de este perfil."
-            >
-              <Card className="rounded-[1.75rem] p-5 sm:p-7">
-                <SectionTitle title="Acerca de" icon={Sparkles} />
-                <p className="mt-4 text-[15px] leading-7 text-muted-foreground">{profile.about}</p>
-                <div className="mt-6 grid gap-3">
-                  {profile.highlights.map((item) => (
-                    <div
-                      key={item}
-                      className="rounded-2xl border border-border bg-background/70 px-4 py-3 text-sm text-foreground"
-                    >
-                      {item}
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </ProtectedPreview>
-
-            <ProtectedPreview
-              isLocked={isGuestPreview}
-              title="Experiencia reservada"
-              description="Inicia sesion para revisar roles, empresas y trayectoria profesional en detalle."
-            >
-              <Card className="rounded-[1.75rem] p-5 sm:p-7">
-                <SectionTitle title="Experiencia" icon={Briefcase} />
-                <div className="mt-6 space-y-5">
-                  {profile.experiences.map((item) => (
-                    <article
-                      key={item.id}
-                      className="rounded-2xl border border-border bg-background/70 p-4 sm:p-5"
-                    >
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
-                          <h3 className="text-lg font-semibold text-foreground">{item.title}</h3>
-                          <p className="text-sm font-medium text-primary">{item.company}</p>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          <p>{item.period}</p>
-                          <p>{item.location}</p>
-                        </div>
-                      </div>
-                      <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                        {item.description}
-                      </p>
-                    </article>
-                  ))}
-                </div>
-              </Card>
-            </ProtectedPreview>
-
-            <ProtectedPreview
-              isLocked={isGuestPreview}
-              title="Proyectos visibles al registrarte"
-              description="Crea una cuenta para entrar al detalle de proyectos, stack y resultados obtenidos."
-            >
-              <Card className="rounded-[1.75rem] p-5 sm:p-7">
-                <SectionTitle title="Proyectos destacados" icon={FolderKanban} />
-                <div className="mt-6 grid gap-5 md:grid-cols-2">
-                  {profile.projects.map((project) => (
-                    <article
-                      key={project.id}
-                      className="overflow-hidden rounded-[1.5rem] border border-border bg-background/75"
-                    >
-                      {project.image && (
-                        <img
-                          src={project.image}
-                          alt={project.title}
-                          className="h-44 w-full object-cover"
-                        />
-                      )}
-                      <div className="p-4 sm:p-5">
-                        <div className="flex items-center justify-between gap-3">
-                          <h3 className="text-lg font-semibold text-foreground">{project.title}</h3>
-                          {project.liveUrl && (
-                            <a href={project.liveUrl} target="_blank" rel="noreferrer">
-                              <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
-                            </a>
-                          )}
-                        </div>
-                        <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                          {project.description}
-                        </p>
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          {project.technologies.map((tech) => (
-                            <Badge key={tech} variant="outline">
-                              {tech}
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="mt-4 rounded-2xl bg-muted/60 p-3 text-sm">
-                          <p className="font-medium text-foreground">Rol: {project.role}</p>
-                          <p className="mt-1 text-muted-foreground">{project.result}</p>
-                        </div>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </Card>
-            </ProtectedPreview>
-          </main>
-
-          <aside className="space-y-6 xl:sticky xl:top-24 xl:self-start">
-            <ProtectedPreview
-              isLocked={isGuestPreview}
-              title="Skills protegidas"
-              description="Registrate para explorar habilidades, nivel y validaciones del perfil."
-            >
-              <Card className="rounded-[1.75rem] p-5 sm:p-6">
-                <SectionTitle title="Skills principales" icon={Sparkles} />
-                <div className="mt-5 space-y-4">
-                  {profile.skills.map((skill) => (
-                    <div
-                      key={skill.id}
-                      className="rounded-2xl border border-border bg-background/70 p-4"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium text-foreground">{skill.name}</p>
-                            {skill.featured && (
-                              <Badge variant="secondary" className="bg-primary/10 text-primary">
-                                Top
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                            {skill.category}
-                          </p>
-                        </div>
-                        <span className="text-sm font-medium text-muted-foreground">
-                          {skill.levelLabel}
-                        </span>
-                      </div>
-                      <div className="mt-3">
-                        <Progress value={skill.levelValue} size="sm" />
-                      </div>
-                      <p className="mt-2 text-xs text-muted-foreground">
-                        {skill.endorsements} validaciones visibles
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </ProtectedPreview>
-
-            <ProtectedPreview
-              isLocked={isGuestPreview}
-              title="Educacion privada"
-              description="Inicia sesion para consultar formacion, instituciones y recorrido academico."
-            >
-              <Card className="rounded-[1.75rem] p-5 sm:p-6">
-                <SectionTitle title="Educacion" icon={GraduationCap} />
-                <div className="mt-5 space-y-4">
-                  {profile.education.map((item) => (
-                    <div
-                      key={item.id}
-                      className="rounded-2xl border border-border bg-background/70 p-4"
-                    >
-                      <p className="font-medium text-foreground">{item.title}</p>
-                      <p className="mt-1 text-sm text-primary">{item.school}</p>
-                      <p className="mt-2 text-xs uppercase tracking-wide text-muted-foreground">
-                        {item.period}
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                        {item.description}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </ProtectedPreview>
-
-            <ProtectedPreview
-              isLocked={isGuestPreview}
-              title="Recomendaciones bloqueadas"
-              description="Crea tu cuenta para ver referencias completas y contexto profesional."
-            >
-              <Card className="rounded-[1.75rem] p-5 sm:p-6">
-                <SectionTitle title="Recomendaciones" icon={Users} />
-                <div className="mt-5 space-y-4">
-                  {profile.recommendations.map((item) => (
-                    <div
-                      key={item.id}
-                      className="rounded-2xl border border-border bg-background/70 p-4"
-                    >
-                      <p className="text-sm leading-6 text-foreground">&ldquo;{item.text}&rdquo;</p>
-                      <div className="mt-3">
-                        <p className="text-sm font-medium text-foreground">{item.author}</p>
-                        <p className="text-xs text-muted-foreground">{item.role}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </ProtectedPreview>
-
-            <ProtectedPreview
-              isLocked={isGuestPreview}
-              title="Contacto disponible al iniciar sesion"
-              description="Entra o crea tu cuenta para ver y usar los enlaces de contacto completos."
-            >
-              <Card className="rounded-[1.75rem] p-5 sm:p-6">
-                <SectionTitle title="Links" icon={Link2} />
-                <div className="mt-5 space-y-3">
-                  {profile.website && (
-                    <a
-                      href={profile.website}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center justify-between rounded-2xl border border-border bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/70"
-                    >
-                      <span className="inline-flex items-center gap-2">
-                        <Globe className="h-4 w-4 text-primary" />
-                        Sitio personal
-                      </span>
-                      <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
-                    </a>
-                  )}
-                  <a
-                    href={`mailto:${profile.email}`}
-                    className="flex items-center justify-between rounded-2xl border border-border bg-background/70 px-4 py-3 text-sm text-foreground transition-colors hover:bg-muted/70"
-                  >
-                    <span className="inline-flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-primary" />
-                      Correo profesional
-                    </span>
-                    <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
-                  </a>
-                </div>
-              </Card>
-            </ProtectedPreview>
-          </aside>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SectionTitle({
-  title,
-  icon: Icon,
-}: {
-  title: string;
-  icon: React.ElementType;
-}) {
-  return (
-    <div className="flex items-center gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-        <Icon className="h-4 w-4" />
-      </div>
-      <h2 className="text-xl font-semibold text-foreground">{title}</h2>
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-}: {
-  label: string;
-  value: string;
-  icon: React.ElementType;
-}) {
-  return (
-    <div className="rounded-2xl border border-border bg-background/80 px-4 py-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
-          <p className="mt-2 text-2xl font-semibold text-foreground">{value}</p>
-        </div>
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-          <Icon className="h-5 w-5" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ProtectedPreview({
-  isLocked,
-  title,
-  description,
-  children,
-}: {
-  isLocked: boolean;
-  title: string;
-  description: string;
-  children: ReactNode;
-}) {
-  if (!isLocked) {
-    return <>{children}</>;
-  }
-
-  return (
-    <div className="relative overflow-hidden rounded-[1.75rem]">
-      <div className="pointer-events-none select-none blur-[10px] saturate-[0.75] opacity-70 scale-[1.01]">
-        {children}
-      </div>
-      <div className="absolute inset-0 flex items-center justify-center bg-background/58 p-4">
-        <div className="w-full max-w-sm rounded-[1.5rem] border border-border bg-card/95 p-5 text-center shadow-xl backdrop-blur">
-          <p className="text-base font-semibold text-foreground">{title}</p>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
-          <Link to="/login" className="mt-4 inline-flex">
-            <Button>Crear cuenta para ver mas</Button>
-          </Link>
-          <p className="mt-3 text-xs text-muted-foreground">
-            Si ya tienes cuenta, tambien puedes iniciar sesion desde aqui.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+  return <PortfolioPublicView portfolio={portfolio} isGuest={!isAuthenticated} />;
 }

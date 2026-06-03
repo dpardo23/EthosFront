@@ -117,7 +117,7 @@ export interface ProjectMedia {
   id: string;
   projectId: string;
   url: string;
-  type: 'youtube' | 'vimeo' | 'figma' | 'slides' | 'pdf' | 'document';
+  type: 'youtube' | 'vimeo' | 'figma' | 'slides' | 'pdf' | 'document' | 'link';
   title: string;
 }
 

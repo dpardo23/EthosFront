@@ -135,6 +135,7 @@ export default function SkillsPage() {
   const [softSkillDesc,       setSoftSkillDesc]       = useState('');
   const [editingSoftSkill,    setEditingSoftSkill]    = useState<string | null>(null);
   const [softTitleError,      setSoftTitleError]      = useState(false);
+  const [softDescError,       setSoftDescError]       = useState(false);
   // Filter + delete
   const [filterCategory,   setFilterCategory]   = useState<string>('all');
   const [deleteConfirm,    setDeleteConfirm]    = useState<{ type: 'hard' | 'soft'; id: string } | null>(null);
@@ -151,7 +152,12 @@ export default function SkillsPage() {
   }, [profile, fetchHardSkills, fetchSoftSkills]);
 
   useEffect(() => {
-    const timer = setTimeout(() => searchTags(searchQuery), 300);
+    const timer = setTimeout(() => {
+      searchTags(searchQuery);
+      // Al borrar la búsqueda limpiamos la selección previa para evitar
+      // que el botón "Agregar" quede habilitado con un tag no visible
+      if (!searchQuery.trim()) setSelectedTag(null);
+    }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery, searchTags]);
 
@@ -250,15 +256,18 @@ export default function SkillsPage() {
     setSoftSkillDesc('');
     setEditingSoftSkill(null);
     setSoftTitleError(false);
+    setSoftDescError(false);
   };
 
   const handleSoftSkill = async () => {
-    if (!softSkillTitle.trim()) {
-      setSoftTitleError(true);
-      return;
-    }
+    const titleOk = softSkillTitle.trim().length >= 3;
+    const descOk  = softSkillDesc.trim().length >= 10;
+    if (!titleOk) { setSoftTitleError(true); }
+    if (!descOk)  { setSoftDescError(true); }
+    if (!titleOk || !descOk) return;
     if (!profile) return;
     setSoftTitleError(false);
+    setSoftDescError(false);
     if (editingSoftSkill) {
       await updateSoftSkill(editingSoftSkill, softSkillTitle, softSkillDesc);
       addToast({ type: 'success', title: 'Soft skill actualizada' });
@@ -276,9 +285,8 @@ export default function SkillsPage() {
     try {
       if (deleteConfirm.type === 'hard') await removeHardSkill(profile.id, deleteConfirm.id);
       else await removeSoftSkill(profile.id, deleteConfirm.id);
-      addToast({ type: 'success', title: 'Habilidad eliminada' });
     } catch {
-      addToast({ type: 'error', title: 'No se pudo eliminar la habilidad' });
+      // toast already shown by the store
     } finally {
       setDeleteConfirm(null);
     }
@@ -320,41 +328,61 @@ export default function SkillsPage() {
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 280, damping: 28 }}
-      className="relative min-h-full bg-background"
+      className="space-y-5"
     >
-      <div className="max-w-4xl mx-auto px-2 sm:px-4 py-6 space-y-5">
 
-        {/* ── Header ──────────────────────────────────────────────────── */}
+        {/* ── Header card ──────────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.04, type: 'spring', stiffness: 260, damping: 28 }}
-          className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between"
+          className="relative overflow-hidden rounded-3xl border border-border bg-card px-6 py-6 sm:px-8 sm:py-7"
         >
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-violet-500/10 border border-violet-500/20 shrink-0">
-              <Code2 className="h-5 w-5 text-violet-500 dark:text-violet-400" />
+          <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_80%_50%_at_0%_0%,_hsl(var(--primary)/0.10)_0%,_transparent_100%)]" />
+          <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_40%_60%_at_100%_100%,_hsl(var(--primary)/0.05)_0%,_transparent_100%)]" />
+          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-2.5 max-w-lg">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">
+                <Code2 className="h-3 w-3 text-violet-500 dark:text-violet-400" />
+                Stack técnico
+              </div>
+              <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                {t('skills.title', 'Habilidades')}
+              </h1>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Gestiona tu stack técnico y competencias profesionales.
+              </p>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-foreground">{t('skills.title', 'Habilidades')}</h1>
-              <p className="text-sm text-muted-foreground">Gestiona tu stack técnico y competencias</p>
+            <div className="flex flex-col gap-3 shrink-0 lg:items-end">
+              <div className="flex items-center gap-2">
+                {[
+                  { v: hardSkills.length,    l: 'Hard Skills' },
+                  { v: softSkills.length,    l: 'Soft Skills' },
+                  { v: `${topSkillsCount}/3`, l: 'Top Skills' },
+                ].map(s => (
+                  <div key={s.l} className="w-[78px] rounded-2xl border border-border bg-background/80 px-2.5 py-2 text-center">
+                    <p className="text-base font-bold text-foreground tabular-nums leading-none">{s.v}</p>
+                    <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mt-1 truncate">{s.l}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowSoftModal(true)}
+                  className="flex items-center gap-1.5 rounded-xl border border-border bg-card hover:bg-accent px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-all duration-200"
+                >
+                  <Plus className="h-4 w-4" />
+                  Soft Skill
+                </button>
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className="flex items-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 active:scale-95 px-3 py-2 text-sm font-semibold text-white transition-all duration-150"
+                >
+                  <Plus className="h-4 w-4" />
+                  Hard Skill
+                </button>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => setShowSoftModal(true)}
-              className="flex items-center gap-1.5 rounded-xl border border-border bg-card hover:bg-accent px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-all duration-200"
-            >
-              <Plus className="h-4 w-4" />
-              Soft Skill
-            </button>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 active:scale-95 px-3 py-2 text-sm font-semibold text-white transition-all duration-150"
-            >
-              <Plus className="h-4 w-4" />
-              Hard Skill
-            </button>
           </div>
         </motion.div>
 
@@ -663,8 +691,6 @@ export default function SkillsPage() {
           )}
         </motion.div>
 
-      </div>
-
       {/* ── Modals (portaled into #portal-root) ─────────────────────────── */}
 
       {/* Add / Edit Hard Skill */}
@@ -781,7 +807,7 @@ export default function SkillsPage() {
                   >
                     Actualizar
                   </button>
-                ) : newTagName ? (
+                ) : newTagName.trim() ? (
                   <button
                     onClick={handleCreateAndAdd}
                     disabled={!newTagName.trim()}
@@ -792,7 +818,7 @@ export default function SkillsPage() {
                 ) : (
                   <button
                     onClick={handleAddSkill}
-                    disabled={!selectedTag}
+                    disabled={!selectedTag || !searchQuery.trim()}
                     className="rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 px-4 py-2 text-sm font-semibold text-white transition-colors"
                   >
                     {t('common.add', 'Agregar')}
@@ -837,15 +863,18 @@ export default function SkillsPage() {
               </div>
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                  {t('skills.successCase', 'Caso de éxito')}
+                  {t('skills.successCase', 'Caso de éxito')} <span className="text-destructive">*</span>
                 </label>
                 <textarea
-                  className={cn(textareaCls, 'min-h-[90px]')}
+                  className={cn(textareaCls, 'min-h-[90px]', softDescError && 'border-destructive focus:border-destructive')}
                   value={softSkillDesc}
-                  onChange={e => setSoftSkillDesc(e.target.value)}
-                  placeholder="Describe un caso de éxito donde aplicaste esta habilidad..."
+                  onChange={e => { setSoftSkillDesc(e.target.value); if (e.target.value.trim().length >= 10) setSoftDescError(false); }}
+                  placeholder="Describe un caso de éxito donde aplicaste esta habilidad (mín. 10 caracteres)..."
                   maxLength={250}
                 />
+                {softDescError && (
+                  <p className="mt-1 text-xs text-destructive">La descripción es obligatoria (mínimo 10 caracteres)</p>
+                )}
                 <p className="mt-1 text-right text-[11px] text-muted-foreground">{softSkillDesc.length}/250</p>
               </div>
               <div className="flex justify-end gap-2 pt-1">
@@ -857,7 +886,8 @@ export default function SkillsPage() {
                 </button>
                 <button
                   onClick={handleSoftSkill}
-                  className="rounded-xl bg-violet-600 hover:bg-violet-500 px-4 py-2 text-sm font-semibold text-white transition-colors"
+                  disabled={softSkillTitle.trim().length < 3 || softSkillDesc.trim().length < 10}
+                  className="rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2 text-sm font-semibold text-white transition-colors"
                 >
                   {editingSoftSkill ? 'Actualizar' : t('common.add', 'Agregar')}
                 </button>

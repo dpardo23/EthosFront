@@ -36,5 +36,9 @@ export const educationService = {
 
   deleteRecord: async (profileId: string, id: string): Promise<void> => {
     await apiClient.delete(`${ROUTE}/${id}/profile/${profileId}`);
-  }
+  },
+
+  reorderRecords: async (profileId: string, orderedIds: string[]): Promise<void> => {
+    await apiClient.patch(`${ROUTE}/profile/${profileId}/reorder`, { orderedIds });
+  },
 };

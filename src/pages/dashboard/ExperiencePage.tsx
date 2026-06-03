@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { Button } from '@/shared/ui';
 import { useAuthStore } from '@/store/authStore';
 import { experienceService } from '@/shared/services/experienceService';
+import { fileService } from '@/shared/services/fileService';
 import type { WorkExperience } from '@/shared/types/experience';
 
 const MAX_DESC = 1000;
@@ -36,13 +37,7 @@ const EMPTY_FORM: FormData = {
 };
 
 
-const toBase64 = (file: File): Promise<string> =>
-  new Promise((res, rej) => {
-    const r = new FileReader();
-    r.readAsDataURL(file);
-    r.onload = () => res(r.result as string);
-    r.onerror = rej;
-  });
+
 
 const fmtDate = (d?: string) => {
   if (!d) return '';
@@ -347,6 +342,7 @@ export default function ExperiencePage() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
   const [form, setForm] = useState<FormData>(EMPTY_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -364,7 +360,18 @@ export default function ExperiencePage() {
     setIsLoading(true);
     try {
       const data = await experienceService.getExperiences(profile.id);
-      const list = Array.isArray(data) ? data : [];
+      let list = Array.isArray(data) ? data : [];
+      // Restore saved custom order from localStorage
+      const savedOrder = localStorage.getItem(`ethoshub_exp_order_${profile.id}`);
+      if (savedOrder) {
+        try {
+          const ids: string[] = JSON.parse(savedOrder);
+          const map = new Map(list.map(e => [e.workExperienceId, e]));
+          const sorted = ids.map(id => map.get(id)).filter(Boolean) as typeof list;
+          const remaining = list.filter(e => !ids.includes(e.workExperienceId ?? ''));
+          list = [...sorted, ...remaining];
+        } catch { /* ignore malformed storage */ }
+      }
       setExperiences(list);
       setOrdered([...list]);
     } catch (e) {
@@ -406,16 +413,47 @@ export default function ExperiencePage() {
     setIsFormOpen(true);
   };
 
-  const closeForm = () => { setIsFormOpen(false); setEditingExp(null); };
+  const closeForm = () => { setIsFormOpen(false); setEditingExp(null); }
+
+  const REORDER_KEY = profile?.id ? `ethoshub_exp_order_${profile.id}` : null;
+
+  const saveOrder = async () => {
+    if (!profile?.id || !REORDER_KEY) return;
+    setIsSavingOrder(true);
+    try {
+      // Persist custom order in localStorage
+      const ids = ordered.map(e => e.workExperienceId).filter(Boolean);
+      localStorage.setItem(REORDER_KEY, JSON.stringify(ids));
+      // Attempt backend call; falls back gracefully if endpoint not available
+      await experienceService.reorderExperiences?.(profile.id, ids as string[]);
+      setExperiences([...ordered]);
+      toast.success('Orden guardado');
+    } catch {
+      // Backend may not have the endpoint yet; order is still saved locally
+      setExperiences([...ordered]);
+      toast.success('Orden guardado localmente');
+    } finally {
+      setIsSavingOrder(false);
+      setIsReorderMode(false);
+    }
+  };;
+
+  const MAX_DATE = new Date().toISOString().split('T')[0]; // año actual como máximo
 
   const validate = () => {
     const e: Record<string, string> = {};
     if (!form.companyName.trim()) e.companyName = 'Obligatorio';
+    else if (form.companyName.trim().length < 3) e.companyName = 'Mínimo 3 caracteres';
     if (!form.jobTitle.trim()) e.jobTitle = 'Obligatorio';
+    else if (form.jobTitle.trim().length < 3) e.jobTitle = 'Mínimo 3 caracteres';
+    if (!form.location.trim()) e.location = 'Obligatorio';
     if (!form.startDate) e.startDate = 'Obligatorio';
+    else if (form.startDate > MAX_DATE) e.startDate = 'No puede ser una fecha futura';
     if (!form.description.trim()) e.description = 'Obligatorio';
+    else if (form.description.trim().length < 20) e.description = 'Mínimo 20 caracteres';
     if (!form.isCurrent) {
       if (!form.endDate) e.endDate = 'Obligatorio';
+      else if (form.endDate > MAX_DATE) e.endDate = 'No puede ser una fecha futura';
       else if (form.startDate && new Date(form.endDate) < new Date(form.startDate))
         e.endDate = 'Anterior al inicio';
     }
@@ -470,9 +508,9 @@ export default function ExperiencePage() {
     if (!ok.includes(file.type)) { setErrors(p => ({ ...p, logo: 'JPG, PNG, SVG o WEBP' })); return; }
     setUploadingLogo(true);
     try {
-      const b64 = await toBase64(file);
-      setForm(p => ({ ...p, logoUrl: b64 }));
-    } catch (e) { console.error(e); } finally { setUploadingLogo(false); }
+      const url = await fileService.uploadFile(file);
+      setForm(p => ({ ...p, logoUrl: url }));
+    } catch { toast.error('Error al subir el logo'); } finally { setUploadingLogo(false); }
   };
 
   const mkBannerHandler = async (file: File) => {
@@ -480,9 +518,9 @@ export default function ExperiencePage() {
     if (!ok.includes(file.type)) { setErrors(p => ({ ...p, banner: 'JPG, PNG o WEBP' })); return; }
     setUploadingBanner(true);
     try {
-      const b64 = await toBase64(file);
-      setForm(p => ({ ...p, companyImageUrl: b64 }));
-    } catch (e) { console.error(e); } finally { setUploadingBanner(false); }
+      const url = await fileService.uploadFile(file);
+      setForm(p => ({ ...p, companyImageUrl: url }));
+    } catch { toast.error('Error al subir el banner'); } finally { setUploadingBanner(false); }
   };
 
   // Stats
@@ -569,7 +607,7 @@ export default function ExperiencePage() {
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                       <Calendar className="h-3 w-3" /> Inicio *
                     </label>
-                    <input type="date" value={form.startDate}
+                    <input type="date" value={form.startDate} max={MAX_DATE}
                       onChange={e => setForm(p => ({ ...p, startDate: e.target.value }))}
                       onClick={e => (e.currentTarget as any).showPicker?.()}
                       className={`${inputCls(errors.startDate)} cursor-pointer`}
@@ -578,9 +616,9 @@ export default function ExperiencePage() {
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                      <Calendar className="h-3 w-3" /> Fin
+                      <Calendar className="h-3 w-3" /> Fin {!form.isCurrent && '*'}
                     </label>
-                    <input type="date" value={form.endDate} min={form.startDate}
+                    <input type="date" value={form.endDate} min={form.startDate} max={MAX_DATE}
                       disabled={form.isCurrent}
                       onChange={e => setForm(p => ({ ...p, endDate: e.target.value }))}
                       onClick={e => (e.currentTarget as any).showPicker?.()}
@@ -594,12 +632,13 @@ export default function ExperiencePage() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                      <MapPin className="h-3 w-3" /> Ubicación
+                      <MapPin className="h-3 w-3" /> Ubicación *
                     </label>
                     <input type="text" value={form.location}
                       onChange={e => setForm(p => ({ ...p, location: e.target.value }))}
-                      className={inputCls()}
+                      className={inputCls(errors.location)}
                     />
+                    {errors.location && <p className="text-xs text-destructive">{errors.location}</p>}
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
@@ -971,12 +1010,22 @@ export default function ExperiencePage() {
           </h2>
           <div className="flex gap-2">
             {experiences.length > 1 && (
-              <Button variant="ghost" size="sm"
-                onClick={() => { setIsReorderMode(r => !r); if (!isReorderMode) setOrdered([...experiences]); }}
-                className={`gap-1.5 text-xs ${isReorderMode ? 'bg-primary/10 text-primary border border-primary/20' : 'text-muted-foreground'}`}>
-                <ArrowUpDown className="h-3.5 w-3.5" />
-                {isReorderMode ? 'Guardar orden' : 'Reordenar'}
-              </Button>
+              isReorderMode ? (
+                <Button variant="ghost" size="sm"
+                  onClick={saveOrder}
+                  disabled={isSavingOrder}
+                  className="gap-1.5 text-xs bg-primary/10 text-primary border border-primary/20">
+                  {isSavingOrder ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowUpDown className="h-3.5 w-3.5" />}
+                  Guardar orden
+                </Button>
+              ) : (
+                <Button variant="ghost" size="sm"
+                  onClick={() => { setIsReorderMode(true); setOrdered([...experiences]); }}
+                  className="gap-1.5 text-xs text-muted-foreground">
+                  <ArrowUpDown className="h-3.5 w-3.5" />
+                  Reordenar
+                </Button>
+              )
             )}
             <Button variant="primary" size="sm" onClick={openAdd}
               className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 text-xs">

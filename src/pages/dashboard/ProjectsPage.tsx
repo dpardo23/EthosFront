@@ -407,23 +407,21 @@ function ProjectCard({
           {project.description}
         </p>
 
-        {tech.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {tech.slice(0, 4).map((t) => (
-              <span
-                key={t}
-                className="rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-foreground/70"
-              >
-                {t}
-              </span>
-            ))}
-            {tech.length > 4 && (
-              <span className="rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] text-muted-foreground">
-                +{tech.length - 4}
-              </span>
-            )}
-          </div>
-        )}
+        <div className="mt-3 h-[26px] flex gap-1.5 overflow-hidden">
+          {tech.slice(0, 4).map((t) => (
+            <span
+              key={t}
+              className="shrink-0 max-w-[90px] truncate rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-foreground/70"
+            >
+              {t}
+            </span>
+          ))}
+          {tech.length > 4 && (
+            <span className="shrink-0 rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] text-muted-foreground">
+              +{tech.length - 4}
+            </span>
+          )}
+        </div>
 
         <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
           <span className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
@@ -818,11 +816,14 @@ function ProjectDetailModal({
                           />
                         </div>
                       )}
-                      {(m.type === 'figma' || m.type === 'slides' || m.type === 'document') && (
+                      {(m.type === 'figma' || m.type === 'slides' || m.type === 'document' || m.type === 'link') && (
                         <div className="flex items-center justify-between p-3.5">
                           <div className="flex items-center gap-2 min-w-0">
                             <span className="rounded border border-border bg-muted/50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground shrink-0">
-                              {m.type}
+                              {m.type === 'slides' ? 'Google Slides'
+                                : m.type === 'figma' ? 'Figma'
+                                : m.type === 'document' ? 'Documento'
+                                : 'Enlace'}
                             </span>
                             <span className="truncate text-[13px] text-foreground">{m.title}</span>
                           </div>
@@ -860,7 +861,7 @@ function ProjectDetailModal({
                   project.files.map((f) => (
                     <a
                       key={f.id}
-                      href={f.url}
+                      href={getFullUrl(f.url)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-3 rounded-xl border border-border bg-muted/20 p-3.5 hover:bg-muted/40 hover:border-violet-500/20 transition-all group"
