@@ -3,6 +3,9 @@ import { Moon, Sun } from 'lucide-react';
 import { useUiStore } from '@/store/uiStore';
 import { cn } from '@/shared/lib/utils';
 
+/**
+ * Toggle button that switches between light and dark themes and persists the preference.
+ */
 interface ThemeToggleProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg';

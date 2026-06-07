@@ -1,11 +1,12 @@
 import axios, { type AxiosError } from 'axios';
 
+/**
+ * Axios instance pre-configured with the backend base URL and a request interceptor that attaches the Supabase JWT bearer token to every request.
+ */
 const ACCESS_TOKEN_KEY  = 'ethoshub_access_token';
 const TOKEN_TYPE_KEY    = 'ethoshub_token_type';
 const EXPIRES_AT_KEY    = 'ethoshub_access_expires_at';
 
-// Tokens live in sessionStorage (tab-isolated). Fall back to localStorage
-// for backwards-compat with any tab that stored them there previously.
 function readToken(): string | null {
   return sessionStorage.getItem(ACCESS_TOKEN_KEY) ?? localStorage.getItem(ACCESS_TOKEN_KEY);
 }
@@ -16,8 +17,6 @@ function readExpiresAt(): string | null {
   return sessionStorage.getItem(EXPIRES_AT_KEY) ?? localStorage.getItem(EXPIRES_AT_KEY);
 }
 
-// Read the `exp` claim directly from the JWT payload (base64url-encoded JSON).
-// This is the ground truth — independent of the timestamp we store in localStorage.
 function isJwtExpired(token: string): boolean {
   try {
     const payload = token.split('.')[1];
@@ -38,12 +37,11 @@ const api = axios.create({
   },
 });
 
-// ── Request interceptor: inject JWT ──────────────────────────────────────────
 api.interceptors.request.use(
   (config) => {
-    // Only inject if the caller did not already set an explicit Authorization header.
-    // This prevents overwriting the Supabase OAuth access token with a stale
-    // localStorage token during the OAuth callback flow.
+    
+    
+    
     if (!config.headers.Authorization) {
       const token     = readToken();
       const tokenType = readTokenType();
@@ -56,7 +54,6 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// ── Response interceptor: handle auth errors + timeouts ──────────────────────
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
@@ -66,12 +63,12 @@ api.interceptors.response.use(
       const token     = readToken();
       const expiresAt = readExpiresAt();
 
-      // isExpired is true when:
-      // (a) no token at all, OR
-      // (b) localStorage timestamp says it's expired, OR
-      // (c) the JWT `exp` claim itself is past (catches the case where the
-      //     frontend stored a longer TTL than the real token lifetime, e.g.
-      //     hardcoded 86400 vs actual Supabase 3600)
+      
+      
+      
+      
+      
+      
       const isExpiredByStore = !token || (!!expiresAt && Date.now() > Number(expiresAt) * 1000);
       const isExpiredByJwt   = token ? isJwtExpired(token) : true;
 

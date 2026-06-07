@@ -1,6 +1,9 @@
 import { apiClient } from './apiClient';
 import { WorkExperience } from '../types/experience';
 
+/**
+ * API service layer for work experience CRUD.
+ */
 const ROUTE = '/v1/work-experiences';
 
 const toExperienceArray = (payload: unknown): WorkExperience[] => {

@@ -9,6 +9,9 @@ import type {
 } from '@/shared/types';
 import { connectionsService } from '@/shared/services';
 
+/**
+ * Zustand store for external connections CRUD (GitHub, LinkedIn, etc.) shown on the public portfolio.
+ */
 interface ConnectionsStore {
   connections: OAuthConnection[];
   githubRepos: GithubRepository[];

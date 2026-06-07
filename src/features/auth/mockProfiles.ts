@@ -1,5 +1,8 @@
 import type { Profile } from '@/shared/types';
 
+/**
+ * Mock user profile fixtures used by authStore and explore page during local development.
+ */
 const SEED = 'ethoshub-demo';
 
 export const MOCK_PROFILES: Profile[] = [

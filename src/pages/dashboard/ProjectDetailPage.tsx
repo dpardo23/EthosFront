@@ -1,7 +1,4 @@
-/**
- * ProjectDetailPage.tsx — Premium cinematic rewrite
- * Full technical case-study presentation experience
- */
+
 
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
@@ -31,7 +28,9 @@ import { Skeleton } from '@/shared/ui';
 import type { ProjectFile, ProjectMedia } from '@/shared/types';
 import { formatDate, cn, getYoutubeEmbedUrl, getVimeoEmbedUrl } from '@/shared/lib/utils';
 
-/** GitHub mark SVG */
+/**
+ * Detail view for a single portfolio project: full description, media gallery, and edit/delete actions.
+ */
 function GithubMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
@@ -72,8 +71,6 @@ async function fetchFileSize(url: string): Promise<number> {
   }
 }
 
-// ─── Section label ────────────────────────────────────────────────────────────
-
 function SectionLabel({
   icon: Icon,
   children,
@@ -92,8 +89,6 @@ function SectionLabel({
     </div>
   );
 }
-
-// ─── InfoTile ─────────────────────────────────────────────────────────────────
 
 function InfoTile({
   icon: Icon,
@@ -114,8 +109,6 @@ function InfoTile({
     </div>
   );
 }
-
-// ─── Document Viewer ──────────────────────────────────────────────────────────
 
 const VIEWABLE_EXTS = new Set(['pdf', 'txt', 'md', 'markdown', 'csv', 'log', 'json', 'xml', 'yaml', 'yml', 'html', 'htm']);
 const CODE_EXTS     = new Set(['py', 'js', 'ts', 'tsx', 'jsx', 'java', 'cs', 'go', 'rs', 'cpp', 'c', 'h', 'rb', 'php', 'swift', 'kt', 'tex', 'r', 'sh']);
@@ -140,7 +133,7 @@ function DocumentViewer({ file }: { file: ProjectFile }) {
 
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-muted/10">
-      {/* Header row */}
+      {}
       <div className="flex items-center gap-3 p-3">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/50">
           <FileText className="h-3.5 w-3.5 text-violet-500 dark:text-violet-400" />
@@ -176,7 +169,7 @@ function DocumentViewer({ file }: { file: ProjectFile }) {
         </div>
       </div>
 
-      {/* Viewer panel */}
+      {}
       {canView && open && (
         <div className="border-t border-border bg-background">
           {ext === 'pdf' ? (
@@ -196,7 +189,7 @@ function DocumentViewer({ file }: { file: ProjectFile }) {
         </div>
       )}
 
-      {/* Download-only message for code / binary files */}
+      {}
       {!canView && (isCode || ext) && (
         <div className="border-t border-border bg-muted/20 px-4 py-2.5 flex items-center gap-2">
           <Download className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -212,8 +205,6 @@ function DocumentViewer({ file }: { file: ProjectFile }) {
     </div>
   );
 }
-
-// ─── Main component ───────────────────────────────────────────────────────────
 
 export default function ProjectDetailPage() {
   const { projectId } = useParams();
@@ -266,7 +257,7 @@ export default function ProjectDetailPage() {
     return url;
   };
 
-  // ── Loading state ──────────────────────────────────────────────────────────
+  
 
   if (loading) {
     return (
@@ -284,7 +275,7 @@ export default function ProjectDetailPage() {
     );
   }
 
-  // ── Not found ──────────────────────────────────────────────────────────────
+  
 
   if (!currentProject) {
     return (
@@ -309,11 +300,11 @@ export default function ProjectDetailPage() {
   const repoUrl = (currentProject as typeof currentProject & { repositoryUrl?: string })
     .repositoryUrl;
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  
 
   return (
     <div className="space-y-6 pb-8">
-      {/* ── Breadcrumb nav ─────────────────────────────────────────────────── */}
+      {}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Link
           to="/dashboard/projects"
@@ -334,9 +325,9 @@ export default function ProjectDetailPage() {
         transition={{ type: 'spring', stiffness: 280, damping: 28 }}
         className="space-y-6"
       >
-        {/* ── Hero card ───────────────────────────────────────────────────── */}
+        {}
         <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-          {/* Cover */}
+          {}
           {currentProject.thumbnail ? (
             <div className="aspect-[21/7] overflow-hidden bg-muted">
               <img
@@ -359,11 +350,11 @@ export default function ProjectDetailPage() {
             </div>
           )}
 
-          {/* Title area */}
+          {}
           <div className="p-6 sm:p-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0 flex-1">
-                {/* Badges row */}
+                {}
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                   {currentProject.isFeatured && (
                     <span className="flex items-center gap-1 rounded-full border border-yellow-400/20 bg-yellow-400/10 px-2.5 py-0.5 text-[11px] font-semibold text-yellow-600 dark:text-yellow-400">
@@ -409,7 +400,7 @@ export default function ProjectDetailPage() {
                 )}
               </div>
 
-              {/* Quick actions */}
+              {}
               <div className="flex flex-wrap gap-2 sm:shrink-0">
                 {repoUrl && (
                   <a
@@ -428,7 +419,7 @@ export default function ProjectDetailPage() {
               {currentProject.description}
             </p>
 
-            {/* Timestamps */}
+            {}
             <div className="mt-5 flex flex-wrap gap-4">
               <span className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
                 <Calendar className="h-3.5 w-3.5" />
@@ -442,11 +433,11 @@ export default function ProjectDetailPage() {
           </div>
         </div>
 
-        {/* ── Content grid ────────────────────────────────────────────────── */}
+        {}
         <div className="grid gap-6 lg:grid-cols-3">
-          {/* Main column */}
+          {}
           <div className="space-y-6 lg:col-span-2">
-            {/* Tech info */}
+            {}
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
               <SectionLabel icon={Tag}>Información técnica</SectionLabel>
 
@@ -473,7 +464,7 @@ export default function ProjectDetailPage() {
                 )}
               </div>
 
-              {/* Technologies */}
+              {}
               {currentProject.technicalInfo.technologies.length > 0 && (
                 <div className="mt-4">
                   <p className="mb-2.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
@@ -492,7 +483,7 @@ export default function ProjectDetailPage() {
                 </div>
               )}
 
-              {/* Repository link */}
+              {}
               {repoUrl && (
                 <div className="mt-4">
                   <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
@@ -514,7 +505,7 @@ export default function ProjectDetailPage() {
               )}
             </div>
 
-            {/* Results */}
+            {}
             {currentProject.technicalInfo.results && (
               <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                 <SectionLabel icon={BarChart3}>Resultados e impacto</SectionLabel>
@@ -526,7 +517,7 @@ export default function ProjectDetailPage() {
               </div>
             )}
 
-            {/* Media */}
+            {}
             {mediaItems.length > 0 && (
               <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                 <SectionLabel icon={Play}>Media y demos</SectionLabel>
@@ -593,9 +584,9 @@ export default function ProjectDetailPage() {
             )}
           </div>
 
-          {/* Sidebar column */}
+          {}
           <div className="space-y-5">
-            {/* Project meta */}
+            {}
             <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
               <SectionLabel icon={Layers}>Detalles del proyecto</SectionLabel>
               <dl className="space-y-3">
@@ -659,7 +650,7 @@ export default function ProjectDetailPage() {
               </dl>
             </div>
 
-            {/* Files */}
+            {}
             {fileItems.length > 0 && (
               <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
                 <SectionLabel icon={FileText}>Documentos</SectionLabel>
@@ -671,7 +662,7 @@ export default function ProjectDetailPage() {
               </div>
             )}
 
-            {/* Back to list */}
+            {}
             <Link
               to="/dashboard/projects"
               className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-muted/30 py-2.5 text-[13px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"

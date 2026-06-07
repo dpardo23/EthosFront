@@ -4,6 +4,9 @@ import { Badge, Button } from '@/shared/ui';
 import { useAuthStore } from '@/store/authStore';
 import { mockProfiles } from '@/shared/mocks/data';
 
+/**
+ * Public explore page listing published professional portfolios for unauthenticated visitors.
+ */
 const featuredProfiles = mockProfiles
   .filter((profile) => profile.role === 'professional')
   .slice(0, 3)

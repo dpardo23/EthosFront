@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import type { Notification } from '@/shared/types';
 import { notificationsService } from '@/shared/services';
 
+/**
+ * Zustand store for in-app notifications list and unread count.
+ */
 interface NotificationsStore {
   notifications: Notification[];
   unreadCount: number;

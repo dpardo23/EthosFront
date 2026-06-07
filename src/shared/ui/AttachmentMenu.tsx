@@ -4,10 +4,9 @@ import { Mic, Square, Send, X, Camera, Video, RotateCcw } from 'lucide-react';
 import { validateAttachment, ALLOWED_MIME_TYPES, type AttachmentCategory } from '@/shared/lib/chatAttachments';
 import { toast } from 'sonner';
 
-/* ── MediaDevices availability ──────────────────────────────────────────────
-   navigator.mediaDevices only exists in secure contexts (HTTPS or localhost).
-   Accessing it via an IP address over HTTP returns undefined and crashes.
-────────────────────────────────────────────────────────────────────────────── */
+/**
+ * Popover menu for selecting attachment types (image, file, link) in the chat composer.
+ */
 function getMediaDevices(): MediaDevices | null {
   return typeof navigator !== 'undefined' && navigator.mediaDevices
     ? navigator.mediaDevices
@@ -18,7 +17,6 @@ const INSECURE_MSG =
   'La cámara y el micrófono requieren una conexión segura (HTTPS). ' +
   'Accede desde localhost o configura HTTPS para usar esta función.';
 
-/* ── Audio recorder modal ─────────────────────────────────────────────────── */
 export function AudioRecorderModal({
   onSend,
   onCancel,
@@ -76,7 +74,7 @@ export function AudioRecorderModal({
     }
   }, []);
 
-  // Start on mount
+  
   useEffect(() => {
     startRecording();
     return () => { stopStream(); mediaRef.current?.stop(); };
@@ -94,7 +92,7 @@ export function AudioRecorderModal({
 
   const handleCancel = () => {
     stopStream();
-    try { mediaRef.current?.stop(); } catch { /* already stopped */ }
+    try { mediaRef.current?.stop(); } catch {  }
     onCancel();
   };
 
@@ -191,7 +189,6 @@ export function AudioRecorderModal({
   );
 }
 
-/* ── Camera modal ─────────────────────────────────────────────────────────── */
 export function CameraModal({
   onSend,
   onCancel,
@@ -357,16 +354,10 @@ export function CameraModal({
   );
 }
 
-/* ── Attachment file picker (no submenu) ─────────────────────────────────────
-   The page renders this component and passes a ref callback so the Paperclip
-   button can directly trigger the file input on user gesture, bypassing the
-   popup blocker that prevents .click() inside useEffect.
-────────────────────────────────────────────────────────────────────────────── */
-
 const ACCEPT = Object.keys(ALLOWED_MIME_TYPES).join(',');
 
 interface Props {
-  /** Expose a trigger function to the parent so the Paperclip button calls it directly */
+  
   triggerRef: React.MutableRefObject<(() => void) | null>;
   onFile: (file: File, category: AttachmentCategory) => void;
 }
@@ -403,7 +394,6 @@ export function AttachmentFilePicker({ triggerRef, onFile }: Props) {
   );
 }
 
-/* ── Legacy AttachmentMenu kept for compat (unused submenu logic stripped) ── */
 interface LegacyProps {
   open: boolean;
   onClose: () => void;
@@ -422,7 +412,7 @@ export function AttachmentMenu({ open: _open, onClose: _onClose, onFile, onLocat
     onFile(file, result.category!);
   };
 
-  // Called directly from the Paperclip button onClick in the page
+  
   useEffect(() => {
     if (_open) {
       _onClose();

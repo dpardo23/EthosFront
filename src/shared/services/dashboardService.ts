@@ -1,5 +1,8 @@
-// src/shared/services/dashboardService.ts
 
+
+/**
+ * API service layer for dashboard data: profile stats, analytics, and feed content.
+ */
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 function getAuthHeaders(): Record<string, string> {
@@ -10,8 +13,6 @@ function getAuthHeaders(): Record<string, string> {
   } catch {}
   return headers;
 }
-
-// ── Tipos que devuelve fn_get_professional_dashboard_json ──────────────────
 
 export interface DashboardBasicInfo {
   first_name:         string;
@@ -58,8 +59,6 @@ export interface ProfessionalDashboardData {
   experience:     DashboardExperience[];
   education:      DashboardEducation[];
 }
-
-// ── Service ────────────────────────────────────────────────────────────────
 
 export const dashboardService = {
   async getProfessionalDashboard(profileId: string): Promise<ProfessionalDashboardData> {

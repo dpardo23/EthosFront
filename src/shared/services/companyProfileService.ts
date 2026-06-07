@@ -1,5 +1,8 @@
 import type { CompanyProfile } from '@/shared/types';
 
+/**
+ * API service layer for recruiter company profile read and update operations.
+ */
 const API_BASE_URL = ((import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_API_BASE_URL || '').replace(/\/$/, '');
 
 type ApiEnvelope<T> = {
@@ -39,9 +42,7 @@ async function requestJson<T>(path: string, init: RequestInit): Promise<T> {
 }
 
 export const companyProfileService = {
-  /**
-   * Guarda o actualiza el perfil de la empresa del reclutador.
-   */
+  
   async saveCompanyProfile(profileId: string, companyData: CompanyProfile): Promise<CompanyProfile> {
     const response = await requestJson<{
       profileId: string;
@@ -82,9 +83,7 @@ export const companyProfileService = {
     };
   },
 
-  /**
-   * Obtiene el perfil de la empresa del reclutador.
-   */
+  
   async getCompanyProfile(profileId: string): Promise<CompanyProfile> {
     const response = await requestJson<{
       profileId: string;

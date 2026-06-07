@@ -20,12 +20,15 @@ import {
 } from '@/components/ui/input-otp';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
 
+/**
+ * Settings card with OTP-gated actions for changing password, changing email, and deleting the account.
+ */
 type SecuritySection = 'password' | 'email' | null;
 
 export function AccountSecurityCard() {
   const [expandedSection, setExpandedSection] = useState<SecuritySection>(null);
   
-  // Password change state
+  
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -37,7 +40,7 @@ export function AccountSecurityCard() {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   
-  // Email change state
+  
   const [newEmail, setNewEmail] = useState('');
   const [emailOtp, setEmailOtp] = useState('');
   const [emailOtpSent, setEmailOtpSent] = useState(false);
@@ -74,7 +77,7 @@ export function AccountSecurityCard() {
 
   const handleSendPasswordOtp = async () => {
     setPasswordLoading(true);
-    // Simulate API call
+    
     await new Promise((resolve) => setTimeout(resolve, 1500));
     setPasswordOtpSent(true);
     setPasswordLoading(false);
@@ -85,12 +88,12 @@ export function AccountSecurityCard() {
     if (passwordOtp.length !== 6) return;
     
     setPasswordLoading(true);
-    // Simulate API call
+    
     await new Promise((resolve) => setTimeout(resolve, 1500));
     setPasswordLoading(false);
     setPasswordSuccess(true);
     
-    // Reset and close after success
+    
     setTimeout(() => {
       setExpandedSection(null);
       resetPasswordForm();
@@ -101,7 +104,7 @@ export function AccountSecurityCard() {
     if (!newEmail) return;
     
     setEmailLoading(true);
-    // Simulate API call
+    
     await new Promise((resolve) => setTimeout(resolve, 1500));
     setEmailOtpSent(true);
     setEmailLoading(false);
@@ -111,12 +114,12 @@ export function AccountSecurityCard() {
     if (emailOtp.length !== 6) return;
     
     setEmailLoading(true);
-    // Simulate API call
+    
     await new Promise((resolve) => setTimeout(resolve, 1500));
     setEmailLoading(false);
     setEmailSuccess(true);
     
-    // Reset and close after success
+    
     setTimeout(() => {
       setExpandedSection(null);
       resetEmailForm();
@@ -127,7 +130,7 @@ export function AccountSecurityCard() {
 
   return (
     <Card className="w-full border-gray-200 bg-white p-0 sm:p-0 dark:border-white/10 dark:bg-zinc-950">
-      {/* Header */}
+      {}
       <div className="border-b border-gray-200 p-4 sm:p-6 dark:border-white/10">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600 sm:h-11 sm:w-11 sm:rounded-2xl dark:bg-red-500/10 dark:text-red-400">
@@ -142,7 +145,7 @@ export function AccountSecurityCard() {
         </div>
       </div>
 
-      {/* Change Password Section */}
+      {}
       <div className="border-b border-gray-200 dark:border-white/10">
         <button
           type="button"
@@ -195,7 +198,7 @@ export function AccountSecurityCard() {
                   </motion.div>
                 ) : !passwordOtpSent ? (
                   <>
-                    {/* Step 1: Request OTP */}
+                    {}
                     <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-black/50">
                       <div className="flex items-start gap-3">
                         <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-violet-600 dark:text-violet-400" />
@@ -230,9 +233,9 @@ export function AccountSecurityCard() {
                   </>
                 ) : (
                   <>
-                    {/* Step 2: Enter OTP and new password */}
+                    {}
                     <div className="space-y-4">
-                      {/* OTP Input */}
+                      {}
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-black dark:text-white">
                           Codigo de verificacion
@@ -263,7 +266,7 @@ export function AccountSecurityCard() {
                         </div>
                       </div>
 
-                      {/* Current Password */}
+                      {}
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-black dark:text-white">
                           Contrasena Actual
@@ -290,7 +293,7 @@ export function AccountSecurityCard() {
                         </div>
                       </div>
 
-                      {/* New Password */}
+                      {}
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-black dark:text-white">
                           Nueva Contrasena
@@ -320,7 +323,7 @@ export function AccountSecurityCard() {
                         )}
                       </div>
 
-                      {/* Confirm Password */}
+                      {}
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-black dark:text-white">
                           Confirmar Nueva Contrasena
@@ -390,7 +393,7 @@ export function AccountSecurityCard() {
         </AnimatePresence>
       </div>
 
-      {/* Change Email Section */}
+      {}
       <div>
         <button
           type="button"
@@ -443,7 +446,7 @@ export function AccountSecurityCard() {
                   </motion.div>
                 ) : !emailOtpSent ? (
                   <>
-                    {/* Step 1: Enter new email */}
+                    {}
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-black dark:text-white">
                         Nuevo Correo Electronico
@@ -486,7 +489,7 @@ export function AccountSecurityCard() {
                   </>
                 ) : (
                   <>
-                    {/* Step 2: Verify with OTP */}
+                    {}
                     <div className="space-y-4">
                       <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/20 dark:bg-emerald-500/5">
                         <p className="text-sm text-emerald-800 dark:text-emerald-300">

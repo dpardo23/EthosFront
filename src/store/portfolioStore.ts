@@ -6,6 +6,9 @@ import {
   type UpdateSettingsRequest,
 } from '@/shared/services/portfolioService';
 
+/**
+ * Zustand store for portfolio settings and content item selection; drives the portfolio editor page.
+ */
 interface PortfolioState {
   settings: PortfolioSettings | null;
   availableItems: AvailableItems | null;
@@ -50,9 +53,9 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 
   updateSettings: async (req) => {
     const prev = get().settings;
-    // Optimistic update solo para campos no-slug (el slug se confirma desde el servidor)
+    
     const optimistic = req.slug !== undefined
-      ? prev  // para slug, esperar respuesta del servidor
+      ? prev  
       : prev ? { ...prev, ...req } : prev;
     set({ saving: true, settings: optimistic, error: null });
     try {
@@ -71,7 +74,7 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
   },
 
   fetchAvailableItems: async () => {
-    // No resetear availableItems a null para evitar parpadeo en refrescos
+    
     set({ loadingItems: true, error: null });
     try {
       const availableItems = await portfolioService.getAvailableItems();
@@ -99,13 +102,13 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
     const items = availableItems[typeKey] as Array<{ id: string; isSelected: boolean; displayOrder: number }>;
     const wasSelected = items.find(i => i.id === itemId)?.isSelected ?? false;
 
-    // Optimistic update — marcar inmediatamente sin esperar al servidor
+    
     const updatedItems = items.map(i =>
       i.id === itemId ? { ...i, isSelected: !wasSelected } : i
     );
     const newAvailable = { ...availableItems, [typeKey]: updatedItems };
 
-    // Actualizar el contador en settings también de forma optimista
+    
     const { settings } = get();
     let newSettings = settings;
     if (settings) {
@@ -119,7 +122,7 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 
     set({ availableItems: newAvailable, settings: newSettings });
 
-    // All currently selected ids in order
+    
     const selectedIds = updatedItems
       .filter(i => i.isSelected)
       .sort((a, b) => a.displayOrder - b.displayOrder)
@@ -128,7 +131,7 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
     try {
       await portfolioService.updateItems({ itemType, itemIds: selectedIds });
     } catch {
-      // Revertir en caso de error
+      
       set({ availableItems, settings, error: 'No se pudo actualizar la selección' });
     }
   },

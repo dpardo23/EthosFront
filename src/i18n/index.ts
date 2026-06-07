@@ -1,10 +1,13 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
+/**
+ * i18next configuration: loads translation namespaces for Spanish and English and sets the default locale.
+ */
 const resources = {
   es: {
     translation: {
-      // Navigation
+      
       'nav.dashboard': 'Dashboard',
       'nav.skills': 'Habilidades',
       'nav.projects': 'Proyectos',
@@ -16,7 +19,7 @@ const resources = {
       'nav.admin': 'Administración',
       'nav.logout': 'Cerrar sesión',
       
-      // Auth
+      
       'auth.login': 'Iniciar sesión',
       'auth.logout': 'Cerrar sesión',
       'auth.email': 'Correo electrónico',
@@ -25,13 +28,13 @@ const resources = {
       'auth.welcome': 'Bienvenido a EthosHub',
       'auth.subtitle': 'Tu portafolio profesional inteligente',
       
-      // Roles
+      
       'role.professional': 'Profesional',
       'role.recruiter': 'Reclutador',
       'role.guest': 'Invitado',
       'role.admin': 'Administrador',
       
-      // Skills
+      
       'skills.title': 'Matriz de Habilidades',
       'skills.hardSkills': 'Hard Skills',
       'skills.softSkills': 'Soft Skills',
@@ -50,7 +53,7 @@ const resources = {
       'skills.successCase': 'Caso de éxito',
       'skills.charactersRemaining': 'caracteres restantes',
       
-      // Projects
+      
       'projects.title': 'Mis Proyectos',
       'projects.addProject': 'Agregar proyecto',
       'projects.editProject': 'Editar proyecto',
@@ -73,7 +76,7 @@ const resources = {
       'projects.confirmDelete': '¿Estás seguro de eliminar este proyecto?',
       'projects.deleteWarning': 'También se eliminarán todas las evidencias asociadas.',
       
-      // Connections
+      
       'connections.title': 'Centro de Conexiones',
       'connections.status': 'Estado',
       'connections.connected': 'Conectado',
@@ -89,7 +92,7 @@ const resources = {
       'connections.import': 'Importar',
       'connections.imported': 'Importado',
       
-      // Visibility
+      
       'visibility.title': 'Visibilidad y SEO',
       'visibility.vanityUrl': 'URL personalizada',
       'visibility.available': 'Disponible',
@@ -106,7 +109,7 @@ const resources = {
       'visibility.password': 'Protección con contraseña',
       'visibility.openGraph': 'Open Graph',
       
-      // Analytics
+      
       'analytics.title': 'Panel de Analíticas',
       'analytics.totalProfiles': 'Usuarios totales',
       'analytics.activeProfiles': 'Usuarios activos',
@@ -117,7 +120,7 @@ const resources = {
       'analytics.error': 'No se pudo cargar la supervisión general de la plataforma, intenta de nuevo',
       'analytics.retry': 'Reintentar',
       
-      // Common
+      
       'common.save': 'Guardar',
       'common.cancel': 'Cancelar',
       'common.delete': 'Eliminar',
@@ -136,7 +139,7 @@ const resources = {
       'common.viewMore': 'Ver más',
       'common.viewLess': 'Ver menos',
 
-      // Settings
+      
       'settings.identity': 'Identidad',
       'settings.visibility': 'Visibilidad',
       'settings.customization': 'Personalización',
@@ -150,7 +153,7 @@ const resources = {
       'settings.showLocation': 'Mostrar ubicación',
       'settings.showConnections': 'Mostrar conexiones',
 
-      // Language selector
+      
       'settings.lang.es': 'Español',
       'settings.lang.en': 'Inglés',
       'settings.lang.pt': 'Portugués',
@@ -158,7 +161,7 @@ const resources = {
   },
   en: {
     translation: {
-      // Navigation
+      
       'nav.dashboard': 'Dashboard',
       'nav.skills': 'Skills',
       'nav.projects': 'Projects',
@@ -170,7 +173,7 @@ const resources = {
       'nav.admin': 'Administration',
       'nav.logout': 'Log out',
       
-      // Auth
+      
       'auth.login': 'Log in',
       'auth.logout': 'Log out',
       'auth.email': 'Email',
@@ -179,13 +182,13 @@ const resources = {
       'auth.welcome': 'Welcome to EthosHub',
       'auth.subtitle': 'Your intelligent professional portfolio',
       
-      // Roles
+      
       'role.professional': 'Professional',
       'role.recruiter': 'Recruiter',
       'role.guest': 'Guest',
       'role.admin': 'Administrator',
       
-      // Skills
+      
       'skills.title': 'Skills Matrix',
       'skills.hardSkills': 'Hard Skills',
       'skills.softSkills': 'Soft Skills',
@@ -204,7 +207,7 @@ const resources = {
       'skills.successCase': 'Success case',
       'skills.charactersRemaining': 'characters remaining',
       
-      // Projects
+      
       'projects.title': 'My Projects',
       'projects.addProject': 'Add project',
       'projects.editProject': 'Edit project',
@@ -227,7 +230,7 @@ const resources = {
       'projects.confirmDelete': 'Are you sure you want to delete this project?',
       'projects.deleteWarning': 'All associated evidence will also be deleted.',
       
-      // Connections
+      
       'connections.title': 'Connections Hub',
       'connections.status': 'Status',
       'connections.connected': 'Connected',
@@ -243,7 +246,7 @@ const resources = {
       'connections.import': 'Import',
       'connections.imported': 'Imported',
       
-      // Visibility
+      
       'visibility.title': 'Visibility & SEO',
       'visibility.vanityUrl': 'Custom URL',
       'visibility.available': 'Available',
@@ -260,7 +263,7 @@ const resources = {
       'visibility.password': 'Password protection',
       'visibility.openGraph': 'Open Graph',
       
-      // Analytics
+      
       'analytics.title': 'Analytics Dashboard',
       'analytics.totalProfiles': 'Total profiles',
       'analytics.activeProfiles': 'Active profiles',
@@ -271,7 +274,7 @@ const resources = {
       'analytics.error': 'Could not load platform monitoring, please try again',
       'analytics.retry': 'Retry',
       
-      // Common
+      
       'common.save': 'Save',
       'common.cancel': 'Cancel',
       'common.delete': 'Delete',
@@ -290,7 +293,7 @@ const resources = {
       'common.viewMore': 'View more',
       'common.viewLess': 'View less',
 
-      // Settings
+      
       'settings.identity': 'Identity',
       'settings.visibility': 'Visibility',
       'settings.customization': 'Customization',
@@ -304,7 +307,7 @@ const resources = {
       'settings.showLocation': 'Show location',
       'settings.showConnections': 'Show connections',
 
-      // Language selector
+      
       'settings.lang.es': 'Spanish',
       'settings.lang.en': 'English',
       'settings.lang.pt': 'Portuguese',
@@ -312,7 +315,7 @@ const resources = {
   },
   pt: {
     translation: {
-      // Navigation
+      
       'nav.dashboard': 'Dashboard',
       'nav.skills': 'Habilidades',
       'nav.projects': 'Projetos',
@@ -324,7 +327,7 @@ const resources = {
       'nav.admin': 'Administração',
       'nav.logout': 'Sair',
 
-      // Auth
+      
       'auth.login': 'Entrar',
       'auth.logout': 'Sair',
       'auth.email': 'E-mail',
@@ -333,13 +336,13 @@ const resources = {
       'auth.welcome': 'Bem-vindo ao EthosHub',
       'auth.subtitle': 'Seu portfólio profissional inteligente',
 
-      // Roles
+      
       'role.professional': 'Profissional',
       'role.recruiter': 'Recrutador',
       'role.guest': 'Visitante',
       'role.admin': 'Administrador',
 
-      // Skills
+      
       'skills.title': 'Matriz de Habilidades',
       'skills.hardSkills': 'Hard Skills',
       'skills.softSkills': 'Soft Skills',
@@ -358,7 +361,7 @@ const resources = {
       'skills.successCase': 'Caso de sucesso',
       'skills.charactersRemaining': 'caracteres restantes',
 
-      // Projects
+      
       'projects.title': 'Meus Projetos',
       'projects.addProject': 'Adicionar projeto',
       'projects.editProject': 'Editar projeto',
@@ -381,7 +384,7 @@ const resources = {
       'projects.confirmDelete': 'Tem certeza que deseja excluir este projeto?',
       'projects.deleteWarning': 'Todas as evidências associadas também serão excluídas.',
 
-      // Connections
+      
       'connections.title': 'Central de Conexões',
       'connections.status': 'Status',
       'connections.connected': 'Conectado',
@@ -397,7 +400,7 @@ const resources = {
       'connections.import': 'Importar',
       'connections.imported': 'Importado',
 
-      // Visibility
+      
       'visibility.title': 'Visibilidade e SEO',
       'visibility.vanityUrl': 'URL personalizada',
       'visibility.available': 'Disponível',
@@ -414,7 +417,7 @@ const resources = {
       'visibility.password': 'Proteção por senha',
       'visibility.openGraph': 'Open Graph',
 
-      // Analytics
+      
       'analytics.title': 'Painel de Análises',
       'analytics.totalProfiles': 'Total de usuários',
       'analytics.activeProfiles': 'Usuários ativos',
@@ -425,7 +428,7 @@ const resources = {
       'analytics.error': 'Não foi possível carregar o monitoramento da plataforma, tente novamente',
       'analytics.retry': 'Tentar novamente',
 
-      // Common
+      
       'common.save': 'Salvar',
       'common.cancel': 'Cancelar',
       'common.delete': 'Excluir',
@@ -444,7 +447,7 @@ const resources = {
       'common.viewMore': 'Ver mais',
       'common.viewLess': 'Ver menos',
 
-      // Settings
+      
       'settings.identity': 'Identidade',
       'settings.visibility': 'Visibilidade',
       'settings.customization': 'Personalização',
@@ -458,7 +461,7 @@ const resources = {
       'settings.showLocation': 'Mostrar localização',
       'settings.showConnections': 'Mostrar conexões',
 
-      // Language selector
+      
       'settings.lang.es': 'Espanhol',
       'settings.lang.en': 'Inglês',
       'settings.lang.pt': 'Português',

@@ -28,7 +28,9 @@ import {
 import { Button, Card, Badge, Avatar, Modal } from '@/shared/ui';
 import { cn } from '@/shared/lib/utils';
 
-// Types for admin schema
+/**
+ * Admin moderation queue for reviewing flagged content, profiles, and reported items.
+ */
 interface AuditLogEntry {
   id: string;
   profile_id: string;
@@ -65,7 +67,6 @@ interface SystemStatus {
   lastCheck: string;
 }
 
-// Mock audit logs (admin.audit_trail)
 const mockAuditLogs: AuditLogEntry[] = [
   {
     id: '1',
@@ -143,7 +144,6 @@ const mockAuditLogs: AuditLogEntry[] = [
   },
 ];
 
-// Mock moderation queue
 const mockModerationItems: ModerationItem[] = [
   {
     id: 'm1',
@@ -185,7 +185,6 @@ const mockModerationItems: ModerationItem[] = [
   },
 ];
 
-// System health mock
 const mockSystemStatus: SystemStatus[] = [
   { name: 'API Server', status: 'healthy', latency: 45, uptime: '99.99%', lastCheck: '5s ago' },
   { name: 'Database', status: 'healthy', latency: 12, uptime: '99.95%', lastCheck: '5s ago' },
@@ -303,7 +302,7 @@ export default function AdminModerationPage() {
 
   return (
     <div className="min-h-screen space-y-4 sm:space-y-6 bg-gray-50 p-4 sm:p-6 dark:bg-black">
-      {/* Header - Adaptado para móvil */}
+      {}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
@@ -330,7 +329,7 @@ export default function AdminModerationPage() {
         </div>
       </div>
 
-      {/* System Health Grid - Arreglado el responsive para móvil (1 col), tablet (2 col), desktop (4 col) */}
+      {}
       <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-4">
         {systemStatus.map((service, index) => (
           <motion.div
@@ -372,9 +371,9 @@ export default function AdminModerationPage() {
         ))}
       </div>
 
-      {/* Main Content Grid - Pasa a 1 columna en móvil y 2 en pantallas grandes */}
+      {}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        {/* Audit Trail Timeline */}
+        {}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
           <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-violet-500/20 dark:bg-zinc-950">
             <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -397,7 +396,7 @@ export default function AdminModerationPage() {
               </div>
             </div>
 
-            {/* Timeline */}
+            {}
             <div className="relative space-y-4">
               <div className="absolute left-[11px] top-4 bottom-4 w-0.5 bg-gradient-to-b from-gray-200 via-gray-100 to-transparent dark:from-violet-500/50 dark:via-violet-500/20" />
 
@@ -467,7 +466,7 @@ export default function AdminModerationPage() {
           </div>
         </motion.div>
 
-        {/* Moderation Queue */}
+        {}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
           <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-violet-500/20 dark:bg-zinc-950">
             <div className="mb-6 flex items-center justify-between">
@@ -541,7 +540,7 @@ export default function AdminModerationPage() {
                           </div>
                         </div>
 
-                        {/* Quick Actions - Responsivo en móvil */}
+                        {}
                         <div className="mt-4 flex flex-col gap-3 border-t border-gray-200 pt-4 sm:flex-row sm:items-center sm:justify-between dark:border-violet-500/10">
                           <button
                             onClick={() => {
@@ -583,7 +582,7 @@ export default function AdminModerationPage() {
         </motion.div>
       </div>
 
-      {/* Statistics Row - Arreglado el grid responsivo */}
+      {}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -619,7 +618,7 @@ export default function AdminModerationPage() {
         ))}
       </motion.div>
 
-      {/* Detail Modal */}
+      {}
       <AnimatePresence>
         {detailModalOpen && selectedItem && (
           <>
@@ -637,7 +636,7 @@ export default function AdminModerationPage() {
                 exit={{ opacity: 0, scale: 0.95 }}
                 className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-violet-500/30 dark:bg-black/95 dark:backdrop-blur-xl"
               >
-                {/* Header */}
+                {}
                 <div className="mb-6 flex items-start justify-between">
                   <div>
                     <h3 className="font-sans text-xl font-semibold text-gray-900 dark:text-white">
@@ -655,7 +654,7 @@ export default function AdminModerationPage() {
                   </button>
                 </div>
 
-                {/* Profile Info */}
+                {}
                 <div className="mb-6 flex items-center gap-4 rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-violet-500/20 dark:bg-violet-500/5">
                   <Avatar 
                     src={selectedItem.profile_avatar} 
@@ -670,7 +669,7 @@ export default function AdminModerationPage() {
                   </div>
                 </div>
 
-                {/* Content Preview */}
+                {}
                 <div className="mb-6">
                   <p className="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-violet-300/60">
                     Contenido Reportado
@@ -680,7 +679,7 @@ export default function AdminModerationPage() {
                   </div>
                 </div>
 
-                {/* Details */}
+                {}
                 <div className="mb-6 space-y-3">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-500 dark:text-violet-300/60">Razón del reporte</span>
@@ -700,7 +699,7 @@ export default function AdminModerationPage() {
                   </div>
                 </div>
 
-                {/* Actions */}
+                {}
                 <div className="flex gap-3">
                   <Button
                     onClick={() => {

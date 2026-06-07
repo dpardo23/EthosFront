@@ -13,22 +13,24 @@ import {
 } from '@/components/auth/AuthShared';
 import { useAuthFlow } from '@/hooks/useAuthFlow';
 
-// ── Rate limit helpers ────────────────────────────────────────────────────────
+/**
+ * Login page with email/password form, OAuth buttons, and post-login role-based redirect.
+ */
 const RL_KEY = 'ethoshub_login_rl';
-const MAX_ATTEMPTS  = 15; // total antes del bloqueo IP (frontend)
-const WARN_ATTEMPTS = 5;  // umbral para empezar a bloquear temporalmente
+const MAX_ATTEMPTS  = 15; 
+const WARN_ATTEMPTS = 5;  
 
 interface RLData {
-  attempts: number;       // intentos fallidos acumulados
-  blockedUntil: number;   // timestamp hasta el que está bloqueado (ms)
-  blockCount: number;     // número de bloqueos temporales anteriores
+  attempts: number;       
+  blockedUntil: number;   
+  blockCount: number;     
 }
 
 function getRLData(): RLData {
   try {
     const raw = localStorage.getItem(RL_KEY);
     if (raw) return JSON.parse(raw) as RLData;
-  } catch { /* ignore */ }
+  } catch {  }
   return { attempts: 0, blockedUntil: 0, blockCount: 0 };
 }
 
@@ -37,7 +39,7 @@ function saveRLData(d: RLData) {
 }
 
 function getBlockDuration(blockCount: number): number {
-  // 1er bloqueo: 3 min, luego +3 min por cada bloqueo extra (máx 30 min)
+  
   return Math.min(3 + blockCount * 3, 30) * 60 * 1000;
 }
 
@@ -56,7 +58,6 @@ type RegisterPrefills = {
   role?: 'professional' | 'recruiter' | 'admin' | 'guest';
 };
 
-// ─── Premium Input ────────────────────────────────────────────────────
 function PremiumInput({
   id,
   type,
@@ -121,7 +122,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(0); // ms restantes de bloqueo
+  const [timeLeft, setTimeLeft] = useState(0); 
   const [attempts, setAttempts] = useState(() => getRLData().attempts);
 
   useEffect(() => {
@@ -129,7 +130,7 @@ export default function LoginPage() {
     if (prefills?.password) setPassword(prefills.password);
   }, [prefills]);
 
-  // Countdown ticker para el bloqueo temporal
+  
   useEffect(() => {
     const rl = getRLData();
     const remaining = rl.blockedUntil - Date.now();
@@ -156,12 +157,12 @@ export default function LoginPage() {
     setAttempts(rl.attempts);
 
     if (rl.attempts >= MAX_ATTEMPTS) {
-      // Bloqueo permanente (frontend) — sugiere al usuario que contacte soporte
+      
       saveRLData(rl);
       return;
     }
 
-    // Bloqueo temporal cada WARN_ATTEMPTS intentos fallidos
+    
     if (rl.attempts % WARN_ATTEMPTS === 0) {
       const duration = getBlockDuration(rl.blockCount);
       rl.blockedUntil = Date.now() + duration;
@@ -242,7 +243,7 @@ export default function LoginPage() {
 
   return (
     <div className="w-full">
-      {/* Back link */}
+      {}
       <motion.div
         initial={{ opacity: 0, x: -8 }}
         animate={{ opacity: 1, x: 0 }}
@@ -260,14 +261,14 @@ export default function LoginPage() {
 
       <AuthHero eyebrow="Bienvenido de vuelta" title="Inicia sesión" />
 
-      {/* Form card */}
+      {}
       <motion.div
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.55, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
         className="space-y-5 rounded-2xl border border-white/8 bg-white/[0.025] p-6 backdrop-blur-sm"
       >
-        {/* Bloqueo temporal */}
+        {}
         {isBlocked && (
           <div className="flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3">
             <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
@@ -278,7 +279,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Advertencia de intentos restantes */}
+        {}
         {!isBlocked && attempts > 0 && attempts < MAX_ATTEMPTS && (
           <div className="flex items-center gap-3 rounded-xl border border-amber-500/25 bg-amber-500/8 px-4 py-3">
             <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
@@ -291,7 +292,7 @@ export default function LoginPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Email */}
+          {}
           <div className="space-y-1.5">
             <label htmlFor="login-email" className="block text-xs font-semibold text-white/55">
               Correo electrónico
@@ -308,7 +309,7 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* Password */}
+          {}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label htmlFor="login-password" className="block text-xs font-semibold text-white/55">
@@ -346,7 +347,7 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* Submit */}
+          {}
           <motion.button
             type="submit"
             disabled={loading || isBlocked || getRLData().attempts >= MAX_ATTEMPTS}

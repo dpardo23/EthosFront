@@ -8,6 +8,9 @@ import type {
 } from '@/shared/types';
 import { visibilityService } from '@/shared/services';
 
+/**
+ * Zustand store for portfolio visibility settings (publish state, slug, show/hide toggles).
+ */
 interface VisibilityStore {
   settings: VisibilitySettings | null;
   publicPortfolio: { profile: Profile; settings: VisibilitySettings } | null;

@@ -4,9 +4,11 @@ import { motion } from 'framer-motion';
 import { AlertTriangle, RotateCcw, UserRound, ChevronDown } from 'lucide-react';
 import { Button } from '@/shared/ui';
 
+/**
+ * Error boundary for route-level errors: renders a fallback UI and logs the caught error.
+ */
 const SPRING = { type: 'spring' as const, stiffness: 360, damping: 30 };
 
-/** Extrae un mensaje técnico legible sin exponerlo crudamente al profile. */
 function describeError(error: unknown): { title: string; detail: string } {
   if (isRouteErrorResponse(error)) {
     return {
@@ -20,11 +22,6 @@ function describeError(error: unknown): { title: string; detail: string } {
   return { title: 'Error desconocido', detail: String(error ?? 'Sin detalles disponibles.') };
 }
 
-/**
- * Boundary de ruta premium. Reemplaza el "Unexpected Application Error!" genérico
- * de React Router por una interfaz amigable, animada y coherente en dark/light.
- * Los logs técnicos quedan ocultos tras un disclosure opcional (solo lectura).
- */
 export default function RouteErrorBoundary() {
   const error = useRouteError();
   const navigate = useNavigate();
@@ -39,11 +36,11 @@ export default function RouteErrorBoundary() {
         transition={SPRING}
         className="relative w-full max-w-md overflow-hidden rounded-3xl border border-border bg-card px-7 py-9 text-center shadow-2xl"
       >
-        {/* Glow decorativo, fiel a la paleta primaria */}
+        {}
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_0%,_hsl(var(--primary)/0.14)_0%,_transparent_100%)]" />
 
         <div className="relative flex flex-col items-center">
-          {/* Icono con halo pulsante */}
+          {}
           <div className="relative mb-6 flex h-16 w-16 items-center justify-center">
             <motion.span
               className="absolute inset-0 rounded-2xl bg-destructive/15"
@@ -63,7 +60,7 @@ export default function RouteErrorBoundary() {
             a salvo: puedes recargar o volver a tu perfil para continuar.
           </p>
 
-          {/* Acciones */}
+          {}
           <div className="mt-7 flex w-full flex-col gap-2.5 sm:flex-row">
             <Button
               variant="primary"
@@ -83,7 +80,7 @@ export default function RouteErrorBoundary() {
             </Button>
           </div>
 
-          {/* Detalle técnico opcional — oculto por defecto */}
+          {}
           <button
             type="button"
             onClick={() => setShowDetail(v => !v)}

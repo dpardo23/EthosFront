@@ -5,6 +5,9 @@ import { EthosOwlMascot } from '@/components/brand/EthosCoreLogo';
 import { AmbientBackground, GradientText } from '@/shared/landing';
 import { easeOut, fadeUpView, slideUpView, fadeView } from '@/shared/motion';
 
+/**
+ * Call-to-action landing section with sign-up prompt and primary action button.
+ */
 export function CTASection() {
   return (
     <section className="relative overflow-hidden bg-black py-32 sm:py-48">
@@ -13,7 +16,7 @@ export function CTASection() {
       <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center text-center">
 
-          {/* Mascot with rings */}
+          {}
           <motion.div
             initial={{ opacity: 0, scale: 0.75 }}
             whileInView={{ opacity: 1, scale: 1 }}

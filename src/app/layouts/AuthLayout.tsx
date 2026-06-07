@@ -14,7 +14,7 @@ const FLOAT_TAGS = [
 function VisualPanel() {
   return (
     <div className="relative hidden w-[46%] shrink-0 flex-col overflow-hidden bg-black lg:flex">
-      {/* Ambient layers */}
+      {}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
@@ -33,7 +33,7 @@ function VisualPanel() {
           animationDelay: '-5s',
         }}
       />
-      {/* Subtle grid */}
+      {}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.015]"
         style={{
@@ -43,17 +43,17 @@ function VisualPanel() {
         }}
       />
 
-      {/* Right border fade */}
+      {}
       <div className="pointer-events-none absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/8 to-transparent" />
 
-      {/* Logo top-left */}
+      {}
       <div className="absolute left-8 top-8 z-10">
         <Link to="/">
           <EthosCoreLogo size="sm" />
         </Link>
       </div>
 
-      {/* Floating code tags */}
+      {}
       {FLOAT_TAGS.map(({ label, x, y, delay }) => (
         <motion.div
           key={label}
@@ -67,9 +67,9 @@ function VisualPanel() {
         </motion.div>
       ))}
 
-      {/* Center content */}
+      {}
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-10">
-        {/* Owl with glow */}
+        {}
         <motion.div
           initial={{ opacity: 0, scale: 0.7, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -86,7 +86,7 @@ function VisualPanel() {
           <EthosOwlMascot size={160} floating />
         </motion.div>
 
-        {/* Brand text */}
+        {}
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
@@ -106,7 +106,7 @@ function VisualPanel() {
           </p>
         </motion.div>
 
-        {/* Subtle divider */}
+        {}
         <motion.div
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{ opacity: 1, scaleX: 1 }}
@@ -114,7 +114,7 @@ function VisualPanel() {
           className="mt-10 h-px w-24 bg-gradient-to-r from-transparent via-violet-500/30 to-transparent"
         />
 
-        {/* Ambient quote */}
+        {}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -125,7 +125,7 @@ function VisualPanel() {
         </motion.p>
       </div>
 
-      {/* Bottom dots nav */}
+      {}
       <div className="relative z-10 flex justify-center gap-1.5 pb-10">
         {[0, 1, 2].map((i) => (
           <div
@@ -147,16 +147,16 @@ export function AuthLayout() {
     <div className="flex min-h-screen bg-black">
       <VisualPanel />
 
-      {/* Form panel */}
+      {}
       <div className="relative flex flex-1 flex-col overflow-y-auto">
-        {/* Mobile logo (only when left panel hidden) */}
+        {}
         <div className="flex shrink-0 items-center justify-center pt-8 lg:hidden">
           <Link to="/">
             <EthosCoreLogo size="md" />
           </Link>
         </div>
 
-        {/* Subtle bg texture for form side */}
+        {}
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.012]"
           style={{

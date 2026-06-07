@@ -4,21 +4,18 @@ import { X, AlertCircle, CheckCircle, Info, AlertTriangle, Loader2 } from 'lucid
 import { cn } from '../lib/utils';
 import { Button } from './Button';
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
+/**
+ * Toast/snackbar feedback component consuming uiStore notifications to display success, error, and info messages.
+ */
 export function Skeleton({ className }: { className?: string }) {
   return <div className={cn('animate-pulse rounded-md bg-muted', className)} />;
 }
-
-// ─── LoadingSpinner ───────────────────────────────────────────────────────────
 
 const SPINNER_SIZES = { sm: 'h-4 w-4', md: 'h-6 w-6', lg: 'h-10 w-10' };
 
 export function LoadingSpinner({ size = 'md', className }: { size?: keyof typeof SPINNER_SIZES; className?: string }) {
   return <Loader2 className={cn('animate-spin text-primary', SPINNER_SIZES[size], className)} />;
 }
-
-// ─── Progress ─────────────────────────────────────────────────────────────────
 
 const PROGRESS_SIZES = { sm: 'h-2', md: 'h-3', lg: 'h-4' };
 
@@ -32,8 +29,6 @@ export function Progress({ value, size = 'md', className }: { value: number; siz
     </div>
   );
 }
-
-// ─── EmptyState ───────────────────────────────────────────────────────────────
 
 interface EmptyStateProps {
   icon?: ReactNode | ElementType;
@@ -65,8 +60,6 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
   );
 }
 
-// ─── ErrorState ───────────────────────────────────────────────────────────────
-
 interface ErrorStateProps {
   title?: string;
   message: string;
@@ -83,8 +76,6 @@ export function ErrorState({ title = 'Error', message, onRetry }: ErrorStateProp
     </div>
   );
 }
-
-// ─── Toast ────────────────────────────────────────────────────────────────────
 
 const TOAST_ICONS = {
   success: <CheckCircle  className="h-5 w-5 text-success"     />,
@@ -119,8 +110,6 @@ export function Toast({ type, title, message, onClose }: ToastProps) {
     </motion.div>
   );
 }
-
-// ─── Modal ────────────────────────────────────────────────────────────────────
 
 const MODAL_SIZES = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-lg', xl: 'max-w-xl' };
 
@@ -165,8 +154,6 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
     </AnimatePresence>
   );
 }
-
-// ─── ConfirmDialog ────────────────────────────────────────────────────────────
 
 interface ConfirmDialogProps {
   isOpen: boolean;

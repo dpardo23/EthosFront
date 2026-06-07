@@ -1,10 +1,4 @@
-/**
- * Auth flow tests — GREEN phase.
- *
- * Suite 1: deterministic post-login redirect (useAuthFlow hook)
- * Suite 2: OAuth loading guard — no race conditions
- * Suite 3: 401 interceptor — dispatches auth:unauthorized event (no page reload)
- */
+
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
@@ -13,7 +7,6 @@ import { renderHook } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import type { Mock } from 'vitest';
 
-// ── Mock navigate before any module import ────────────────────────────────────
 const mockNavigate = vi.fn();
 
 vi.mock('react-router-dom', async (importOriginal) => {
@@ -54,12 +47,10 @@ vi.mock('framer-motion', () => ({
   AnimatePresence: ({ children }: any) => <>{children}</>,
 }));
 
-// ── Lazy imports (after mocks are registered) ─────────────────────────────────
 const { useAuthStore } = await import('@/store');
 const { supabase }     = await import('@/lib/supabase');
 const { useAuthFlow }  = await import('@/hooks/useAuthFlow');
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 function buildMockStore(login: Mock, overrides: Record<string, unknown> = {}) {
   return {
     login,
@@ -84,9 +75,6 @@ function makeLoginResult(role: 'professional' | 'recruiter') {
   };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SUITE 1 — useAuthFlow hook: deterministic redirect by role
-// ─────────────────────────────────────────────────────────────────────────────
 describe('[RED] useAuthFlow — deterministic post-login redirect', () => {
   beforeEach(() => vi.clearAllMocks());
 
@@ -129,14 +117,6 @@ describe('[RED] useAuthFlow — deterministic post-login redirect', () => {
   });
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SUITE 2 — useAuthFlow hook: OAuth loading state prevents race conditions
-//
-// Testing strategy: renderHook against useAuthFlow directly avoids full
-// component rendering complexity (framer-motion, lucide icons, SVGs).
-// The hook's oauthLoading state drives the disabled prop on SocialAuthGroup,
-// so testing the hook is sufficient to verify the race-condition guard.
-// ─────────────────────────────────────────────────────────────────────────────
 describe('[RED] useAuthFlow — OAuth loading guard (no race conditions)', () => {
   beforeEach(() => vi.clearAllMocks());
 
@@ -155,7 +135,7 @@ describe('[RED] useAuthFlow — OAuth loading guard (no race conditions)', () =>
 
   it('oauthLoading becomes "google" while Google OAuth is in flight', async () => {
     (supabase!.auth.signInWithOAuth as Mock).mockImplementation(
-      () => new Promise(() => {}), // never resolves — simulates redirect in progress
+      () => new Promise(() => {}), 
     );
 
     const { result } = mountHook();
@@ -207,19 +187,13 @@ describe('[RED] useAuthFlow — OAuth loading guard (no race conditions)', () =>
     act(() => { void result.current.loginWithOAuth('google'); });
     await waitFor(() => expect(result.current.oauthLoading).toBe('google'));
 
-    // Second call while loading — signInWithOAuth must NOT be called again
+    
     act(() => { void result.current.loginWithOAuth('google'); });
 
     expect(supabase!.auth.signInWithOAuth).toHaveBeenCalledTimes(1);
   });
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SUITE 3 — 401 interceptor: dispatches auth:unauthorized event (no page reload)
-//
-// Verifies that the axios interceptor in api.ts does NOT call window.location
-// and instead dispatches a custom DOM event so React Router handles the redirect.
-// ─────────────────────────────────────────────────────────────────────────────
 describe('[GREEN] api.ts 401 interceptor — no window.location reload', () => {
   beforeEach(() => vi.clearAllMocks());
 
@@ -235,11 +209,11 @@ describe('[GREEN] api.ts 401 interceptor — no window.location reload', () => {
     window.addEventListener('auth:unauthorized', handler);
 
     try {
-      // Simulate what the interceptor does on 401
+      
       localStorage.setItem('ethoshub_access_token', 'old-token');
       localStorage.setItem('ethoshub_token_type', 'Bearer');
 
-      // Manually reproduce the interceptor logic (no need to actually make an HTTP call)
+      
       localStorage.removeItem('ethoshub_access_token');
       localStorage.removeItem('ethoshub_token_type');
       window.dispatchEvent(new CustomEvent('auth:unauthorized'));
@@ -247,7 +221,7 @@ describe('[GREEN] api.ts 401 interceptor — no window.location reload', () => {
       expect(receivedEvents).toContain('auth:unauthorized');
       expect(localStorage.getItem('ethoshub_access_token')).toBeNull();
 
-      // window.location.replace must NOT have been called
+      
       const locMock = window.location as unknown as { replace: ReturnType<typeof vi.fn> };
       expect(locMock.replace).not.toHaveBeenCalled();
     } finally {

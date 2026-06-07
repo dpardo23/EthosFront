@@ -11,7 +11,9 @@ import {
 } from '@/shared/ui';
 import { cn } from '@/shared/lib/utils';
 
-// Types mapped to core.profiles and core.profiles_basic
+/**
+ * Admin page for browsing, searching, and managing all user profiles on the platform.
+ */
 interface ProfileData {
   id: string;
   email: string;
@@ -29,7 +31,6 @@ interface ProfileData {
   conexiones_count: number;
 }
 
-// Mock profiles data
 const mockProfiles: ProfileData[] = [
   { id: '1', email: 'ana.martinez@example.com', profileHandle: 'anamartinez', nombre_completo: 'Ana Martinez', avatar_url: 'https://i.pravatar.cc/150?u=ana', rol: 'Estandar', status: 'active', fecha_registro: '2023-06-15T10:30:00Z', ultimo_login: '2024-01-15T14:20:00Z', ubicacion: 'Madrid, Spain', empresa: 'TechCorp', portfolio_views: 1234, proyectos_count: 8, conexiones_count: 156 },
   { id: '2', email: 'carlos.ruiz@example.com', profileHandle: 'carlosruiz', nombre_completo: 'Carlos Ruiz', avatar_url: 'https://i.pravatar.cc/150?u=carlos', rol: 'Reclutador', status: 'active', fecha_registro: '2023-01-10T08:15:00Z', ultimo_login: '2024-01-16T09:00:00Z', ubicacion: 'Barcelona, Spain', empresa: 'StartupXYZ', portfolio_views: 5678, proyectos_count: 15, conexiones_count: 342 },
@@ -241,7 +242,7 @@ export default function AdminProfilesPage() {
 
   return (
     <div className="max-w-full space-y-4 overflow-x-hidden bg-gray-50 dark:bg-black p-4 md:space-y-6 md:p-6">
-      {/* Header */}
+      {}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-sans text-2xl font-bold tracking-tight text-black dark:text-white md:text-3xl">Gestion de Usuarios</h1>
@@ -265,7 +266,7 @@ export default function AdminProfilesPage() {
         </div>
       </div>
 
-      {/* Search Bar */}
+      {}
       <div className="space-y-3 md:space-y-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-violet-400/50 sm:left-4 sm:h-5 sm:w-5" />
@@ -300,13 +301,13 @@ export default function AdminProfilesPage() {
         </AnimatePresence>
       </div>
 
-      {/* Users List/Table */}
+      {}
       <div className="w-full max-w-full overflow-hidden rounded-xl border border-gray-200 dark:border-violet-500/20 bg-white dark:bg-black">
         {paginatedProfiles.length === 0 ? (
           <div className="p-8 md:p-12"><EmptyState icon={Users} title="No se encontraron usuarios" description="Intenta ajustar los filtros" /></div>
         ) : (
           <>
-            {/* Mobile Card List View */}
+            {}
             <div className="block md:hidden">
               <div className="flex items-center justify-between border-b border-gray-200 dark:border-violet-500/20 bg-gray-50 dark:bg-violet-500/5 px-4 py-3">
                 <button onClick={handleSelectAll} className={cn("flex items-center gap-2 text-xs font-medium", selectedProfiles.size === paginatedProfiles.length ? "text-violet-600 dark:text-violet-400" : "text-gray-500 dark:text-violet-300/70")}>
@@ -351,7 +352,7 @@ export default function AdminProfilesPage() {
               </div>
             </div>
 
-            {/* Desktop Table View */}
+            {}
             <div className="hidden md:block overflow-x-auto w-full">
               <table className="w-full min-w-[800px]">
                 <thead>
@@ -388,7 +389,7 @@ export default function AdminProfilesPage() {
                       <td className="px-4 py-4 text-sm text-gray-600 dark:text-violet-300/80">{formatDate(profile.fecha_registro)}</td>
                       <td className="px-4 py-4 text-sm font-medium text-black dark:text-white">{profile.portfolio_views.toLocaleString()}</td>
                       <td className="px-4 py-4 text-right">
-                         {/* Mismo menú de acciones pero para desktop */}
+                         {}
                          <button onClick={() => handleAction('view', profile)} className="text-violet-600 hover:text-violet-800 dark:text-violet-400 dark:hover:text-violet-300 font-medium text-sm">Ver</button>
                       </td>
                     </tr>
@@ -397,7 +398,7 @@ export default function AdminProfilesPage() {
               </table>
             </div>
 
-            {/* Pagination */}
+            {}
             <div className="flex flex-col items-center justify-between gap-3 border-t border-gray-200 dark:border-violet-500/20 px-4 py-4 sm:flex-row md:px-6">
               <p className="text-xs text-gray-500 dark:text-violet-300/60 sm:text-sm">
                 Mostrando {(currentPage - 1) * itemsPerPage + 1} a {Math.min(currentPage * itemsPerPage, filteredProfiles.length)} de {filteredProfiles.length}
@@ -411,7 +412,7 @@ export default function AdminProfilesPage() {
         )}
       </div>
 
-      {/* Detail Modal (Corregido fondo oscuro) */}
+      {}
       <Modal isOpen={detailModalOpen} onClose={() => setDetailModalOpen(false)} title="Detalles del Usuario" size="lg">
         {selectedProfile && (
           <div className="space-y-6 text-black dark:text-white">

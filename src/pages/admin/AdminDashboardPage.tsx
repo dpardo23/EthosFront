@@ -11,7 +11,9 @@ import {
 import { Button, Card, Badge } from '@/shared/ui';
 import { cn } from '@/shared/lib/utils';
 
-// Time range options
+/**
+ * Admin panel home with summary statistics for users, portfolios, and platform health.
+ */
 const timeRanges = [
   { label: '7d', value: 7 },
   { label: '30d', value: 30 },
@@ -19,7 +21,6 @@ const timeRanges = [
   { label: '1y', value: 365 },
 ];
 
-// KPI Stats with dynamic values
 const getKpiStats = () => [
   {
     label: 'Total Usuarios',
@@ -55,7 +56,6 @@ const getKpiStats = () => [
   },
 ];
 
-// Profile growth data generator
 const generateGrowthData = (days: number) => {
   const data = [];
   const baseProfiles = 10000;
@@ -71,14 +71,12 @@ const generateGrowthData = (days: number) => {
   return data;
 };
 
-// Role distribution data (core_types.rol_ethoshub)
 const roleDistribution = [
   { name: 'Estandar', value: 9850, color: '#8B5CF6' },
   { name: 'Reclutador', value: 2847, color: '#D8B4FE' },
   { name: 'Admin', value: 150, color: '#A78BFA' },
 ];
 
-// Top skills data (from portfolio.skills)
 const topSkills = [
   { name: 'React', count: 4523, growth: '+12%' },
   { name: 'TypeScript', count: 3987, growth: '+18%' },
@@ -87,7 +85,6 @@ const topSkills = [
   { name: 'AWS', count: 2987, growth: '+22%' },
 ];
 
-// System logs mock (admin.system_logs)
 const systemLogMessages = [
   { type: 'info', message: '[AUTH] Usuario profesional@ethoshub.com inicio sesion', timestamp: '' },
   { type: 'success', message: '[PORTFOLIO] Nuevo portafolio creado por @anamartinez', timestamp: '' },
@@ -103,7 +100,6 @@ const systemLogMessages = [
   { type: 'info', message: '[ANALYTICS] Reporte semanal generado', timestamp: '' },
 ];
 
-// Custom Tooltip for charts
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
@@ -128,12 +124,12 @@ export default function AdminDashboardPage() {
   const logContainerRef = useRef<HTMLDivElement>(null);
   const kpiStats = getKpiStats();
 
-  // Update growth data when range changes
+  
   useEffect(() => {
     setGrowthData(generateGrowthData(selectedRange));
   }, [selectedRange]);
 
-  // Simulate live system logs
+  
   useEffect(() => {
     const interval = setInterval(() => {
       const randomLog = systemLogMessages[Math.floor(Math.random() * systemLogMessages.length)];
@@ -149,7 +145,7 @@ export default function AdminDashboardPage() {
       }]);
     }, 2500);
 
-    // Initial logs
+    
     const now = new Date();
     setLogs(systemLogMessages.slice(0, 8).map((log, i) => ({
       ...log,
@@ -163,7 +159,7 @@ export default function AdminDashboardPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-scroll logs
+  
   useEffect(() => {
     if (logContainerRef.current) {
       logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
@@ -178,7 +174,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="max-w-full space-y-4 overflow-x-hidden bg-gray-50 dark:bg-black p-4 md:space-y-6 md:p-6">
-      {/* Header */}
+      {}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-sans text-2xl font-bold tracking-tight text-black dark:text-white md:text-3xl">
@@ -215,7 +211,7 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* KPI Stats - Bento Grid */}
+      {}
       <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 lg:grid-cols-4">
         {kpiStats.map((stat, index) => (
           <motion.div
@@ -225,7 +221,7 @@ export default function AdminDashboardPage() {
             transition={{ delay: index * 0.1, duration: 0.4 }}
           >
             <div className="group relative overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-950 p-4 transition-all hover:border-violet-500/40 md:p-6">
-              {/* Lilac glow effect (only visible in dark mode typically, but kept subtle) */}
+              {}
               <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-violet-500/10 dark:bg-violet-500/20 blur-3xl transition-all group-hover:bg-violet-500/20 dark:group-hover:bg-violet-500/30" />
               <div className="pointer-events-none absolute -bottom-10 -left-10 h-24 w-24 rounded-full bg-purple-500/5 dark:bg-purple-500/10 blur-2xl" />
               
@@ -260,9 +256,9 @@ export default function AdminDashboardPage() {
         ))}
       </div>
 
-      {/* Charts Row */}
+      {}
       <div className="grid w-full grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">
-        {/* Profile Growth Area Chart */}
+        {}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -300,7 +296,7 @@ export default function AdminDashboardPage() {
                       <stop offset="50%" stopColor="#D8B4FE" stopOpacity={0.15} />
                       <stop offset="100%" stopColor="#D8B4FE" stopOpacity={0} />
                     </linearGradient>
-                    {/* Glow filter */}
+                    {}
                     <filter id="glow">
                       <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
                       <feMerge>
@@ -350,7 +346,7 @@ export default function AdminDashboardPage() {
           </div>
         </motion.div>
 
-        {/* Role Distribution Pie Chart */}
+        {}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -395,7 +391,7 @@ export default function AdminDashboardPage() {
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            {/* Legend */}
+            {}
             <div className="mt-4 space-y-2">
               {roleDistribution.map((role) => {
                 const total = roleDistribution.reduce((sum, r) => sum + r.value, 0);
@@ -421,9 +417,9 @@ export default function AdminDashboardPage() {
         </motion.div>
       </div>
 
-      {/* Bottom Row */}
+      {}
       <div className="grid w-full grid-cols-1 gap-4 md:gap-6 lg:grid-cols-2">
-        {/* Top Skills Bar Chart */}
+        {}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -477,7 +473,7 @@ export default function AdminDashboardPage() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            {/* Growth indicators */}
+            {}
             <div className="mt-3 flex flex-wrap gap-1.5 md:mt-4 md:gap-2">
               {topSkills.map((skill) => (
                 <div 
@@ -492,7 +488,7 @@ export default function AdminDashboardPage() {
           </div>
         </motion.div>
 
-        {/* Live System Logs */}
+        {}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -554,7 +550,7 @@ export default function AdminDashboardPage() {
         </motion.div>
       </div>
 
-      {/* System Health Grid */}
+      {}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -585,14 +581,14 @@ export default function AdminDashboardPage() {
                 transition={{ delay: 0.9 + index * 0.1 }}
                 className="group relative flex flex-col items-center gap-2 overflow-hidden rounded-xl border border-gray-200 bg-gray-50 p-3 transition-all hover:border-violet-300 dark:border-white/10 dark:bg-black/60 dark:hover:border-violet-500/40 sm:gap-3 sm:p-5"
               >
-                {/* Animated background pulse */}
+                {}
                 <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
                 
                 <div className="relative">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 transition-all group-hover:from-violet-200 group-hover:to-purple-200 dark:from-violet-500/20 dark:to-purple-500/20 dark:group-hover:from-violet-500/30 dark:group-hover:to-purple-500/30 sm:h-14 sm:w-14">
                     <service.icon className="h-5 w-5 text-violet-600 dark:text-violet-400 sm:h-7 sm:w-7" />
                   </div>
-                  {/* Status indicator */}
+                  {}
                   <span className="absolute -right-1 -top-1 flex h-3 w-3 sm:h-4 sm:w-4">
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                     <span className="relative inline-flex h-3 w-3 items-center justify-center rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50 sm:h-4 sm:w-4">

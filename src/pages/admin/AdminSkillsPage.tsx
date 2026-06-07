@@ -20,6 +20,9 @@ import {
 import { Badge, Button, Card, Progress } from '@/shared/ui';
 import { cn } from '@/shared/lib/utils';
 
+/**
+ * Admin page for managing the global skill tag taxonomy used across all professional profiles.
+ */
 type SkillStatus = 'Aprobada' | 'Observacion';
 type QueueSeverity = 'Alta' | 'Media' | 'Baja';
 

@@ -12,6 +12,9 @@ import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/shared/lib/utils';
 
+/**
+ * Recruiter talent discovery page: browsable grid of published professional profiles with filters.
+ */
 export interface BackendTalentProfile {
   profileId: string;
   slug: string | null;
@@ -64,7 +67,6 @@ const categoryOptions: { value: CategoryType; label: string }[] = [
   { value: 'Systems', label: 'Systems' },
 ];
 
-// Convierte un código de país ISO-3166-1-alpha-2 a bandera emoji
 function countryCodeToFlag(code: string): string {
   if (!code || code.length !== 2) return '🌐';
   return code.toUpperCase().replace(/./g, char =>
@@ -72,7 +74,6 @@ function countryCodeToFlag(code: string): string {
   );
 }
 
-// Nombre de país en español según código ISO
 const COUNTRY_NAMES: Record<string, string> = {
   BO: 'Bolivia', AR: 'Argentina', CL: 'Chile', PE: 'Perú', CO: 'Colombia',
   MX: 'México', BR: 'Brasil', EC: 'Ecuador', PY: 'Paraguay', UY: 'Uruguay',
@@ -123,7 +124,6 @@ function FilterChip({ label, active, onClick }: { label: string; active: boolean
   );
 }
 
-
 function TalentCard({
   candidate,
   index,
@@ -149,7 +149,7 @@ function TalentCard({
       whileHover={{ y: -2, boxShadow: '0 0 24px rgba(139,92,246,0.18)' }}
       className="group relative flex h-[340px] flex-col rounded-2xl border border-border bg-card p-5 transition-colors duration-200 hover:border-violet-500/40"
     >
-      {/* Action icons */}
+      {}
       <div className="absolute right-4 top-4 flex items-center gap-1.5 opacity-0 transition-opacity group-hover:opacity-100">
         <motion.button
           whileTap={{ scale: 0.88 }}
@@ -174,7 +174,7 @@ function TalentCard({
         </motion.button>
       </div>
 
-      {/* Header */}
+      {}
       <div className="flex items-center gap-3 pr-20">
         <Avatar
           src={candidate.photoUrl || undefined}
@@ -190,7 +190,7 @@ function TalentCard({
         </div>
       </div>
 
-      {/* Status + seniority */}
+      {}
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <span className={cn('h-1.5 w-1.5 rounded-full', status.dot)} />
         <span className={cn('rounded-full border px-2.5 py-0.5 text-[11px] font-semibold', status.badge)}>
@@ -208,12 +208,12 @@ function TalentCard({
         )}
       </div>
 
-      {/* Bio */}
+      {}
       <p className="mt-3 line-clamp-2 flex-1 text-[13px] leading-relaxed text-muted-foreground">
         {candidate.bioHeadline ?? 'Sin descripción disponible.'}
       </p>
 
-      {/* Top skills */}
+      {}
       <div className="mt-3 flex flex-wrap gap-1.5">
         {topSkills.map((skill, i) => (
           <span key={i} className="rounded-full bg-muted px-2.5 py-1 text-[12px] font-medium text-foreground">
@@ -225,7 +225,7 @@ function TalentCard({
         )}
       </div>
 
-      {/* Footer */}
+      {}
       <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
         <div className="flex items-center gap-1.5 text-muted-foreground">
           <MapPin className="h-3.5 w-3.5 shrink-0" />
@@ -253,7 +253,7 @@ export default function TalentDiscoveryPage() {
   const [likePending, setLikePending] = useState<string | null>(null);
   const [availableCountries, setAvailableCountries] = useState<string[]>([]);
 
-  // Filtros
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [seniorityFilters, setSeniorityFilters] = useState<SeniorityLevel[]>([]);
   const [experienceFilters, setExperienceFilters] = useState<ExperienceRange[]>([]);
@@ -280,10 +280,10 @@ export default function TalentDiscoveryPage() {
       .finally(() => setIsLoading(false));
   }, []);
 
-  // Load talents on mount
+  
   useEffect(() => { fetchTalents(); }, [fetchTalents]);
 
-  // Realtime: re-fetch whenever any professional toggles is_published
+  
   useEffect(() => {
     if (!supabase) return;
     const channel = supabase
@@ -297,7 +297,7 @@ export default function TalentDiscoveryPage() {
     return () => { supabase.removeChannel(channel); };
   }, [fetchTalents]);
 
-  // Load liked profiles via RPC (bypasses RLS without needing Supabase JWT)
+  
   useEffect(() => {
     if (!profile?.id || !supabase) return;
     supabase.rpc('get_company_likes', { p_company_id: profile.id })
@@ -416,7 +416,7 @@ export default function TalentDiscoveryPage() {
   return (
     <div className="flex min-h-0 flex-col gap-6">
 
-      {/* Search bar */}
+      {}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -453,7 +453,7 @@ export default function TalentDiscoveryPage() {
 
       <div className="flex flex-col gap-6 lg:flex-row">
 
-        {/* Filters panel */}
+        {}
         <AnimatePresence initial={false}>
           {filtersOpen && (
             <motion.aside
@@ -478,7 +478,7 @@ export default function TalentDiscoveryPage() {
 
                 <div className="space-y-5">
 
-                  {/* Seniority */}
+                  {}
                   <div>
                     <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Nivel</label>
                     <div className="flex flex-wrap gap-1.5">
@@ -489,7 +489,7 @@ export default function TalentDiscoveryPage() {
                     </div>
                   </div>
 
-                  {/* Experience */}
+                  {}
                   <div>
                     <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Experiencia</label>
                     <div className="flex flex-wrap gap-1.5">
@@ -500,7 +500,7 @@ export default function TalentDiscoveryPage() {
                     </div>
                   </div>
 
-                  {/* Status */}
+                  {}
                   <div>
                     <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Disponibilidad</label>
                     <div className="flex flex-wrap gap-1.5">
@@ -511,7 +511,7 @@ export default function TalentDiscoveryPage() {
                     </div>
                   </div>
 
-                  {/* Category */}
+                  {}
                   <div>
                     <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Tipo de perfil</label>
                     <div className="flex flex-wrap gap-1.5">
@@ -522,7 +522,7 @@ export default function TalentDiscoveryPage() {
                     </div>
                   </div>
 
-                  {/* País — desplegable cargado dinámicamente de la DB */}
+                  {}
                   {availableCountries.length > 0 && (
                     <div>
                       <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">País</label>
@@ -544,7 +544,7 @@ export default function TalentDiscoveryPage() {
                     </div>
                   )}
 
-                  {/* Skills */}
+                  {}
                   <div>
                     <label className="mb-2 flex justify-between text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                       <span>Skills</span>
@@ -584,7 +584,7 @@ export default function TalentDiscoveryPage() {
           )}
         </AnimatePresence>
 
-        {/* Cards grid */}
+        {}
         <div className="flex-1 min-w-0">
           {isLoading ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">

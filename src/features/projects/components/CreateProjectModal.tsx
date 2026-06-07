@@ -19,9 +19,10 @@ import type {
 } from '@/shared/types';
 
 // ─────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────
 
+/**
+ * Modal form for creating and editing portfolio projects including title, description, media, and tech stack.
+ */
 const API_BASE = (import.meta.env.VITE_API_URL as string) || '';
 const resolvePreviewUrl = (url: string | null): string | null => {
   if (!url) return null;
@@ -83,10 +84,6 @@ function reorderList<T>(list: T[], fromIndex: number, toIndex: number) {
   next.splice(toIndex, 0, item);
   return next;
 }
-
-// ─────────────────────────────────────────────
-// Constants
-// ─────────────────────────────────────────────
 
 const MAX_TITLE = 100;
 const MAX_ROLE = 100;
@@ -157,7 +154,6 @@ const PREDEFINED_COVERS = [
 
 type CoverId = (typeof PREDEFINED_COVERS)[number]['id'];
 
-/** Encode as `gradient:<id>` stored in thumbnail field */
 const encodeCover = (id: CoverId) => `gradient:${id}`;
 const decodeCover = (thumbnail: string): CoverId | null => {
   if (!thumbnail.startsWith('gradient:')) return null;
@@ -189,19 +185,11 @@ async function uploadProjectFile(file: File): Promise<{ url: string; name: strin
   }
 }
 
-// ─────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────
-
 interface CreateProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
   project?: Project | null;
 }
-
-// ─────────────────────────────────────────────
-// Sub-components
-// ─────────────────────────────────────────────
 
 function StepCircle({ n, current }: { n: number; current: number }) {
   const done = n < current;
@@ -466,7 +454,7 @@ function ImageUpload({ preview, setPreview }: {
       addToast({ type: 'error', title: 'Archivo inválido', message: 'Por favor selecciona una imagen.' });
       return;
     }
-    // Mostrar preview local inmediatamente sin esperar al upload
+    
     const localUrl = URL.createObjectURL(file);
     setPreview(localUrl);
     try {
@@ -627,7 +615,7 @@ function FileUpload({ files, setFiles }: {
       addToast({ type: 'error', title: 'Archivo demasiado grande', message: 'El tamaño máximo es 5 MB.' });
       return;
     }
-    // Mostrar el archivo inmediatamente en la lista mientras se sube
+    
     setPendingFile({ name: file.name, size: file.size });
     try {
       setIsUploading(true);
@@ -677,7 +665,7 @@ function FileUpload({ files, setFiles }: {
               </button>
             </div>
           ))}
-          {/* Fila de archivo en proceso de subida */}
+          {}
           {pendingFile && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed border-violet-500/30 bg-violet-500/5 animate-pulse">
               <span className="text-[11px] text-muted-foreground/30 select-none">⋮⋮</span>
@@ -727,7 +715,6 @@ function SectionCard({ icon: Icon, title, children }: {
   );
 }
 
-/** Grid of 6 clickable predefined cover tiles */
 function CoverPresetSelector({
   selectedId,
   onSelect,
@@ -756,10 +743,10 @@ function CoverPresetSelector({
                   : 'border-border hover:border-violet-500/50 hover:scale-[1.02]'
                 }`}
             >
-              {/* Gradient fill */}
+              {}
               <div className="absolute inset-0" style={{ backgroundImage: cover.css }} />
 
-              {/* Subtle grid overlay */}
+              {}
               <div
                 className="absolute inset-0 opacity-[0.08]"
                 style={{
@@ -769,7 +756,7 @@ function CoverPresetSelector({
                 }}
               />
 
-              {/* Label + glow dot */}
+              {}
               <div className="absolute inset-x-0 bottom-0 flex items-center gap-1.5 px-2 py-1.5">
                 <span
                   className="h-1.5 w-1.5 rounded-full shrink-0"
@@ -778,7 +765,7 @@ function CoverPresetSelector({
                 <span className="text-[9px] font-semibold text-white/70 truncate">{cover.label}</span>
               </div>
 
-              {/* Check badge */}
+              {}
               {active && (
                 <div className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-violet-500">
                   <Check size={8} strokeWidth={3} className="text-white" />
@@ -791,10 +778,6 @@ function CoverPresetSelector({
     </div>
   );
 }
-
-// ─────────────────────────────────────────────
-// Main Component
-// ─────────────────────────────────────────────
 
 export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectModalProps) {
   const navigate = useNavigate();
@@ -1069,7 +1052,7 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
   const portalRoot = document.getElementById('portal-root') ?? document.body;
   return createPortal(
     <>
-      {/* Backdrop — separated so blur stays fixed and doesn't scroll */}
+      {}
       <motion.div
         className="absolute inset-0 z-[80] bg-background/75 backdrop-blur-md"
         initial={{ opacity: 0 }}
@@ -1077,15 +1060,15 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
         exit={{ opacity: 0 }}
         transition={{ duration: 0.18 }}
       />
-      {/* Scrollable container — pointer-events pass through to backdrop */}
+      {}
       <div className="absolute inset-0 z-[81] flex items-center justify-center p-4 overflow-y-auto pointer-events-none">
       <div
         className="bg-background rounded-2xl w-full max-w-3xl max-h-[88vh] border border-border flex flex-col overflow-hidden shadow-2xl shadow-black/30 pointer-events-auto"
       >
-        {/* accent bar */}
+        {}
         <div className="h-[3px] bg-gradient-to-r from-violet-700 via-violet-500 to-violet-300 shrink-0" />
 
-        {/* header */}
+        {}
         <div className="flex items-center justify-between px-4 sm:px-7 pt-4 sm:pt-5 pb-0 shrink-0">
           <div>
             <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-widest text-violet-600 dark:text-violet-400 mb-1">
@@ -1105,7 +1088,7 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
           </button>
         </div>
 
-        {/* stepper */}
+        {}
         <div className="flex items-center justify-center gap-3 sm:gap-8 px-4 sm:px-7 pt-4 sm:pt-5 pb-0 shrink-0 overflow-x-auto">
           {STEPS.map((label, i) => {
             const n = i + 1;
@@ -1138,10 +1121,10 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
 
         <div className="mx-4 sm:mx-7 mt-4 sm:mt-5 h-px bg-border shrink-0" />
 
-        {/* body */}
+        {}
         <div className="overflow-y-auto flex-1 min-h-0 px-4 sm:px-7 py-4 sm:py-5">
 
-          {/* STEP 1 */}
+          {}
           {step === 1 && (
             <div key="s1" className="flex flex-col gap-4" style={{ animation: 'fadeUp .28s ease both' }}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1226,7 +1209,7 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
             </div>
           )}
 
-          {/* STEP 2 */}
+          {}
           {step === 2 && (
             <div key="s2" className="flex flex-col gap-4" style={{ animation: 'fadeUp .28s ease both' }}>
               <div className="grid grid-cols-2 gap-3">
@@ -1266,11 +1249,11 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
             </div>
           )}
 
-          {/* STEP 3 */}
+          {}
           {step === 3 && (
             <div key="s3" className="flex flex-col gap-4" style={{ animation: 'fadeUp .28s ease both' }}>
               <SectionCard icon={ImageIcon} title={<>Portada del proyecto <Req /></>}>
-                {/* ── Predefined cover grid ── */}
+                {}
                 <CoverPresetSelector
                   selectedId={selectedCover}
                   onSelect={(id) => {
@@ -1283,7 +1266,7 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
                   }}
                 />
 
-                {/* ── Divider ── */}
+                {}
                 <div className="relative my-4">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-border" />
@@ -1295,7 +1278,7 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
                   </div>
                 </div>
 
-                {/* ── Mode tabs: Upload vs URL ── */}
+                {}
                 <div className="flex gap-1 rounded-xl border border-input bg-muted/30 p-1 mb-3">
                   <button
                     type="button"
@@ -1370,7 +1353,7 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
           )}
         </div>
 
-        {/* footer */}
+        {}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-7 py-4 border-t border-border shrink-0">
           <span className="text-[11px] text-muted-foreground text-center sm:text-left">{HINTS[step - 1]}</span>
           <div className="flex flex-wrap justify-center sm:justify-end gap-2">

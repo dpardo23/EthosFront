@@ -17,7 +17,9 @@ import { experienceService } from '@/shared/services/experienceService';
 import { fileService } from '@/shared/services/fileService';
 import type { WorkExperience } from '@/shared/types/experience';
 
-// Fix Leaflet default marker icons broken by Vite bundler
+/**
+ * Dashboard page for managing work experience entries including current role and date ranges.
+ */
 const _iconDefault = L.icon({
   iconRetinaUrl: new URL('leaflet/dist/images/marker-icon-2x.png', import.meta.url).href,
   iconUrl: new URL('leaflet/dist/images/marker-icon.png', import.meta.url).href,
@@ -29,12 +31,10 @@ const _iconDefault = L.icon({
 });
 L.Marker.prototype.options.icon = _iconDefault;
 
-// ─── Leaflet / OpenStreetMap ──────────────────────────────────────────────────
 const DARK_TILE  = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 const LIGHT_TILE = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 const TILE_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
-// ─── Nominatim types ──────────────────────────────────────────────────────────
 interface NominatimResult {
   place_id: number;
   display_name: string;
@@ -44,21 +44,17 @@ interface NominatimResult {
   importance: number;
 }
 
-// ─── Map helpers ──────────────────────────────────────────────────────────────
-/** react-leaflet child: clicks on the map call `onClick` */
 function MapClickHandler({ onClick }: { onClick: (lat: number, lng: number) => void }) {
   useMapEvents({ click: (e) => onClick(e.latlng.lat, e.latlng.lng) });
   return null;
 }
 
-/** react-leaflet child: updates the map view when `center` changes */
 function SetMapView({ center, zoom }: { center: [number, number]; zoom: number }) {
   const map = useMap();
   useEffect(() => { map.setView(center, zoom, { animate: false }); }, [center[0], center[1]]);
   return null;
 }
 
-/** react-leaflet child: flies the map to `position` (triggered by search selection) */
 function FlyToLocation({ position }: { position: [number, number] }) {
   const map = useMap();
   useEffect(() => {
@@ -105,9 +101,6 @@ const EMPTY_FORM: FormData = {
   isFreelance: false, logoUrl: '', companyImageUrl: '', companyUrl: '',
 };
 
-
-
-
 const clip = (s: string, n: number) => s.length > n ? `${s.slice(0, n)}…` : s;
 
 const fmtDate = (d?: string) => {
@@ -129,7 +122,6 @@ const parseTech = (t: unknown): string[] => {
 const SPRING = { type: 'spring' as const, stiffness: 380, damping: 30 };
 const SPRING_MODAL = { type: 'spring' as const, stiffness: 320, damping: 32 };
 
-// ─── Upload zone ─────────────────────────────────────────────────────────────
 interface UploadZoneProps {
   value: string;
   uploading: boolean;
@@ -156,7 +148,7 @@ function UploadZone({ value, uploading, isDragging, hint, accept, inputRef, onDr
     if (trimmed) onUrlChange(trimmed);
   };
 
-  // Reset draft when image is removed externally
+  
   useEffect(() => { if (!value) { setUrlDraft(''); setImgError(false); } }, [value]);
 
   if (uploading) {
@@ -190,7 +182,7 @@ function UploadZone({ value, uploading, isDragging, hint, accept, inputRef, onDr
 
   return (
     <div className="space-y-2">
-      {/* Mode tabs */}
+      {}
       <div className="flex rounded-lg border border-border bg-muted/30 p-0.5 gap-0.5">
         <button type="button" onClick={() => setMode('upload')}
           className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1 text-xs font-medium transition-colors ${
@@ -252,7 +244,6 @@ function UploadZone({ value, uploading, isDragging, hint, accept, inputRef, onDr
   );
 }
 
-// ─── Timeline line ────────────────────────────────────────────────────────────
 function TimelineLine() {
   return (
     <div className="absolute left-[19px] top-5 bottom-10 w-px overflow-hidden pointer-events-none">
@@ -270,7 +261,6 @@ function TimelineLine() {
   );
 }
 
-// ─── Custom checkbox ──────────────────────────────────────────────────────────
 function Checkbox({ checked, onChange, label }: { checked: boolean; onChange: () => void; label: string }) {
   return (
     <label className="flex cursor-pointer items-center gap-2.5 select-none" onClick={onChange}>
@@ -282,7 +272,6 @@ function Checkbox({ checked, onChange, label }: { checked: boolean; onChange: ()
   );
 }
 
-// ─── Empty state ──────────────────────────────────────────────────────────────
 function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/20 py-16 px-6 text-center">
@@ -300,7 +289,6 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
   );
 }
 
-// ─── Map preview (static tile image — no Leaflet, no z-index conflicts) ─────
 function StaticMapPreview({ lat, lng, height = 'h-28', clickable = false }: {
   lat: number; lng: number; height?: string; clickable?: boolean;
 }) {
@@ -341,7 +329,6 @@ function StaticMapPreview({ lat, lng, height = 'h-28', clickable = false }: {
   return inner;
 }
 
-// ─── Location autocomplete (Nominatim / OpenStreetMap) ───────────────────────
 interface LocationAutocompleteProps {
   value: string;
   onChange: (val: string) => void;
@@ -357,10 +344,10 @@ function LocationAutocomplete({ value, onChange, onPlaceSelect, className }: Loc
   const abortRef = useRef<AbortController | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Sync external value (e.g., when MapPickerModal confirms)
+  
   useEffect(() => { setInputVal(value); }, [value]);
 
-  // Close dropdown on outside click
+  
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node))
@@ -370,7 +357,7 @@ function LocationAutocomplete({ value, onChange, onPlaceSelect, className }: Loc
     return () => document.removeEventListener('mousedown', onDown);
   }, []);
 
-  // Debounced Nominatim search
+  
   useEffect(() => {
     if (inputVal.length < 3) { setResults([]); setShowDropdown(false); return; }
     const t = setTimeout(async () => {
@@ -439,7 +426,6 @@ function LocationAutocomplete({ value, onChange, onPlaceSelect, className }: Loc
   );
 }
 
-// ─── Experience card ──────────────────────────────────────────────────────────
 interface CardProps {
   exp: WorkExperience;
   reorderMode: boolean;
@@ -465,7 +451,7 @@ function ExperienceCard({ exp, reorderMode, deleteConfirmId, isDeleting, onView,
       transition={SPRING}
       onClick={!reorderMode && !isConfirming ? onView : undefined}
     >
-      {/* Banner — always shown for consistent card height */}
+      {}
       <div className="w-full h-[72px] overflow-hidden rounded-t-2xl">
         {exp.companyImageUrl && isImg(exp.companyImageUrl) ? (
           <img src={exp.companyImageUrl} alt="" className="w-full h-full object-cover" />
@@ -476,7 +462,7 @@ function ExperienceCard({ exp, reorderMode, deleteConfirmId, isDeleting, onView,
 
       <div className="p-4 sm:p-5">
         <div className="flex gap-3">
-          {/* Logo */}
+          {}
           {isImg(exp.logoUrl ?? '') ? (
             <img src={exp.logoUrl!} alt={exp.companyName}
               className="mt-0.5 h-11 w-11 shrink-0 rounded-xl object-contain bg-white p-1 border border-border" />
@@ -486,7 +472,7 @@ function ExperienceCard({ exp, reorderMode, deleteConfirmId, isDeleting, onView,
             </div>
           )}
 
-          {/* Content */}
+          {}
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
@@ -549,7 +535,7 @@ function ExperienceCard({ exp, reorderMode, deleteConfirmId, isDeleting, onView,
                 </div>
               </div>
 
-              {/* Action buttons */}
+              {}
               {!reorderMode && !isConfirming && (
                 <div className="flex shrink-0 items-center gap-1" onClick={e => e.stopPropagation()}>
                   <button onClick={onView}
@@ -574,12 +560,12 @@ function ExperienceCard({ exp, reorderMode, deleteConfirmId, isDeleting, onView,
               )}
             </div>
 
-            {/* Description preview */}
+            {}
             {exp.description && (
               <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground line-clamp-2">{exp.description}</p>
             )}
 
-            {/* Tech tags */}
+            {}
             {techList.length > 0 && (
               <div className="mt-2.5 flex flex-wrap gap-1.5">
                 {techList.slice(0, 5).map(t => (
@@ -593,7 +579,7 @@ function ExperienceCard({ exp, reorderMode, deleteConfirmId, isDeleting, onView,
           </div>
         </div>
 
-        {/* Inline delete confirm */}
+        {}
         <AnimatePresence>
           {isConfirming && (
             <motion.div
@@ -625,7 +611,6 @@ function ExperienceCard({ exp, reorderMode, deleteConfirmId, isDeleting, onView,
   );
 }
 
-// ─── Map Picker Modal (react-leaflet + Nominatim) ─────────────────────────────
 interface MapPickerModalProps {
   initialLat?: number | null;
   initialLng?: number | null;
@@ -649,7 +634,7 @@ function MapPickerModal({ initialLat, initialLng, initialLocation, onConfirm, on
   const [flyTarget, setFlyTarget] = useState<[number, number] | null>(null);
   const [selectedAddress, setSelectedAddress] = useState(initialLocation || '');
 
-  // Search state
+  
   const [searchVal, setSearchVal] = useState('');
   const [searchResults, setSearchResults] = useState<NominatimResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -657,14 +642,14 @@ function MapPickerModal({ initialLat, initialLng, initialLocation, onConfirm, on
   const searchAbortRef = useRef<AbortController | null>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  // Close on Escape key
+  
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  // Close search dropdown on outside click
+  
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node))
@@ -674,7 +659,7 @@ function MapPickerModal({ initialLat, initialLng, initialLocation, onConfirm, on
     return () => document.removeEventListener('mousedown', onDown);
   }, []);
 
-  // Debounced search
+  
   useEffect(() => {
     if (searchVal.length < 3) { setSearchResults([]); setShowSearchDrop(false); return; }
     const t = setTimeout(async () => {
@@ -728,14 +713,14 @@ function MapPickerModal({ initialLat, initialLng, initialLocation, onConfirm, on
 
   return createPortal(
     <div className="absolute inset-0 z-[60] flex items-center justify-center p-3 sm:p-5">
-      {/* Backdrop */}
+      {}
       <motion.div
         className="absolute inset-0 bg-background/80 backdrop-blur-md"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         onClick={onClose}
       />
 
-      {/* Card */}
+      {}
       <motion.div
         className="relative z-10 flex w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
         initial={{ opacity: 0, scale: 0.96, y: 16 }}
@@ -743,7 +728,7 @@ function MapPickerModal({ initialLat, initialLng, initialLocation, onConfirm, on
         exit={{ opacity: 0, scale: 0.96, y: 16 }}
         transition={SPRING_MODAL}
       >
-        {/* Header */}
+        {}
         <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-3.5">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
@@ -760,7 +745,7 @@ function MapPickerModal({ initialLat, initialLng, initialLocation, onConfirm, on
           </button>
         </div>
 
-        {/* Search input + dropdown — z-[1001] to float above Leaflet tile/control layers (z-400 / z-1000) */}
+        {}
         <div ref={searchContainerRef} className="relative z-[1001] shrink-0 px-4 pt-3 pb-2">
           <div className="relative">
             <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -795,7 +780,7 @@ function MapPickerModal({ initialLat, initialLng, initialLocation, onConfirm, on
           )}
         </div>
 
-        {/* Leaflet map */}
+        {}
         <div style={{ height: 460 }} className="relative w-full">
           <MapContainer
             center={mapCenter}
@@ -823,7 +808,7 @@ function MapPickerModal({ initialLat, initialLng, initialLocation, onConfirm, on
           </MapContainer>
         </div>
 
-        {/* Footer */}
+        {}
         <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border bg-card px-5 py-3.5">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             {markerPos ? (
@@ -863,7 +848,6 @@ function MapPickerModal({ initialLat, initialLng, initialLocation, onConfirm, on
   );
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
 export default function ExperiencePage() {
   const { profile: profile } = useAuthStore();
   const [experiences, setExperiences] = useState<WorkExperience[]>([]);
@@ -898,7 +882,7 @@ export default function ExperiencePage() {
     try {
       const data = await experienceService.getExperiences(profile.id);
       let list = Array.isArray(data) ? data : [];
-      // Restore saved custom order from localStorage
+      
       const savedOrder = localStorage.getItem(`ethoshub_exp_order_${profile.id}`);
       if (savedOrder) {
         try {
@@ -907,7 +891,7 @@ export default function ExperiencePage() {
           const sorted = ids.map(id => map.get(id)).filter(Boolean) as typeof list;
           const remaining = list.filter(e => !ids.includes(e.workExperienceId ?? ''));
           list = [...sorted, ...remaining];
-        } catch { /* ignore malformed storage */ }
+        } catch {  }
       }
       setExperiences(list);
       setOrdered([...list]);
@@ -960,15 +944,15 @@ export default function ExperiencePage() {
     if (!profile?.id || !REORDER_KEY) return;
     setIsSavingOrder(true);
     try {
-      // Persist custom order in localStorage
+      
       const ids = ordered.map(e => e.workExperienceId).filter(Boolean);
       localStorage.setItem(REORDER_KEY, JSON.stringify(ids));
-      // Attempt backend call; falls back gracefully if endpoint not available
+      
       await experienceService.reorderExperiences?.(profile.id, ids as string[]);
       setExperiences([...ordered]);
       toast.success('Orden guardado');
     } catch {
-      // Backend may not have the endpoint yet; order is still saved locally
+      
       setExperiences([...ordered]);
       toast.success('Orden guardado localmente');
     } finally {
@@ -977,7 +961,7 @@ export default function ExperiencePage() {
     }
   };;
 
-  const MAX_DATE = new Date().toISOString().split('T')[0]; // año actual como máximo
+  const MAX_DATE = new Date().toISOString().split('T')[0]; 
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -1062,7 +1046,7 @@ export default function ExperiencePage() {
     } catch { toast.error('Error al subir el banner'); } finally { setUploadingBanner(false); }
   };
 
-  // Stats
+  
   const uniqueCompanies = new Set(experiences.map(e => e.companyName).filter(Boolean)).size;
   let totalYears = 0;
   experiences.forEach(e => {
@@ -1078,7 +1062,7 @@ export default function ExperiencePage() {
       err ? 'border-destructive focus:border-destructive' : 'border-border focus:border-primary'
     }`;
 
-  // ── Form modal (portaled) ─────────────────────────────────────────────────
+  
   const formModal = portalEl ? createPortal(
     <AnimatePresence>
       {isFormOpen && (
@@ -1094,7 +1078,7 @@ export default function ExperiencePage() {
             exit={{ opacity: 0, y: 32 }}
             transition={SPRING_MODAL}
           >
-            {/* Header */}
+            {}
             <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
@@ -1113,7 +1097,7 @@ export default function ExperiencePage() {
             <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
               <div className="flex-1 overflow-y-auto p-6 space-y-5">
 
-                {/* Company + Role */}
+                {}
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between gap-1.5">
@@ -1149,7 +1133,7 @@ export default function ExperiencePage() {
                   </div>
                 </div>
 
-                {/* Dates */}
+                {}
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
@@ -1176,7 +1160,7 @@ export default function ExperiencePage() {
                   </div>
                 </div>
 
-                {/* Location + URL */}
+                {}
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
@@ -1219,7 +1203,7 @@ export default function ExperiencePage() {
                   </div>
                 </div>
 
-                {/* Checkboxes */}
+                {}
                 <div className="flex flex-wrap gap-5">
                   <Checkbox
                     checked={form.isCurrent}
@@ -1233,7 +1217,7 @@ export default function ExperiencePage() {
                   />
                 </div>
 
-                {/* Description */}
+                {}
                 <div className="space-y-1.5">
                   <label className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     <span>Descripción de logros *</span>
@@ -1247,7 +1231,7 @@ export default function ExperiencePage() {
                   {errors.description && <p className="text-xs text-destructive">{errors.description}</p>}
                 </div>
 
-                {/* Technologies */}
+                {}
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Tecnologías / Stack
@@ -1259,7 +1243,7 @@ export default function ExperiencePage() {
                   <p className="text-xs text-muted-foreground">Separadas por coma</p>
                 </div>
 
-                {/* Uploads */}
+                {}
                 <div className="border-t border-border pt-5">
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Imágenes opcionales</p>
                   <div className="grid gap-4 sm:grid-cols-2">
@@ -1297,7 +1281,7 @@ export default function ExperiencePage() {
                 </div>
               </div>
 
-              {/* Footer */}
+              {}
               <div className="flex shrink-0 items-center justify-between border-t border-border bg-card px-6 py-4">
                 <div>
                   {editingExp?.workExperienceId && (
@@ -1327,7 +1311,7 @@ export default function ExperiencePage() {
     portalEl!
   ) : null;
 
-  // ── Detail panel (portaled) ───────────────────────────────────────────────
+  
   const detailPanel = portalEl ? createPortal(
     <AnimatePresence>
       {detailExp && (
@@ -1343,7 +1327,7 @@ export default function ExperiencePage() {
             initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
             transition={{ type: 'spring', stiffness: 340, damping: 36 }}
           >
-            {/* ── Panel header ── */}
+            {}
             <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4 bg-card/80 backdrop-blur-sm">
               <div className="flex items-center gap-3 min-w-0">
                 {isImg(detailExp.logoUrl ?? '') ? (
@@ -1373,15 +1357,15 @@ export default function ExperiencePage() {
               </div>
             </div>
 
-            {/* ── Scrollable body ── */}
+            {}
             <div className="flex-1 overflow-y-auto overflow-x-hidden">
 
-              {/* Hero banner with gradient overlay */}
+              {}
               {isImg(detailExp.companyImageUrl ?? '') ? (
                 <div className="relative w-full h-44 overflow-hidden bg-muted">
                   <img src={detailExp.companyImageUrl!} alt="Banner empresa" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent" />
-                  {/* Logo floating over banner */}
+                  {}
                   <div className="absolute bottom-3 left-4 right-4 flex items-center gap-3 min-w-0">
                     {isImg(detailExp.logoUrl ?? '') && (
                       <img src={detailExp.logoUrl!} alt={detailExp.companyName}
@@ -1409,7 +1393,7 @@ export default function ExperiencePage() {
 
               <div className="p-5 space-y-5">
 
-                {/* Status + type badges */}
+                {}
                 <div className="flex flex-wrap gap-2">
                   {detailExp.isCurrent && (
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
@@ -1424,7 +1408,7 @@ export default function ExperiencePage() {
                   )}
                 </div>
 
-                {/* Meta grid */}
+                {}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="col-span-2 rounded-xl border border-border bg-muted/20 px-4 py-3">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 flex items-center gap-1">
@@ -1452,7 +1436,7 @@ export default function ExperiencePage() {
                   )}
                 </div>
 
-                {/* Company URL */}
+                {}
                 {detailExp.companyUrl && (
                   <a
                     href={detailExp.companyUrl}
@@ -1471,7 +1455,7 @@ export default function ExperiencePage() {
                   </a>
                 )}
 
-                {/* Description */}
+                {}
                 {detailExp.description && (
                   <div className="space-y-2">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -1481,7 +1465,7 @@ export default function ExperiencePage() {
                   </div>
                 )}
 
-                {/* Technologies */}
+                {}
                 {parseTech(detailExp.technologies).length > 0 && (
                   <div className="space-y-2.5">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -1506,7 +1490,7 @@ export default function ExperiencePage() {
               </div>
             </div>
 
-            {/* ── Panel footer ── */}
+            {}
             <div className="shrink-0 border-t border-border bg-card/80 backdrop-blur-sm px-5 py-3 flex items-center justify-between gap-2">
               <button
                 onClick={() => { setDetailExp(null); openEdit(detailExp); }}
@@ -1536,7 +1520,7 @@ export default function ExperiencePage() {
         transition={SPRING}
         className="space-y-6"
       >
-        {/* ── Header ─────────────────────────────────────────────────────── */}
+        {}
         <div className="relative overflow-hidden rounded-3xl border border-border bg-card px-6 py-6 sm:px-8 sm:py-7">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_0%_0%,_hsl(var(--primary)/0.12)_0%,_transparent_100%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_40%_60%_at_100%_100%,_hsl(var(--primary)/0.06)_0%,_transparent_100%)]" />
@@ -1569,7 +1553,7 @@ export default function ExperiencePage() {
           </div>
         </div>
 
-        {/* ── Toolbar ────────────────────────────────────────────────────── */}
+        {}
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
             Trayectoria
@@ -1606,7 +1590,7 @@ export default function ExperiencePage() {
           </div>
         </div>
 
-        {/* ── Timeline ───────────────────────────────────────────────────── */}
+        {}
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />

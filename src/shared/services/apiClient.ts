@@ -1,6 +1,9 @@
 import axios, { AxiosError, isCancel } from 'axios';
 import { useAuthStore } from '@/store/authStore';
 
+/**
+ * Typed API client wrapping the Axios instance; provides strongly-typed request helpers used by all service modules.
+ */
 const baseURL = (import.meta.env.VITE_API_URL as string) || '/api';
 
 function isJwtExpired(token: string): boolean {

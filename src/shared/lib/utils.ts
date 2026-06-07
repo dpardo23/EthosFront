@@ -1,6 +1,9 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
+/**
+ * General-purpose utility functions: class name merging, date formatting, and string helpers.
+ */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -13,9 +16,8 @@ export function generateId(): string {
   return Math.random().toString(36).substring(2, 15);
 }
 
-// DESPUÉS
 export function formatDate(dateString: string): string {
-  // Si es solo fecha (YYYY-MM-DD), agregar hora para evitar desfase UTC
+  
   const normalized = /^\d{4}-\d{2}-\d{2}$/.test(dateString)
     ? dateString + 'T00:00:00'
     : dateString;

@@ -34,6 +34,9 @@ import { Button, Card, Badge, LoadingSpinner } from '@/shared/ui';
 import { useAnalyticsStore } from '@/store/analyticsStore';
 import { cn } from '@/shared/lib/utils';
 
+/**
+ * Dashboard page displaying profile view counts, portfolio engagement metrics, and skill match analytics.
+ */
 type TimeRange = '7d' | '30d' | '90d' | '1y';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
@@ -47,7 +50,7 @@ export default function AnalyticsPage() {
     fetchMetrics();
   }, [fetchMetrics, timeRange]);
 
-  // Mock data for charts
+  
   const viewsData = [
     { date: 'Mon', views: 120, unique: 89 },
     { date: 'Tue', views: 150, unique: 102 },
@@ -145,7 +148,7 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">{t('analytics.title')}</h1>
@@ -175,7 +178,7 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Stats Grid */}
+      {}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, index) => (
           <motion.div
@@ -212,9 +215,9 @@ export default function AnalyticsPage() {
         ))}
       </div>
 
-      {/* Charts Row 1 */}
+      {}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Views Over Time */}
+        {}
         <Card className="p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-foreground">{t('analytics.viewsOverTime')}</h2>
@@ -267,7 +270,7 @@ export default function AnalyticsPage() {
           </div>
         </Card>
 
-        {/* Project Performance */}
+        {}
         <Card className="p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-foreground">{t('analytics.projectPerformance')}</h2>
@@ -298,9 +301,9 @@ export default function AnalyticsPage() {
         </Card>
       </div>
 
-      {/* Charts Row 2 */}
+      {}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Traffic Sources */}
+        {}
         <Card className="p-6">
           <h2 className="text-lg font-semibold text-foreground mb-6">{t('analytics.trafficSources')}</h2>
           <div className="h-64">
@@ -345,7 +348,7 @@ export default function AnalyticsPage() {
           </div>
         </Card>
 
-        {/* Devices */}
+        {}
         <Card className="p-6">
           <h2 className="text-lg font-semibold text-foreground mb-6">{t('analytics.devices')}</h2>
           <div className="space-y-6">
@@ -371,7 +374,7 @@ export default function AnalyticsPage() {
           </div>
         </Card>
 
-        {/* Top Referrers */}
+        {}
         <Card className="p-6">
           <h2 className="text-lg font-semibold text-foreground mb-6">{t('analytics.topReferrers')}</h2>
           <div className="space-y-4">
@@ -394,7 +397,7 @@ export default function AnalyticsPage() {
         </Card>
       </div>
 
-      {/* Geography */}
+      {}
       <Card className="p-6">
         <h2 className="text-lg font-semibold text-foreground mb-6">{t('analytics.geographicDistribution')}</h2>
         <div className="overflow-x-auto">

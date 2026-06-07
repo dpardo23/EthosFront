@@ -30,8 +30,9 @@ import { EthosOwlMascot } from '@/components/brand/EthosCoreLogo';
 import { useCvStudioStore } from '@/store/cvStudioStore';
 import { callAiAssist, compileLatexToPdf, type CvDocument, type ChatMessage } from '@/shared/services/cvStudioService';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
-
+/**
+ * AI-assisted CV editor page: Gemini multi-turn chat, CV document management, and PDF export.
+ */
 type EditorMode = 'markdown' | 'latex';
 
 type Template = {
@@ -40,8 +41,6 @@ type Template = {
   description: string;
   code: string;
 };
-
-// ── Templates ──────────────────────────────────────────────────────────────────
 
 const markdownTemplates: Template[] = [
   {
@@ -547,8 +546,6 @@ Universidad Politécnica de Madrid · Nota media: 8.6/10 · Mención en Ingenier
   },
 ];
 
-// ── Export options ─────────────────────────────────────────────────────────────
-
 const exportOptions = [
   { id: 'pdf',      label: 'Exportar PDF',     icon: FileType,  desc: 'Listo para enviar' },
   { id: 'markdown', label: 'Exportar Markdown', icon: FileText,  desc: 'Formato .md' },
@@ -561,8 +558,6 @@ const exportFormatLabel: Record<string, string> = {
 };
 
 const ZOOM_LEVELS = [25, 50, 75, 100, 125, 150];
-
-// ── Monaco LaTeX language registration ────────────────────────────────────────
 
 const handleBeforeMount: BeforeMount = (monaco) => {
   if (monaco.languages.getLanguages().some((l: { id: string }) => l.id === 'latex')) return;
@@ -582,14 +577,12 @@ const handleBeforeMount: BeforeMount = (monaco) => {
   });
 };
 
-// ── Main Component ─────────────────────────────────────────────────────────────
-
 export default function CVStudioPage() {
   const { resolvedTheme } = useUiStore();
   const isDark = resolvedTheme === 'dark';
   const { profile } = useAuthStore();
 
-  // ── Store ──────────────────────────────────────────────────────────────────
+  
   const {
     documents, fetchDocuments, saveDocument, editDocument, removeDocument, isSaving, isDeleting,
     editorContent, setEditorContent,
@@ -598,25 +591,25 @@ export default function CVStudioPage() {
     editingDocId, setEditingDocId,
   } = useCvStudioStore();
 
-  // Aliases so the rest of the component keeps its existing names
+  
   const mode = editorMode;
   const setMode = (m: EditorMode) => setEditorMode(m);
 
-  // ── UI toggles ─────────────────────────────────────────────────────────────
+  
   const [showModeDropdown, setShowModeDropdown] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
 
-  // ── Toolbar state ──────────────────────────────────────────────────────────
+  
   const [copied, setCopied] = useState(false);
   const [previewZoom, setPreviewZoom] = useState(100);
 
-  // ── Export loading modal ───────────────────────────────────────────────────
+  
   const [showExportLoading, setShowExportLoading] = useState(false);
   const [exportLoadingType, setExportLoadingType] = useState('');
 
-  // ── AI state ───────────────────────────────────────────────────────────────
+  
   const [aiPrompt, setAiPrompt] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
@@ -624,14 +617,14 @@ export default function CVStudioPage() {
   const chatMessagesRef = useRef<HTMLDivElement>(null);
   const aiTextareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // ── Save modal state ───────────────────────────────────────────────────────
+  
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [saveTitle, setSaveTitle] = useState('');
 
-  // ── Document management ────────────────────────────────────────────────────
+  
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  // ── Refs ───────────────────────────────────────────────────────────────────
+  
   const exportRef = useRef<HTMLDivElement>(null);
   const modeRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
@@ -640,22 +633,22 @@ export default function CVStudioPage() {
   const lineCount = editorContent.split('\n').length;
   const charCount = editorContent.length;
 
-  // ── Effects ────────────────────────────────────────────────────────────────
+  
 
   useEffect(() => {
     fetchDocuments().catch(() => toast.error('Error al cargar documentos guardados'));
   }, [fetchDocuments]);
 
-  // Initialize editor with default template on first load
+  
   useEffect(() => {
     if (!editorContent) {
       setEditorContent(markdownTemplates[0].code);
       setActiveTemplateId(markdownTemplates[0].id);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  
   }, []);
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
+  
 
   const handleModeSwitch = (newMode: EditorMode) => {
     setMode(newMode);
@@ -686,19 +679,19 @@ export default function CVStudioPage() {
   }, [handleLoadDoc]);
 
   const handleCopy = useCallback(async () => {
-    // Always read from Monaco's live model, never from stale React state
+    
     const content = editorRef.current?.getValue() ?? editorContent;
     try {
       await navigator.clipboard.writeText(content);
     } catch {
-      // Fallback for HTTP (non-secure) contexts
+      
       const ta = document.createElement('textarea');
       ta.value = content;
       ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
       document.body.appendChild(ta);
       ta.focus();
       ta.select();
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      
       document.execCommand('copy');
       document.body.removeChild(ta);
     }
@@ -802,7 +795,7 @@ export default function CVStudioPage() {
     }
 
     setShowExportMenu(false);
-    // Always read from Monaco's live model for freshest content
+    
     const contentSnapshot = editorRef.current?.getValue() ?? editorContent;
 
     if (type === 'pdf') {
@@ -810,14 +803,14 @@ export default function CVStudioPage() {
       setShowExportLoading(true);
 
       if (mode === 'markdown') {
-        // Client-side PDF via html2pdf string mode — avoids DOM position/clipping issues
+        
         try {
           const { default: html2pdf } = await import('html2pdf.js');
-          // Yield two animation frames so framer-motion can start the spinner
-          // before html2pdf blocks the main thread with canvas rendering.
+          
+          
           await new Promise(r => requestAnimationFrame(r));
           await new Promise(r => setTimeout(r, 80));
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          
           const worker = html2pdf() as any;
           await worker
             .set({
@@ -835,7 +828,7 @@ export default function CVStudioPage() {
           toast.error('Error generando PDF: ' + (err as Error).message);
         }
       } else {
-        // LaTeX → PDF via backend pdflatex
+        
         try {
           const blob = await compileLatexToPdf(contentSnapshot, profile?.avatar ?? undefined);
           const url = URL.createObjectURL(blob);
@@ -875,7 +868,7 @@ export default function CVStudioPage() {
       document.body.appendChild(ta);
       ta.focus();
       ta.select();
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      
       document.execCommand('copy');
       document.body.removeChild(ta);
     }
@@ -924,12 +917,12 @@ export default function CVStudioPage() {
     }
   }, [aiPrompt, isAiLoading, mode, editorContent, chatHistory]);
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  
 
   return (
     <div className="flex flex-col -mx-4 -my-6 sm:-mx-6 lg:-mx-8 lg:h-[calc(100vh-3.5rem)] lg:overflow-hidden">
 
-      {/* ── Header Card ────────────────────────────────────────────────────── */}
+      {}
       <div className={cn(
         'relative rounded-3xl border border-border bg-card',
         'px-6 py-8 sm:px-8 sm:py-10',
@@ -940,7 +933,7 @@ export default function CVStudioPage() {
 
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
 
-          {/* Left: badge + title */}
+          {}
           <div className="space-y-3 max-w-lg">
             <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">
               <Sparkles className="h-3 w-3 text-primary" />
@@ -954,10 +947,10 @@ export default function CVStudioPage() {
             </p>
           </div>
 
-          {/* Right: single-row controls */}
+          {}
           <div className="flex flex-row flex-wrap items-center gap-2 lg:justify-end">
 
-            {/* Mode combobox */}
+            {}
             <div className="relative" ref={modeRef}>
               <button
                 onClick={() => setShowModeDropdown((v) => !v)}
@@ -1007,7 +1000,7 @@ export default function CVStudioPage() {
               </AnimatePresence>
             </div>
 
-            {/* Nuevo CV */}
+            {}
             <button
               onClick={handleNewDocument}
               disabled={isAiLoading}
@@ -1022,7 +1015,7 @@ export default function CVStudioPage() {
               Nuevo CV
             </button>
 
-            {/* Copy */}
+            {}
             <button
               onClick={handleCopy}
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
@@ -1041,7 +1034,7 @@ export default function CVStudioPage() {
               </AnimatePresence>
             </button>
 
-            {/* AI Assistant */}
+            {}
             <button
               onClick={() => setShowAiModal(true)}
               className={cn(
@@ -1057,7 +1050,7 @@ export default function CVStudioPage() {
               {isAiLoading ? 'IA procesando...' : 'Asistente IA'}
             </button>
 
-            {/* Export */}
+            {}
             <div className="relative" ref={exportRef}>
               <button
                 disabled={showExportLoading}
@@ -1119,10 +1112,10 @@ export default function CVStudioPage() {
               </AnimatePresence>
             </div>
 
-            {/* Divider */}
+            {}
             <div className="h-5 w-px bg-border" />
 
-            {/* Guardar / Actualizar */}
+            {}
             <button
               onClick={handleSaveToProfile}
               disabled={isSaving}
@@ -1140,7 +1133,7 @@ export default function CVStudioPage() {
         </div>
       </div>
 
-      {/* ── Template + Saved Docs Strip ───────────────────────────────────────── */}
+      {}
       <motion.div layout className="shrink-0 px-4 sm:px-6 lg:px-8 py-2.5 bg-card/50">
         <p className="mb-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
           Plantillas {mode === 'markdown' ? 'Markdown' : 'LaTeX'}
@@ -1149,7 +1142,7 @@ export default function CVStudioPage() {
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           <AnimatePresence mode="popLayout">
 
-            {/* Built-in templates */}
+            {}
             {templates.map((tpl, i) => (
               <motion.button
                 key={tpl.id}
@@ -1180,7 +1173,7 @@ export default function CVStudioPage() {
               </motion.button>
             ))}
 
-            {/* Saved document cards */}
+            {}
             {documents.map((doc) => (
               <motion.div
                 key={doc.id}
@@ -1197,7 +1190,7 @@ export default function CVStudioPage() {
                     : 'border-border bg-background hover:bg-accent/50',
                 )}
               >
-                {/* Mode badge + active dot */}
+                {}
                 <div className="flex items-center justify-between gap-1 mb-0.5">
                   <span className={cn(
                     'text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded',
@@ -1212,7 +1205,7 @@ export default function CVStudioPage() {
                   )}
                 </div>
 
-                {/* Title (clickable → load) */}
+                {}
                 <button
                   onClick={() => handleLoadDoc(doc)}
                   className={cn(
@@ -1223,7 +1216,7 @@ export default function CVStudioPage() {
                   {doc.title}
                 </button>
 
-                {/* Edit / Delete actions */}
+                {}
                 <div className={cn(
                   'flex items-center gap-0.5 mt-auto pt-1.5 border-t',
                   isDark ? 'border-white/8' : 'border-black/6',
@@ -1249,10 +1242,10 @@ export default function CVStudioPage() {
         </div>
       </motion.div>
 
-      {/* ── Editor Panel ───────────────────────────────────────────────────────── */}
+      {}
       <div className="flex flex-col flex-1 min-h-[300px] max-h-[65vh] lg:max-h-none lg:min-h-0 mx-4 sm:mx-6 lg:mx-8 mb-4 lg:mb-6 rounded-xl overflow-hidden border border-border">
 
-        {/* Animated accent line */}
+        {}
         <div className="relative h-0.5 w-full overflow-hidden shrink-0 pointer-events-none">
           <div className="absolute inset-0 bg-primary/15" />
           <motion.div
@@ -1263,7 +1256,7 @@ export default function CVStudioPage() {
           />
         </div>
 
-        {/* Editor header */}
+        {}
         <div className={cn(
           'flex h-9 shrink-0 items-center justify-between px-4 border-b border-border',
           isDark ? 'bg-[#07070B]' : 'bg-muted/20',
@@ -1292,10 +1285,10 @@ export default function CVStudioPage() {
           </div>
         </div>
 
-        {/* Monaco Editor + floating minimap */}
+        {}
         <div className="relative flex-1 min-h-0">
 
-          {/* Monaco fills space minus minimap width on sm+ */}
+          {}
           <div className="absolute inset-0 sm:right-[200px]">
             <Editor
               height="100%"
@@ -1322,7 +1315,7 @@ export default function CVStudioPage() {
             />
           </div>
 
-          {/* Floating minimap */}
+          {}
           <motion.div
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
@@ -1335,7 +1328,7 @@ export default function CVStudioPage() {
             )}
             style={{ bottom: '14px' }}
           >
-            {/* Minimap title bar */}
+            {}
             <div className={cn(
               'flex h-7 shrink-0 items-center justify-between px-2.5 border-b border-border',
               isDark ? 'bg-zinc-900/60' : 'bg-muted/50',
@@ -1353,7 +1346,7 @@ export default function CVStudioPage() {
               </button>
             </div>
 
-            {/* Scaled preview — click to open modal */}
+            {}
             <div
               className="relative flex-1 min-h-0 overflow-hidden cursor-pointer group"
               onClick={() => setShowPreviewModal(true)}
@@ -1379,9 +1372,9 @@ export default function CVStudioPage() {
         </div>
       </div>
 
-      {/* Markdown PDF is generated via buildMarkdownPdfHtml() into a temp DOM node — no ref needed */}
+      {}
 
-      {/* ── Preview Modal ──────────────────────────────────────────────────────── */}
+      {}
       <AnimatePresence>
         {showPreviewModal && (
           <>
@@ -1448,7 +1441,7 @@ export default function CVStudioPage() {
         )}
       </AnimatePresence>
 
-      {/* ── Save Modal ─────────────────────────────────────────────────────────── */}
+      {}
       <AnimatePresence>
         {showSaveModal && (
           <>
@@ -1472,7 +1465,7 @@ export default function CVStudioPage() {
                 )}
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* Modal header */}
+                {}
                 <div className={cn('flex items-center justify-between px-5 py-4 border-b border-border', isDark ? 'bg-zinc-900' : 'bg-white')}>
                   <div className="flex items-center gap-2.5">
                     <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-500/10">
@@ -1494,7 +1487,7 @@ export default function CVStudioPage() {
                   </button>
                 </div>
 
-                {/* Modal body */}
+                {}
                 <div className="p-5 space-y-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-foreground">Nombre del documento</label>
@@ -1515,7 +1508,7 @@ export default function CVStudioPage() {
                     <p className="text-[10px] text-muted-foreground text-right">{saveTitle.length}/200</p>
                   </div>
 
-                  {/* Mode info */}
+                  {}
                   <div className={cn('flex items-center gap-2 rounded-xl border border-border px-3 py-2', isDark ? 'bg-zinc-800/50' : 'bg-muted/30')}>
                     {mode === 'markdown'
                       ? <FileText className="h-3.5 w-3.5 text-violet-400 shrink-0" />
@@ -1526,7 +1519,7 @@ export default function CVStudioPage() {
                     </span>
                   </div>
 
-                  {/* Actions */}
+                  {}
                   <div className="flex gap-2 pt-1">
                     <button
                       onClick={() => setShowSaveModal(false)}
@@ -1558,7 +1551,7 @@ export default function CVStudioPage() {
         )}
       </AnimatePresence>
 
-      {/* ── AI Modal ───────────────────────────────────────────────────────────── */}
+      {}
       <AnimatePresence>
         {showAiModal && (
           <>
@@ -1579,7 +1572,7 @@ export default function CVStudioPage() {
                 'rounded-2xl border border-border shadow-2xl overflow-hidden flex flex-col',
                 isDark ? 'bg-zinc-900/95 backdrop-blur-xl shadow-black/60 border-white/8' : 'bg-white/95 backdrop-blur-xl shadow-black/15',
               )}>
-                {/* AI Modal header */}
+                {}
                 <div className={cn('flex items-center justify-between px-4 py-3 border-b border-border', isDark ? 'bg-zinc-900' : 'bg-white')}>
                   <div className="flex items-center gap-2">
                     <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-violet-500">
@@ -1601,7 +1594,7 @@ export default function CVStudioPage() {
                 </div>
 
                 <div className="p-4 space-y-3">
-                  {/* Quick prompts */}
+                  {}
                   <div className="flex flex-wrap gap-1.5">
                     {['Optimiza para ATS', 'Añade métricas', 'Mejora el tono', 'Traduce al inglés'].map((action) => (
                       <button
@@ -1615,7 +1608,7 @@ export default function CVStudioPage() {
                     ))}
                   </div>
 
-                  {/* Chat history — grows from 0 to max-h, then scrolls */}
+                  {}
                   {(chatHistory.length > 0 || isAiLoading) && (
                     <div
                       ref={chatMessagesRef}
@@ -1642,7 +1635,7 @@ export default function CVStudioPage() {
                               'w-full rounded-lg border border-border overflow-hidden',
                               isDark ? 'bg-zinc-800/60' : 'bg-white',
                             )}>
-                              {/* Code block header */}
+                              {}
                               <div className={cn(
                                 'flex items-center justify-between px-2.5 py-1 border-b border-border',
                                 isDark ? 'bg-zinc-900/60' : 'bg-muted/50',
@@ -1668,7 +1661,7 @@ export default function CVStudioPage() {
                                   </button>
                                 </div>
                               </div>
-                              {/* Code preview */}
+                              {}
                               <pre className={cn(
                                 'text-[9px] font-mono px-2.5 py-1.5 max-h-32 overflow-auto whitespace-pre-wrap leading-relaxed',
                                 isDark ? 'text-zinc-300' : 'text-zinc-700',
@@ -1680,7 +1673,7 @@ export default function CVStudioPage() {
                         </motion.div>
                       ))}
 
-                      {/* Loading bubble while waiting for AI response */}
+                      {}
                       {isAiLoading && (
                         <motion.div
                           initial={{ opacity: 0, y: 4 }}
@@ -1694,7 +1687,7 @@ export default function CVStudioPage() {
                     </div>
                   )}
 
-                  {/* Prompt input — textarea that expands vertically */}
+                  {}
                   <div className={cn(
                     'flex items-end gap-2 rounded-xl border px-3 py-2 transition-colors',
                     'border-border focus-within:border-violet-500/50',
@@ -1754,7 +1747,7 @@ export default function CVStudioPage() {
         )}
       </AnimatePresence>
 
-      {/* ── Export Loading Modal ───────────────────────────────────────────────── */}
+      {}
       <AnimatePresence>
         {showExportLoading && (
           <>
@@ -1827,7 +1820,7 @@ export default function CVStudioPage() {
         )}
       </AnimatePresence>
 
-      {/* Click-outside overlay — below all dropdowns */}
+      {}
       {(showExportMenu || showModeDropdown) && (
         <div
           className="fixed inset-0 z-[50]"
@@ -1835,7 +1828,7 @@ export default function CVStudioPage() {
         />
       )}
 
-      {/* ── Delete CV confirmation popup ───────────────────────────────────────── */}
+      {}
       <AnimatePresence>
         {deleteConfirmId && (
           <DeleteCvConfirmModal
@@ -1848,8 +1841,6 @@ export default function CVStudioPage() {
     </div>
   );
 }
-
-// ── DeleteCvConfirmModal ──────────────────────────────────────────────────────
 
 function DeleteCvConfirmModal({
   onClose,
@@ -1923,8 +1914,6 @@ function DeleteCvConfirmModal({
     portalRoot,
   );
 }
-
-// ── Markdown Preview ───────────────────────────────────────────────────────────
 
 function MarkdownPreview({ content, isDark }: { content: string; isDark: boolean }) {
   const lines = content.split('\n');

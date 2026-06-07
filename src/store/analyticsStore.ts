@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import type { PlatformMetrics, ActivityLog, TimeSeriesData } from '@/shared/types';
 import { analyticsService } from '@/shared/services';
 
+/**
+ * Zustand store for profile analytics data fetched from the dashboard service.
+ */
 interface AnalyticsStore {
   metrics: PlatformMetrics | null;
   activityLogs: ActivityLog[];

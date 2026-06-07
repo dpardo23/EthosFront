@@ -4,6 +4,9 @@ import { useAuthStore } from '@/store';
 import type { ProfileRole } from '@/shared/types';
 import type { ReactNode } from 'react';
 
+/**
+ * Route guard component that redirects unauthenticated users to login and enforces role-based access.
+ */
 const EXPIRES_AT_KEY = 'ethoshub_access_expires_at';
 const ACCESS_TOKEN_KEY = 'ethoshub_access_token';
 
@@ -34,8 +37,8 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   const { isAuthenticated, isAuthResolved, profile, logout } = useAuthStore();
   const expired = isAuthenticated && isTokenExpired();
 
-  // Anti-BFCache: if the browser restores a page from cache after logout,
-  // pageshow.persisted=true but the store already has isAuthenticated=false.
+  
+  
   useEffect(() => {
     const handlePageShow = (event: PageTransitionEvent) => {
       if (event.persisted && !useAuthStore.getState().isAuthenticated) {
@@ -46,22 +49,22 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     return () => window.removeEventListener('pageshow', handlePageShow);
   }, []);
 
-  // Expired token: async logout in effect — never call setState during render.
+  
   useEffect(() => {
     if (expired) void logout();
   }, [expired, logout]);
 
-  // Axios interceptors dispatch this event on 401/403 instead of window.location.replace.
-  // Avoids a full page reload and lets React Router handle the redirect cleanly.
+  
+  
   useEffect(() => {
     const handleUnauthorized = () => { void logout(); };
     window.addEventListener('auth:unauthorized', handleUnauthorized);
     return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
   }, [logout]);
 
-  // Hold the render until AuthProvider has completed its async token check.
-  // Without this gate, Zustand's default state (isAuthenticated=false) causes
-  // a redirect to /login before the persisted session is validated.
+  
+  
+  
   if (!isAuthResolved) {
     return <AuthLoadingScreen />;
   }

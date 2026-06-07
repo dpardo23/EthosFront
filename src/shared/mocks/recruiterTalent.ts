@@ -8,6 +8,9 @@ import type {
   Profile,
 } from '../types';
 
+/**
+ * Static mock talent profiles used by the recruiter talent discovery page during development.
+ */
 export type TalentAvailability = 'Disponible' | 'Entrevistas' | 'Explorando';
 export type TalentWorkMode = 'Remoto' | 'Hibrido' | 'Presencial';
 

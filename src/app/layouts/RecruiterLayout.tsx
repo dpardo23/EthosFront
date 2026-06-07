@@ -20,6 +20,9 @@ import { Avatar } from '@/shared/ui';
 import { EthosCoreLogo } from '@/components/brand/EthosCoreLogo';
 import { useTranslation } from 'react-i18next';
 
+/**
+ * Layout shell for recruiter dashboard pages; uses a simplified navigation without the professional sidebar.
+ */
 const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
 
 type NavItem = { path: string; icon: typeof LayoutDashboard; label: string };
@@ -63,12 +66,12 @@ function TopNavIcon({
           <Icon className="relative z-10 h-[18px] w-[18px]" />
         </motion.div>
 
-        {/* Tooltip */}
+        {}
         <span className="pointer-events-none absolute top-full mt-1.5 whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-[11px] text-background opacity-0 shadow-lg transition-opacity group-hover:opacity-100 z-[200]">
           {item.label}
         </span>
 
-        {/* Active dot */}
+        {}
         {isActive && (
           <motion.div
             layoutId="recruiter-topnav-dot"
@@ -97,7 +100,7 @@ export function RecruiterLayout() {
   const isDark = resolvedTheme === 'dark';
   const pathname = location.pathname;
 
-  // Idle logout
+  
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     const reset = () => {
@@ -115,18 +118,18 @@ export function RecruiterLayout() {
 
   useEffect(() => { setMobileMenuOpen(false); }, [pathname]);
 
-  // Track current path in a ref so the Realtime callback can read it without
-  // the channel being torn down and rebuilt on every navigation.
+  
+  
   const pathnameRef = useRef(pathname);
   useEffect(() => { pathnameRef.current = pathname; }, [pathname]);
 
-  // Global Realtime channel: notify when a new message arrives for this recruiter
-  // even if they're not on the chat page. Created once per session (profile + auth).
+  
+  
   useEffect(() => {
     if (!profile?.id || !supabase || !isAuthResolved) return;
     const sb = supabase;
 
-    // Re-inject JWT before subscribing to avoid race with async checkAuth on reload.
+    
     const token = sessionStorage.getItem('ethoshub_access_token');
     if (token && !token.startsWith('mock-')) sb.realtime.setAuth(token);
 
@@ -136,11 +139,11 @@ export function RecruiterLayout() {
       .channel(`global-chat-rec:${profile.id}`)
       .on(
         'postgres_changes',
-        // Filter server-side: only messages NOT sent by this recruiter.
+        
         { event: 'INSERT', schema: 'core', table: 'chat_messages', filter: `sender_id=neq.${profile.id}` },
         (payload) => {
           const msg = payload.new as { sender_id: string; content: string; chat_id: string };
-          // Suppress bell notification when the recruiter is already viewing the chat.
+          
           if (pathnameRef.current.startsWith('/recruiter/chat')) return;
           addNotification({
             type: 'message',
@@ -184,17 +187,17 @@ export function RecruiterLayout() {
   return (
     <div className={cn('flex h-screen flex-col overflow-hidden', isDark ? 'bg-[#030305]' : 'bg-background')}>
 
-      {/* ── TopBar ─────────────────────────────────────────────────────────── */}
+      {}
       <header
         className="relative z-[60] flex h-14 shrink-0 items-center justify-between gap-4 border-b border-border px-4"
         style={topbarStyle}
       >
-        {/* LEFT: Logo */}
+        {}
         <Link to="/recruiter/dashboard" className="flex items-center gap-2.5 shrink-0">
           <EthosCoreLogo size="sm" />
         </Link>
 
-        {/* CENTER: Desktop nav icons */}
+        {}
         <nav className="hidden md:flex items-center gap-1">
           {recruiterNavItems.map(item => {
             const isActive = pathname === item.path || pathname.startsWith(item.path + '/');
@@ -202,10 +205,10 @@ export function RecruiterLayout() {
           })}
         </nav>
 
-        {/* RIGHT: actions */}
+        {}
         <div className="flex items-center gap-1.5">
 
-          {/* Profile menu */}
+          {}
           <div className="relative" ref={profileMenuRef}>
             <button
               onClick={() => setShowProfileMenu(v => !v)}
@@ -260,7 +263,7 @@ export function RecruiterLayout() {
             </AnimatePresence>
           </div>
 
-          {/* Mobile hamburger */}
+          {}
           <button
             onClick={() => setMobileMenuOpen(v => !v)}
             className="flex md:hidden h-9 w-9 items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
@@ -271,7 +274,7 @@ export function RecruiterLayout() {
         </div>
       </header>
 
-      {/* ── Mobile nav drawer ──────────────────────────────────────────────── */}
+      {}
       <AnimatePresence>
         {mobileMenuOpen && (
           <>
@@ -316,7 +319,7 @@ export function RecruiterLayout() {
         )}
       </AnimatePresence>
 
-      {/* ── Page content ───────────────────────────────────────────────────── */}
+      {}
       <div id="portal-root" className="relative flex-1 overflow-hidden">
         <main className="h-full overflow-y-auto bg-background">
           <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-[1400px] mx-auto">

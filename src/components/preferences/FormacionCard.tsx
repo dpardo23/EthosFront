@@ -13,7 +13,9 @@ import { Button, Card } from '@/shared/ui';
 import type { AcademicRecord } from '@/shared/types';
 import { AcademicRecordModal } from './AcademicRecordModal';
 
-// Mock data for demonstration
+/**
+ * Settings card displaying and editing a single academic formation entry.
+ */
 const initialRecords: AcademicRecord[] = [
   {
     id: '1',
@@ -62,7 +64,7 @@ export function FormacionCard() {
 
   const handleSaveRecord = (record: Omit<AcademicRecord, 'id' | 'profileId' | 'createdAt' | 'updatedAt'>) => {
     if (editingRecord) {
-      // Update existing record
+      
       setRecords((prev) =>
         prev.map((r) =>
           r.id === editingRecord.id
@@ -71,7 +73,7 @@ export function FormacionCard() {
         )
       );
     } else {
-      // Add new record
+      
       const newRecord: AcademicRecord = {
         ...record,
         id: crypto.randomUUID(),
@@ -128,7 +130,7 @@ export function FormacionCard() {
           </div>
         </div>
 
-        {/* Collapsed Preview */}
+        {}
         {!isExpanded && records.length > 0 && (
           <div className="mt-4">
             <div
@@ -158,7 +160,7 @@ export function FormacionCard() {
           </div>
         )}
 
-        {/* Expanded Content */}
+        {}
         <AnimatePresence>
           {isExpanded && (
             <motion.div
@@ -170,7 +172,7 @@ export function FormacionCard() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="mt-5 space-y-4">
-                {/* Add Button */}
+                {}
                 <Button
                   variant="outline"
                   size="sm"
@@ -181,7 +183,7 @@ export function FormacionCard() {
                   Agregar Trayectoria
                 </Button>
 
-                {/* Records List */}
+                {}
                 <div className="space-y-3">
                   {records.map((record, index) => (
                     <motion.div
@@ -191,7 +193,7 @@ export function FormacionCard() {
                       transition={{ delay: index * 0.1, duration: 0.3 }}
                       className="group relative rounded-2xl border border-border bg-background/70 p-4 transition-all hover:border-primary/30"
                     >
-                      {/* Edit Button */}
+                      {}
                       <button
                         type="button"
                         onClick={() => handleEditRecord(record)}
@@ -202,12 +204,12 @@ export function FormacionCard() {
                       </button>
 
                       <div className="flex gap-4">
-                        {/* Icon */}
+                        {}
                         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600">
                           <GraduationCap className="h-6 w-6" />
                         </div>
 
-                        {/* Content */}
+                        {}
                         <div className="min-w-0 flex-1 pr-8">
                           <h3 className="text-base font-semibold text-foreground">
                             {record.degree}
@@ -276,7 +278,7 @@ export function FormacionCard() {
         </AnimatePresence>
       </Card>
 
-      {/* Academic Record Modal */}
+      {}
       <AcademicRecordModal
         isOpen={isModalOpen}
         onClose={() => {

@@ -1,6 +1,9 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/shared/lib/utils';
 
+/**
+ * Small uppercase label chip displayed above section headings on the landing page.
+ */
 interface SectionLabelProps {
   children: ReactNode;
   className?: string;

@@ -18,6 +18,9 @@ import {
 import { Badge, Button, Card, Progress } from '@/shared/ui';
 import { cn } from '@/shared/lib/utils';
 
+/**
+ * Admin page listing all published portfolios with publish/unpublish and inspection actions.
+ */
 type RiskLevel = 'Alto' | 'Medio' | 'Bajo';
 type PortfolioStatus = 'Publicado' | 'En revision' | 'Observado';
 

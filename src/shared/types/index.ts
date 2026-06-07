@@ -1,6 +1,8 @@
-// =============================================
-// AUTH & PROFILES
-// =============================================
+
+
+/**
+ * Shared TypeScript type definitions for the application domain: user, profile, project, skill, and API response types.
+ */
 export type ProfileRole = 'professional' | 'recruiter' | 'guest' | 'admin';
 
 export interface Profile {
@@ -18,10 +20,10 @@ export interface Profile {
   country?: string;
   phone?: string;
   website?: string;
-  // Campos añadidos para la sincronización con la DB
-  status?: string;    // Mapeado a core.availabilities.status [cite: 179]
-  seniority?: string; // Mapeado a core.profiles_basic.seniority [cite: 377]
-  profile_id?: string; // ID del perfil en la tabla core.profiles
+  
+  status?: string;    
+  seniority?: string; 
+  profile_id?: string; 
   createdAt?: string;
   company?: string;
   availabilityStatus?: string;
@@ -32,9 +34,6 @@ export interface AuthState {
   loading: boolean;
 }
 
-// =============================================
-// SKILLS
-// =============================================
 export type SkillLevel = 'Junior' | 'Mid' | 'Senior';
 
 export type SkillCategory = 
@@ -81,9 +80,6 @@ export interface Endorsement {
   createdAt: string;
 }
 
-// =============================================
-// PROJECTS
-// =============================================
 export type ProjectStatus = 'draft' | 'in_progress' | 'completed' | 'archived';
 export type ProjectCategory = 'Web' | 'Mobile' | 'API' | 'Data' | 'DevOps' | 'Other';
 
@@ -130,9 +126,6 @@ export interface ProjectFile {
   url: string;
 }
 
-// =============================================
-// CONNECTIONS
-// =============================================
 export type ConnectionProvider =
   | 'email' | 'github' | 'google' | 'gmail'
   | 'linkedin' | 'slack' | 'website' | 'devto';
@@ -206,9 +199,6 @@ export interface Recommendation {
   createdAt: string;
 }
 
-// =============================================
-// VISIBILITY & SEO
-// =============================================
 export type SectionVisibility = 'PUBLIC' | 'LINK_ONLY' | 'PRIVATE';
 export type PortfolioSection = 'projects' | 'skills' | 'experience' | 'bio' | 'contact';
 
@@ -251,9 +241,6 @@ export interface ModerationAction {
   createdAt: string;
 }
 
-// =============================================
-// ANALYTICS
-// =============================================
 export interface PortfolioMetrics {
   profileId: string;
   totalVisits: number;
@@ -290,9 +277,6 @@ export interface TimeSeriesData {
   interactions: number;
 }
 
-// =============================================
-// PREFERENCES
-// =============================================
 export type Language = 'es' | 'en' | 'pt';
 export type Theme = 'light' | 'dark' | 'system';
 
@@ -325,9 +309,6 @@ export interface ProfilePreferences {
   privacy: PrivacyPreferences;
 }
 
-// =============================================
-// NOTIFICATIONS
-// =============================================
 export type NotificationType = 'endorsement' | 'visit' | 'recommendation' | 'system' | 'message';
 
 export interface Notification {
@@ -340,9 +321,6 @@ export interface Notification {
   createdAt: string;
 }
 
-// =============================================
-// ACADEMIC RECORDS (Formacion)
-// =============================================
 export interface AcademicRecord {
   id: string;
   profileId: string;
@@ -363,9 +341,6 @@ export interface AcademicRecord {
   updatedAt: string;
 }
 
-// =============================================
-// RECRUITER PROFILE (Perfil de Empresa)
-// =============================================
 export interface CompanyProfile {
   profile_id?: string;
   company_name: string;
@@ -381,9 +356,6 @@ export interface CompanyProfile {
   logo_url?: string;
 }
 
-// =============================================
-// UI STATE
-// =============================================
 export interface Toast {
   id: string;
   type: 'success' | 'error' | 'warning' | 'info';

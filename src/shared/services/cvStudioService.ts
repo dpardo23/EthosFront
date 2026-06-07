@@ -1,5 +1,8 @@
 import api from '@/shared/api/api';
 
+/**
+ * API service layer for CV Studio: document CRUD, PDF compilation, and Gemini AI assistant calls.
+ */
 export interface CvDocument {
   id: string;
   title: string;
@@ -22,8 +25,6 @@ export interface ChatMessage {
   text: string;
 }
 
-// ── CRUD ──────────────────────────────────────────────────────────────────────
-
 export async function listDocuments(): Promise<CvDocument[]> {
   const res = await api.get<{ data: CvDocument[] }>('/v1/cv-documents');
   return res.data.data ?? [];
@@ -42,8 +43,6 @@ export async function updateDocument(id: string, req: CvDocumentRequest): Promis
 export async function deleteDocument(id: string): Promise<void> {
   await api.delete(`/v1/cv-documents/${id}`);
 }
-
-// ── LaTeX → PDF (via backend pdflatex) ───────────────────────────────────────
 
 export async function compileLatexToPdf(latexCode: string, profileImageUrl?: string): Promise<Blob> {
   let errorMessage: string | null = null;
@@ -76,8 +75,6 @@ export async function compileLatexToPdf(latexCode: string, profileImageUrl?: str
   }
   throw new Error(errorMessage ?? 'Error de compilación LaTeX');
 }
-
-// ── AI Assist (single REST call, no streaming) ────────────────────────────────
 
 export interface AiCallOptions {
   prompt: string;

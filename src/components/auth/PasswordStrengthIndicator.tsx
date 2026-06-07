@@ -3,6 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Minus } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 
+/**
+ * Visual password strength meter with rule checklist used in registration and change-password forms.
+ */
 interface PasswordRequirement {
   key: string;
   label: string;

@@ -3,6 +3,9 @@ import { GitBranch, Globe, Search, Clock, CheckCircle2 } from 'lucide-react';
 import { SectionLabel, SectionDivider, GradientText } from '@/shared/landing';
 import { easeOut, fadeUpView, slideUpView } from '@/shared/motion';
 
+/**
+ * Landing section explaining the professional identity and portfolio features of the platform.
+ */
 function ActivityFeed() {
   const activities = [
     { msg: 'feat: add auth flow with JWT refresh tokens',       repo: 'api-core',     lang: 'Go',         time: '2h' },

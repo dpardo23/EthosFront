@@ -1,3 +1,6 @@
+/**
+ * TypeScript types for work experience domain objects.
+ */
 export interface WorkExperience {
   workExperienceId?: string;
   profileId?: string;

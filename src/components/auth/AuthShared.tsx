@@ -4,7 +4,9 @@ import { motion } from 'framer-motion';
 import { cn } from '@/shared/lib/utils';
 import { EthosLogoIcon } from '@/components/brand/EthosCoreLogo';
 
-// ─── Auth Hero ────────────────────────────────────────────────────────
+/**
+ * Shared auth UI primitives: social login buttons, divider, and reusable form field wrappers.
+ */
 export function AuthHero({
   eyebrow,
   title,
@@ -57,7 +59,6 @@ export function AuthHero({
   );
 }
 
-// ─── Social Auth Buttons ──────────────────────────────────────────────
 function GoogleIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4 shrink-0">
@@ -151,7 +152,6 @@ export function SocialAuthGroup({
   );
 }
 
-// ─── Auth Footer Link ─────────────────────────────────────────────────
 export function AuthFooterLink({
   prompt,
   cta,
@@ -175,7 +175,6 @@ export function AuthFooterLink({
   );
 }
 
-// ─── Auth Divider ─────────────────────────────────────────────────────
 export function AuthDivider({ label = 'O continúa con' }: { label?: string }) {
   return (
     <div className="flex items-center gap-3">

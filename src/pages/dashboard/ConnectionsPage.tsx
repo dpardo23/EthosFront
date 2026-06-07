@@ -1,8 +1,4 @@
-/**
- * ConnectionsPage.tsx
- * Real data from /v1/connections (Spring Boot → core.profile_connections).
- * 7-provider catalogue: GitHub, Google, Gmail, LinkedIn, Slack, Sitio Web, dev.to
- */
+
 
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -38,8 +34,9 @@ import { useConnectionsStore } from '@/store/connectionsStore';
 import { cn, formatDate } from '@/shared/lib/utils';
 import type { OAuthConnection, ConnectionProvider, ApiHealth } from '@/shared/types';
 
-// ─── Provider catalogue ────────────────────────────────────────────────────────
-
+/**
+ * Dashboard page for managing external connections (GitHub, LinkedIn, portfolio links) shown on the public profile.
+ */
 interface ProviderMeta {
   id: ConnectionProvider;
   label: string;
@@ -164,8 +161,6 @@ function getProviderMeta(provider: ConnectionProvider): ProviderMeta {
   };
 }
 
-// ─── Modal step animation ──────────────────────────────────────────────────────
-
 const stepVariants: Variants = {
   enter: (dir: number) => ({ x: dir * 28, opacity: 0 }),
   center: {
@@ -179,8 +174,6 @@ const stepVariants: Variants = {
     transition: { duration: 0.12, ease: 'easeIn' },
   }),
 };
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ConnectionsPage() {
   const { t } = useTranslation();
@@ -263,7 +256,7 @@ export default function ConnectionsPage() {
       transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
       className="space-y-6 pb-8"
     >
-      {/* ── Header card ────────────────────────────────────────────────────────── */}
+      {}
       <div className="relative overflow-hidden rounded-3xl border border-border bg-card px-6 py-6 sm:px-8 sm:py-7">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_0%_0%,_hsl(var(--primary)/0.12)_0%,_transparent_100%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_40%_60%_at_100%_100%,_hsl(var(--primary)/0.06)_0%,_transparent_100%)]" />
@@ -309,7 +302,7 @@ export default function ConnectionsPage() {
         </div>
       </div>
 
-      {/* ── Loading skeleton ─────────────────────────────────────────────────── */}
+      {}
       {loading && connections.length === 0 && (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {[...Array(3)].map((_, i) => (
@@ -318,7 +311,7 @@ export default function ConnectionsPage() {
         </div>
       )}
 
-      {/* ── Active connections ───────────────────────────────────────────────── */}
+      {}
       {connected.length > 0 && (
         <section>
           <div className="mb-3 flex items-center gap-2">
@@ -359,7 +352,7 @@ export default function ConnectionsPage() {
         </section>
       )}
 
-      {/* ── Inactive / pending ───────────────────────────────────────────────── */}
+      {}
       {disconnected.length > 0 && (
         <section>
           <div className="mb-3 flex items-center gap-2">
@@ -391,7 +384,7 @@ export default function ConnectionsPage() {
         </section>
       )}
 
-      {/* ── Empty state ──────────────────────────────────────────────────────── */}
+      {}
       {!loading && connections.length === 0 && (
         <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-14 text-center">
           <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-muted/50">
@@ -408,7 +401,7 @@ export default function ConnectionsPage() {
         </div>
       )}
 
-      {/* ── Add connection modal ──────────────────────────────────────────────── */}
+      {}
       <AnimatePresence>
         {showAddModal && (
           <AddConnectionModal
@@ -421,8 +414,6 @@ export default function ConnectionsPage() {
     </motion.div>
   );
 }
-
-// ─── ConnectionCard ────────────────────────────────────────────────────────────
 
 function ConnectionCard({
   connection,
@@ -538,8 +529,6 @@ function ConnectionCard({
   );
 }
 
-// ─── AddConnectionModal ────────────────────────────────────────────────────────
-
 function AddConnectionModal({
   existingProviders,
   onClose,
@@ -634,7 +623,7 @@ function AddConnectionModal({
           transition={{ type: 'spring', stiffness: 340, damping: 28 }}
           className="pointer-events-auto w-full max-w-md rounded-2xl border border-border bg-card shadow-2xl shadow-black/25 overflow-hidden"
         >
-          {/* Header */}
+          {}
           <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-border">
             <AnimatePresence mode="wait" initial={false}>
               {step === 'catalog' ? (
@@ -673,7 +662,7 @@ function AddConnectionModal({
             </button>
           </div>
 
-          {/* Step content */}
+          {}
           <div className="overflow-hidden">
             <AnimatePresence mode="wait" custom={direction} initial={false}>
               {step === 'catalog' ? (
@@ -756,8 +745,6 @@ function AddConnectionModal({
     portalRoot,
   );
 }
-
-// ─── ConfigureStep ─────────────────────────────────────────────────────────────
 
 function ConfigureStep({
   provider,
@@ -873,8 +860,6 @@ function ConfigureStep({
   );
 }
 
-// ─── Sub-components ────────────────────────────────────────────────────────────
-
 function StatusDot({ status }: { status: OAuthConnection['status'] }) {
   return (
     <span
@@ -915,8 +900,6 @@ function MetaTile({ icon: Icon, label, value }: { icon: React.ElementType; label
   );
 }
 
-// ─── SVG brand icons ──────────────────────────────────────────────────────────
-
 function DevToIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
@@ -953,5 +936,4 @@ function SlackIcon({ className }: { className?: string }) {
   );
 }
 
-// Suppress unused import — Trash2 kept for future delete-connection button
 void Trash2;

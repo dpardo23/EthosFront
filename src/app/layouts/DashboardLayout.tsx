@@ -32,6 +32,9 @@ import { Avatar } from '@/shared/ui';
 import { EthosCoreLogo, EthosLogoIcon } from '@/components/brand/EthosCoreLogo';
 import type { ProfileRole } from '@/shared/types';
 
+/**
+ * Layout shell for authenticated professional dashboard pages: sidebar navigation, top bar, and main content area.
+ */
 type NavItem = {
   path: string;
   icon: typeof LayoutDashboard;
@@ -39,7 +42,6 @@ type NavItem = {
   badge?: string;
 };
 
-// CV Studio positioned after Educación, before Conexiones
 const professionalNavItems: NavItem[] = [
   { path: '/dashboard/portfolio',                   icon: LayoutGrid,            label: 'Mi Portafolio' },
   { path: '/dashboard/skills',                      icon: Code2,                 label: 'Habilidades' },
@@ -63,8 +65,6 @@ function getNavItems(role: ProfileRole): NavItem[] {
 }
 
 const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
-
-// ── Sidebar nav item ──────────────────────────────────────────────────────────
 
 function SidebarNavItem({
   item,
@@ -158,8 +158,6 @@ function SidebarNavItem({
   );
 }
 
-// ── Shared sidebar body (mobile + desktop) ────────────────────────────────────
-
 type SidebarProfile = {
   name?: string | null;
   role?: ProfileRole | null;
@@ -185,7 +183,7 @@ function SidebarContent({
 }) {
   return (
     <>
-      {/* Logo */}
+      {}
       <div className={cn(
         'flex h-14 shrink-0 items-center border-b border-border',
         collapsed ? 'justify-center px-0' : 'justify-between px-4'
@@ -225,7 +223,7 @@ function SidebarContent({
         </button>
       </div>
 
-      {/* Nav */}
+      {}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-4 scrollbar-hide">
         <div className="space-y-0.5">
           {navItems.map((item) => {
@@ -237,7 +235,7 @@ function SidebarContent({
         </div>
       </nav>
 
-      {/* Footer */}
+      {}
       <div className="shrink-0 border-t border-border p-2 space-y-1">
         <button
           onClick={onToggleCollapse}
@@ -260,8 +258,6 @@ function SidebarContent({
   );
 }
 
-// ── Main layout ───────────────────────────────────────────────────────────────
-
 export function DashboardLayout() {
   const { t } = useTranslation();
   const location = useLocation();
@@ -279,7 +275,7 @@ export function DashboardLayout() {
   const isDark = resolvedTheme === 'dark';
   const sidebarWidth = collapsed ? 64 : 240;
 
-  // Idle logout
+  
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     const reset = () => {
@@ -295,21 +291,21 @@ export function DashboardLayout() {
     return () => { clearTimeout(timer); events.forEach(e => document.removeEventListener(e, reset)); };
   }, [logout, navigate]);
 
-  // Close mobile sidebar on route change
+  
   useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
 
-  // Track current path in a ref so the Realtime callback can read it without
-  // the channel being torn down and rebuilt on every navigation.
+  
+  
   const pathnameRef = useRef(location.pathname);
   useEffect(() => { pathnameRef.current = location.pathname; }, [location.pathname]);
 
-  // Global Realtime channel: notify when a new message arrives for this user
-  // even if they're not on the chat page. Created once per session (profile + auth).
+  
+  
   useEffect(() => {
     if (!profile?.id || !supabase || !isAuthResolved) return;
     const sb = supabase;
 
-    // Re-inject JWT before subscribing to avoid race with async checkAuth on reload.
+    
     const token = sessionStorage.getItem('ethoshub_access_token');
     if (token && !token.startsWith('mock-')) sb.realtime.setAuth(token);
 
@@ -319,12 +315,12 @@ export function DashboardLayout() {
       .channel(`global-chat-pro:${profile.id}`)
       .on(
         'postgres_changes',
-        // Filter server-side: only messages NOT sent by this user arriving in their chats.
-        // RLS already restricts to rows the user can see, so no extra data leaks.
+        
+        
         { event: 'INSERT', schema: 'core', table: 'chat_messages', filter: `sender_id=neq.${profile.id}` },
         (payload) => {
           const msg = payload.new as { sender_id: string; content: string; chat_id: string };
-          // Suppress bell notification when the user is already on the chat page.
+          
           if (pathnameRef.current.startsWith('/dashboard/chat')) return;
           addNotification({
             type: 'message',
@@ -339,13 +335,13 @@ export function DashboardLayout() {
     return () => { sb.removeChannel(channel); globalChatChannelRef.current = null; };
   }, [profile?.id, isAuthResolved, addNotification]);
 
-  // Theme sync
+  
   useEffect(() => { if (initializeTheme) initializeTheme(); }, [initializeTheme]);
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark);
   }, [isDark]);
 
-  // Click outside topbar menus
+  
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) setShowProfileMenu(false);
@@ -374,11 +370,11 @@ export function DashboardLayout() {
   return (
     <div className={cn('flex h-screen overflow-hidden', isDark ? 'bg-[#030305]' : 'bg-background')}>
 
-      {/* ── Mobile sidebar — slides in from left, full-screen backdrop ──────── */}
+      {}
       <AnimatePresence>
         {sidebarOpen && (
           <>
-            {/* Backdrop */}
+            {}
             <motion.div
               className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm lg:hidden"
               initial={{ opacity: 0 }}
@@ -386,7 +382,7 @@ export function DashboardLayout() {
               exit={{ opacity: 0 }}
               onClick={() => setSidebarOpen(false)}
             />
-            {/* Drawer panel */}
+            {}
             <motion.aside
               className="fixed inset-y-0 left-0 z-[70] flex flex-col w-[280px] bg-background lg:hidden"
               initial={{ x: '-100%' }}
@@ -408,7 +404,7 @@ export function DashboardLayout() {
         )}
       </AnimatePresence>
 
-      {/* ── Desktop sidebar — in-flow, animates width, has border-r ─────────── */}
+      {}
       <motion.aside
         className="hidden lg:flex flex-col h-full shrink-0 border-r border-border"
         style={sidebarStyle}
@@ -425,15 +421,15 @@ export function DashboardLayout() {
         />
       </motion.aside>
 
-      {/* ── Main column ─────────────────────────────────────────────────────── */}
+      {}
       <div className="flex flex-1 flex-col min-w-0 h-full overflow-hidden">
 
-        {/* ── Topbar ──────────────────────────────────────────────────────── */}
+        {}
         <header
           className="relative z-[60] flex h-14 shrink-0 items-center justify-between gap-2 px-4 border-b border-border"
           style={topbarStyle}
         >
-          {/* Mobile hamburger */}
+          {}
           <button
             onClick={() => setSidebarOpen(true)}
             className="flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors lg:hidden"
@@ -446,7 +442,7 @@ export function DashboardLayout() {
 
           <div className="flex items-center gap-1.5">
 
-            {/* Profile menu */}
+            {}
             <div className="relative" ref={profileMenuRef}>
               <button
                 onClick={() => setShowProfileMenu(v => !v)}
@@ -534,7 +530,7 @@ export function DashboardLayout() {
           </div>
         </header>
 
-        {/* ── Page content ─────────────────────────────────────────────────── */}
+        {}
         <div id="portal-root" className="relative flex-1 overflow-hidden">
           <main className="h-full overflow-y-auto bg-background">
             <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-[1400px] mx-auto">

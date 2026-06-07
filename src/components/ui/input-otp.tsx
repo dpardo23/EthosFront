@@ -6,6 +6,9 @@ import { MinusIcon } from 'lucide-react'
 
 import { cn } from '@/shared/lib/utils'
 
+/**
+ * One-time password input component with slot-based digit fields used for OTP verification flows.
+ */
 function InputOTP({
   className,
   containerClassName,

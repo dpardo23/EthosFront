@@ -32,6 +32,9 @@ import {
 } from '@/shared/ui';
 import { recruiterTalentProfiles } from '@/shared/mocks/recruiterTalent';
 
+/**
+ * Recruiter talent discovery page: browsable list of published professional profiles with skill filters.
+ */
 type SkillScope = 'all' | 'hard' | 'soft';
 type LevelFilter = '' | 'Junior' | 'Mid' | 'Senior';
 type WorkModeFilter = '' | 'Remoto' | 'Hibrido' | 'Presencial';
@@ -73,7 +76,7 @@ const locationOptions = [
     new Set(
       recruiterTalentProfiles
         .map((profile) => profile.profile.location)
-        .filter((loc): loc is string => !!loc) // Filtra valores undefined o vacíos
+        .filter((loc): loc is string => !!loc) 
     )
   ).map((location) => ({
     value: location,
@@ -313,7 +316,7 @@ export default function RecruiterTalentSearchPage() {
         </div>
       </motion.section>
 
-      {/* Mobile Filter Button */}
+      {}
       <div className="lg:hidden">
         <Button
           onClick={() => setShowMobileFilters(true)}
@@ -330,7 +333,7 @@ export default function RecruiterTalentSearchPage() {
         </Button>
       </div>
 
-      {/* Mobile Filter Drawer */}
+      {}
       <AnimatePresence>
         {showMobileFilters && (
           <>
@@ -403,7 +406,7 @@ export default function RecruiterTalentSearchPage() {
       </AnimatePresence>
 
       <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[300px_1fr]">
-        {/* Desktop Filter Sidebar */}
+        {}
         <motion.aside
           initial={{ opacity: 0, x: -12 }}
           animate={{ opacity: 1, x: 0 }}

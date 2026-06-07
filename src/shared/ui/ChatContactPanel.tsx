@@ -9,6 +9,9 @@ import { supabase } from '@/lib/supabase';
 import { Avatar } from '@/shared/ui';
 import { cn } from '@/shared/lib/utils';
 
+/**
+ * Sidebar panel listing chat contacts/conversations with unread count indicators.
+ */
 interface BasicProfile {
   id_auth: string;
   first_name: string;
@@ -119,7 +122,7 @@ export function ChatContactPanel({ profileId, contactType, onClose }: Props) {
       transition={{ type: 'spring', damping: 30, stiffness: 320 }}
       className="flex h-full w-72 flex-col border-l border-border/60 bg-card overflow-hidden"
     >
-      {/* ── Header ── */}
+      {}
       <div className="relative flex h-14 shrink-0 items-center justify-between border-b border-border/60 bg-gradient-to-r from-violet-500/5 to-transparent px-4">
         <span className="text-sm font-bold text-foreground">Perfil</span>
         <motion.button
@@ -164,11 +167,11 @@ export function ChatContactPanel({ profileId, contactType, onClose }: Props) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             >
-              {/* ── Hero section ── */}
+              {}
               <div className="relative overflow-hidden">
-                {/* Background gradient header */}
+                {}
                 <div className="absolute inset-0 bg-gradient-to-b from-violet-500/8 via-violet-500/3 to-transparent" />
-                {/* Decorative orb */}
+                {}
                 <motion.div
                   animate={{ scale: [1, 1.1, 1], opacity: [0.06, 0.1, 0.06] }}
                   transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
@@ -177,7 +180,7 @@ export function ChatContactPanel({ profileId, contactType, onClose }: Props) {
                 />
 
                 <div className="relative flex flex-col items-center gap-3 px-4 pt-8 pb-5">
-                  {/* Avatar with ring */}
+                  {}
                   <div className="relative">
                     <motion.div
                       initial={{ scale: 0.8, opacity: 0 }}
@@ -194,7 +197,7 @@ export function ChatContactPanel({ profileId, contactType, onClose }: Props) {
                         />
                       </div>
                     </motion.div>
-                    {/* Availability dot */}
+                    {}
                     {availCfg && (
                       <motion.span
                         initial={{ scale: 0 }}
@@ -209,7 +212,7 @@ export function ChatContactPanel({ profileId, contactType, onClose }: Props) {
                     )}
                   </div>
 
-                  {/* Name & title */}
+                  {}
                   <motion.div
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -231,7 +234,7 @@ export function ChatContactPanel({ profileId, contactType, onClose }: Props) {
                     )}
                   </motion.div>
 
-                  {/* Badges row */}
+                  {}
                   <motion.div
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -265,10 +268,10 @@ export function ChatContactPanel({ profileId, contactType, onClose }: Props) {
                 </div>
               </div>
 
-              {/* ── Info sections ── */}
+              {}
               <div className="px-3 pb-6 space-y-1.5 mt-1">
 
-                {/* Bio / Description */}
+                {}
                 {(contactType === 'basic' ? basicProfile?.bio : companyProfile?.company_description) && (
                   <Section
                     title="Sobre"
@@ -281,7 +284,7 @@ export function ChatContactPanel({ profileId, contactType, onClose }: Props) {
                   </Section>
                 )}
 
-                {/* Location */}
+                {}
                 {profile.location && (
                   <InfoRow
                     icon={<MapPin className="h-3.5 w-3.5" />}
@@ -290,7 +293,7 @@ export function ChatContactPanel({ profileId, contactType, onClose }: Props) {
                   />
                 )}
 
-                {/* Company size */}
+                {}
                 {contactType === 'company' && companyProfile?.company_size && (
                   <InfoRow
                     icon={<Users className="h-3.5 w-3.5" />}
@@ -299,7 +302,7 @@ export function ChatContactPanel({ profileId, contactType, onClose }: Props) {
                   />
                 )}
 
-                {/* Website */}
+                {}
                 {contactType === 'basic' && basicProfile?.website && (
                   <InfoRow
                     icon={<Globe className="h-3.5 w-3.5" />}
@@ -317,7 +320,7 @@ export function ChatContactPanel({ profileId, contactType, onClose }: Props) {
                   />
                 )}
 
-                {/* Portfolio */}
+                {}
                 {contactType === 'basic' && basicProfile?.is_published && basicProfile?.portfolio_slug && (
                   <InfoRow
                     icon={<ExternalLink className="h-3.5 w-3.5" />}
@@ -328,7 +331,7 @@ export function ChatContactPanel({ profileId, contactType, onClose }: Props) {
                   />
                 )}
 
-                {/* Skills */}
+                {}
                 {skills.length > 0 && (
                   <Section title="Habilidades" icon={<Code2 className="h-3 w-3" />} delay={0.28}>
                     <div className="flex flex-wrap gap-1.5">

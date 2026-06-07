@@ -5,12 +5,13 @@ import { authService, ROLE_DISPLAY_NAMES, ROLE_REDIRECT_PATHS, type ProfileUpdat
 import { setSupabaseAuth, supabase } from '@/lib/supabase';
 import { findMockProfile } from '@/features/auth';
 
+/**
+ * Zustand store for authentication state: holds the current user session, profile id, role, and exposes login/logout actions used across the app.
+ */
 const ACCESS_TOKEN_KEY = 'ethoshub_access_token';
 const TOKEN_TYPE_KEY = 'ethoshub_token_type';
 const EXPIRES_AT_KEY = 'ethoshub_access_expires_at';
 
-// sessionStorage keeps tokens tab-isolated so two users in different tabs
-// don't overwrite each other's session (multi-session dev scenario).
 const storage = sessionStorage;
 
 interface LoginResult {
@@ -78,8 +79,8 @@ export const useAuthStore = create<AuthStore>()(
           
           const profile = { ...result.profile, role: normalizedRole };
 
-          // Write to both storages: sessionStorage for tab isolation,
-          // localStorage as fallback for direct-URL reloads and new tabs.
+          
+          
           const expiresAtVal = typeof result.expiresIn === 'number' && Number.isFinite(result.expiresIn)
             ? String(Math.floor(Date.now() / 1000) + result.expiresIn)
             : null;
@@ -91,8 +92,8 @@ export const useAuthStore = create<AuthStore>()(
             else s.removeItem(EXPIRES_AT_KEY);
           }
 
-          // Autenticar el cliente Supabase con el JWT de Supabase para que
-          // RPC y Realtime funcionen como `authenticated` con auth.uid() correcto.
+          
+          
           setSupabaseAuth(result.token);
 
           set({ profile, isAuthenticated: true, isAuthResolved: true, loading: false });
@@ -108,7 +109,7 @@ export const useAuthStore = create<AuthStore>()(
             error: error instanceof Error ? error.message : 'Error al iniciar sesión',
             loading: false,
           });
-          // 🚀 LANZAMOS EL ERROR PARA QUE EL COMPONENTE LO ATRAPE
+          
           throw error; 
         }
       },
@@ -126,9 +127,9 @@ export const useAuthStore = create<AuthStore>()(
             profile: state.profile ? { ...state.profile, ...dbData } : null,
           }));
         } catch (error: any) {
-          // A 401 here is NOT a reason to force-logout: the endpoint may not be
-          // available yet or the JWT is being validated. The api.ts interceptor
-          // already handles genuine session expiry (expired token → auth:unauthorized).
+          
+          
+          
           console.error('Error al sincronizar perfil con la BD', error);
         }
       },
@@ -224,9 +225,9 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       checkAuth: async () => {
-        // Read token from sessionStorage first, fall back to localStorage.
-        // sessionStorage is tab-isolated but survives F5. localStorage persists
-        // across tabs and survives opening the URL directly in a new tab.
+        
+        
+        
         const token =
           sessionStorage.getItem(ACCESS_TOKEN_KEY) ??
           localStorage.getItem(ACCESS_TOKEN_KEY);
@@ -234,8 +235,8 @@ export const useAuthStore = create<AuthStore>()(
           sessionStorage.getItem(EXPIRES_AT_KEY) ??
           localStorage.getItem(EXPIRES_AT_KEY);
 
-        // Helper: read the JWT exp claim directly — more reliable than a stored
-        // timestamp that may have been written with the wrong clock or TTL.
+        
+        
         function jwtExpired(t: string): boolean {
           try {
             const payload = t.split('.')[1];
@@ -258,8 +259,8 @@ export const useAuthStore = create<AuthStore>()(
           return;
         }
 
-        // Mirror token to sessionStorage if it only existed in localStorage
-        // (e.g. new tab opened after login in another tab).
+        
+        
         if (!sessionStorage.getItem(ACCESS_TOKEN_KEY) && token) {
           sessionStorage.setItem(ACCESS_TOKEN_KEY, token);
           const tt = localStorage.getItem(TOKEN_TYPE_KEY);
@@ -267,7 +268,7 @@ export const useAuthStore = create<AuthStore>()(
           if (expiresAt) sessionStorage.setItem(EXPIRES_AT_KEY, expiresAt);
         }
 
-        // Restore Supabase Realtime auth after page reload.
+        
         if (!token.startsWith('mock-')) setSupabaseAuth(token);
 
         const { profile } = get();
@@ -289,7 +290,7 @@ export const useAuthStore = create<AuthStore>()(
           : rawRole.includes('rec') || rawRole === 'recruiter'  ? 'recruiter'
           : 'professional';
 
-        // Autenticar el cliente Supabase con el JWT OAuth para RPC y Realtime.
+        
         setSupabaseAuth(token);
 
         set({ profile: { ...profile, role: normalizedRole }, isAuthenticated: true, isAuthResolved: true, error: null, loading: false });
@@ -314,8 +315,8 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: 'ethoshub_auth',
-      // isAuthResolved must NOT be persisted: it must start as false on every
-      // page load so AuthProvider can complete the async check before guards run.
+      
+      
       partialize: ({ profile, isAuthenticated }) => ({ profile, isAuthenticated }),
     }
   )

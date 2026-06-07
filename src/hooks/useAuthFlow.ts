@@ -6,6 +6,9 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { ROLE_INITIAL_PATHS } from '@/app/router/routes';
 import type { ProfileRole } from '@/shared/types';
 
+/**
+ * Custom hook encapsulating the multi-step registration and login flows, including OAuth callback handling and post-auth routing by role.
+ */
 const PENDING_OAUTH_ROLE_KEY = 'ethoshub_pending_oauth_role';
 
 export interface LoginResult {
@@ -20,11 +23,7 @@ export function useAuthFlow() {
   const login    = useAuthStore((state) => state.login);
   const [oauthLoading, setOauthLoading] = useState<'google' | 'github' | null>(null);
 
-  /**
-   * Email/password login. Always navigates to the role's canonical
-   * post-login destination (ROLE_INITIAL_PATHS) — never to redirectPath
-   * from the API response, which may be stale or incomplete.
-   */
+  
   const loginWithPassword = async (
     email: string,
     password: string,
@@ -39,17 +38,12 @@ export function useAuthFlow() {
     return result as LoginResult | null;
   };
 
-  /**
-   * OAuth sign-in via Supabase. Sets oauthLoading for the duration so
-   * the button can be disabled — preventing race conditions from double-clicks.
-   * On success the browser redirects to /oauth-success; loading stays set.
-   * On error loading is cleared.
-   */
+  
   const loginWithOAuth = async (
     provider: 'google' | 'github',
     pendingRole?: ProfileRole,
   ): Promise<void> => {
-    if (oauthLoading) return; // guard against re-entrancy
+    if (oauthLoading) return; 
 
     setOauthLoading(provider);
     try {
@@ -74,8 +68,8 @@ export function useAuthFlow() {
         toast.error('Error al iniciar sesión', { description: error.message });
         setOauthLoading(null);
       }
-      // On success the browser is redirected — intentionally leave loading set
-      // so the button stays disabled until navigation completes.
+      
+      
     } catch {
       toast.error('Error al conectar con el proveedor de autenticación');
       setOauthLoading(null);

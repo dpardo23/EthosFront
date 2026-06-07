@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
 import { cn } from '../lib/utils';
 
-// ─── Tabs ─────────────────────────────────────────────────────────────────────
-
+/**
+ * Root layout shell providing the global HTML structure, font loading, and theme context.
+ */
 interface TabsProps {
   tabs: { id: string; label: string; icon?: ReactNode }[];
   activeTab: string;
@@ -29,8 +30,6 @@ export function Tabs({ tabs, activeTab, onChange }: TabsProps) {
   );
 }
 
-// ─── SectionHeader ────────────────────────────────────────────────────────────
-
 interface SectionHeaderProps {
   title: string;
   description?: string;
@@ -49,8 +48,6 @@ export function SectionHeader({ title, description, action }: SectionHeaderProps
   );
 }
 
-// ─── Tooltip ──────────────────────────────────────────────────────────────────
-
 export function Tooltip({ content, children }: { content: string; children: ReactNode }) {
   return (
     <div className="group relative inline-block">
@@ -62,8 +59,6 @@ export function Tooltip({ content, children }: { content: string; children: Reac
     </div>
   );
 }
-
-// ─── Dropdown ─────────────────────────────────────────────────────────────────
 
 type DropdownItem =
   | { label?: string; icon?: React.ElementType; onClick?: () => void; danger?: boolean; type?: 'divider' }
@@ -98,8 +93,6 @@ export function Dropdown({ items, children }: DropdownProps) {
     </div>
   );
 }
-
-// ─── ToggleSwitch ─────────────────────────────────────────────────────────────
 
 interface ToggleSwitchProps {
   checked: boolean;

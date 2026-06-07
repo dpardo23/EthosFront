@@ -1,6 +1,9 @@
 import { motion, useInView } from 'framer-motion';
 import { useRef, useEffect, useState } from 'react';
 
+/**
+ * Landing section displaying testimonials and usage statistics to build trust.
+ */
 const STATS = [
   { value: 2400, suffix: '+', label: 'Developers activos' },
   { value: 180,  suffix: '+', label: 'Empresas reclutadoras' },

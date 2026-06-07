@@ -1,5 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
+/**
+ * Initialises and exports the Supabase browser client used for auth session management and Realtime subscriptions.
+ */
 const supabaseUrl      = import.meta.env.VITE_SUPABASE_URL as string;
 const supabaseAnonKey  = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
@@ -15,8 +18,8 @@ export const supabase = isSupabaseConfigured
         detectSessionInUrl: false,
       },
       global: {
-        // Inyectar dinámicamente el JWT de Supabase (guardado por el backend Spring)
-        // en cada request para que PostgREST lo evalúe como rol `authenticated`.
+        
+        
         fetch: (url, options = {}) => {
           const token = sessionStorage.getItem('ethoshub_access_token');
           const headers = new Headers((options as RequestInit).headers);
@@ -29,11 +32,6 @@ export const supabase = isSupabaseConfigured
     })
   : null;
 
-/**
- * Autentica el Realtime con el JWT actual para que los canales
- * postgres_changes funcionen como rol `authenticated`.
- * Llamar tras login y al restaurar sesión en checkAuth.
- */
 export function setSupabaseAuth(accessToken: string | null): void {
   if (!supabase) return;
   if (accessToken && !accessToken.startsWith('mock-')) {

@@ -6,7 +6,9 @@ import { ProtectedRoute } from './ProtectedRoute';
 import RouteErrorBoundary from './RouteErrorBoundary';
 import { Skeleton } from '@/shared/ui';
 
-// Lazy loaded pages
+/**
+ * React Router v6 route configuration defining all application routes grouped by layout and access level.
+ */
 const LoginPage                  = lazy(() => import('@/pages/auth/LoginPage'));
 const RegisterPage               = lazy(() => import('@/pages/auth/RegisterPage'));
 const OAuth2CallbackPage         = lazy(() => import('@/pages/auth/OAuth2CallbackPage'));
@@ -60,7 +62,7 @@ function S({ page: Page }: { page: React.ComponentType }) {
 }
 
 export const router = createBrowserRouter([
-  // ── Auth (public) ────────────────────────────────────────────────────────────
+  
   {
     element: <AuthLayout />,
     errorElement: <RouteErrorBoundary />,
@@ -72,7 +74,7 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // ── Professional dashboard (professional + admin only) ────────────────────────
+  
   {
     element: (
       <ProtectedRoute allowedRoles={['professional', 'admin']}>
@@ -93,14 +95,14 @@ export const router = createBrowserRouter([
       { path: 'dashboard/visibility',                                   element: <S page={VisibilityPage} /> },
       { path: 'dashboard/experience',                                   element: <S page={ExperiencePage} /> },
       { path: 'dashboard/education',                                    element: <S page={EducationPage} /> },
-      // Legacy alias kept for bookmarks
+      
       { path: 'dashboard/preferences',                                  element: <Navigate to={ROUTES.PROFESSIONAL_SETTINGS} replace /> },
-      // Canonical post-login destination for professionals
+      
       { path: 'dashboard/profesional/configuracion',                    element: <S page={PreferencesPage} /> },
     ],
   },
 
-  // ── Recruiter dashboard (recruiter + admin only) ──────────────────────────────
+  
   {
     element: (
       <ProtectedRoute allowedRoles={['recruiter', 'admin']}>
@@ -114,12 +116,12 @@ export const router = createBrowserRouter([
       { path: 'recruiter/chat',                                        element: <S page={RecruiterChatPage} /> },
       { path: 'recruiter/chat/:chatId',                                element: <S page={RecruiterChatPage} /> },
       { path: 'recruiter/likes',                                       element: <S page={RecruiterLikesPage} /> },
-      // Canonical post-login destination for recruiters
+      
       { path: 'dashboard/reclutador/configuracion',                    element: <S page={RecruiterSettingsPage} /> },
     ],
   },
 
-  // ── Admin panel ───────────────────────────────────────────────────────────────
+  
   {
     element: (
       <ProtectedRoute allowedRoles={['admin']}>
@@ -137,7 +139,7 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // ── Public ───────────────────────────────────────────────────────────────────
+  
   {
     path: '/talent',
     errorElement: <RouteErrorBoundary />,
@@ -166,6 +168,6 @@ export const router = createBrowserRouter([
     element: <S page={NotFoundPage} />,
   },
 ], {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  
   future: { v7_startTransition: true } as any,
 });

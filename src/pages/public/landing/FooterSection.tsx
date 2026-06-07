@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom';
 import { EthosCoreLogo } from '@/components/brand/EthosCoreLogo';
 import { Github, Twitter, Linkedin } from 'lucide-react';
 
+/**
+ * Landing page footer with navigation links, social icons, and legal links.
+ */
 const PLATFORM_LINKS = [
   { label: 'Inicio',         href: '/' },
   { label: 'Explorar',       href: '/explorar' },
@@ -34,10 +37,10 @@ const item = {
 export function FooterSection() {
   return (
     <footer className="relative overflow-hidden bg-black pb-10 pt-20 sm:pb-12 sm:pt-24">
-      {/* Top separator */}
+      {}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
 
-      {/* Ambient glow bottom-center */}
+      {}
       <div
         className="pointer-events-none absolute bottom-0 left-1/2 h-[400px] w-[700px] -translate-x-1/2 rounded-full"
         style={{
@@ -47,7 +50,7 @@ export function FooterSection() {
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
-        {/* Main grid */}
+        {}
         <motion.div
           variants={container}
           initial="hidden"
@@ -55,14 +58,14 @@ export function FooterSection() {
           viewport={{ once: true, margin: '-60px' }}
           className="grid gap-12 sm:grid-cols-[1.4fr_1fr_1fr] sm:gap-8 lg:gap-16"
         >
-          {/* Brand column */}
+          {}
           <motion.div variants={item}>
             <EthosCoreLogo size="sm" animate showText />
             <p className="mt-5 max-w-xs text-sm leading-7 text-white/28">
               La plataforma para developers que quieren ser descubiertos por lo que realmente construyen.
             </p>
 
-            {/* Social links */}
+            {}
             <div className="mt-6 flex items-center gap-3">
               {SOCIAL_LINKS.map(({ label, href, Icon }) => (
                 <motion.a
@@ -79,7 +82,7 @@ export function FooterSection() {
             </div>
           </motion.div>
 
-          {/* Platform links */}
+          {}
           <motion.div variants={item}>
             <p className="mb-5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/20">
               Plataforma
@@ -98,7 +101,7 @@ export function FooterSection() {
             </ul>
           </motion.div>
 
-          {/* Legal links */}
+          {}
           <motion.div variants={item}>
             <p className="mb-5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/20">
               Legal
@@ -116,7 +119,7 @@ export function FooterSection() {
               ))}
             </ul>
 
-            {/* EthosHub pill */}
+            {}
             <div className="mt-8">
               <span className="inline-flex items-center gap-2 rounded-full border border-violet-500/18 bg-violet-500/6 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-400/70">
                 <span className="h-1.5 w-1.5 rounded-full bg-violet-400 shadow-[0_0_6px_rgba(168,85,247,0.8)]" />
@@ -126,7 +129,7 @@ export function FooterSection() {
           </motion.div>
         </motion.div>
 
-        {/* Bottom bar */}
+        {}
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}

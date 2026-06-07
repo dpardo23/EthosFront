@@ -1,5 +1,8 @@
 import { cn } from '@/shared/lib/utils';
 
+/**
+ * Full-bleed animated gradient background used on the landing page hero section.
+ */
 interface AmbientBackgroundProps {
   className?: string;
   variant?: 'hero' | 'section' | 'cta';

@@ -4,6 +4,9 @@ import { X, Upload, User as ProfileIcon, ChevronDown } from 'lucide-react';
 import { Button } from '@/shared/ui';
 import { useAuthStore } from '@/store/authStore';
 
+/**
+ * Full-screen modal for editing the recruiter's company profile details.
+ */
 const countries = [
   'Argentina', 'Bolivia', 'Brasil', 'Chile', 'Colombia',
   'Costa Rica', 'Cuba', 'Ecuador', 'El Salvador', 'España',
@@ -11,8 +14,6 @@ const countries = [
   'Paraguay', 'Perú', 'República Dominicana', 'Uruguay', 'Venezuela',
 ];
 
-// Mapeo de países a country_id (ajusta los IDs según tu BD)
-// TODO: Verificar los IDs exactos en core.countries
 const COUNTRY_ID_MAP: Record<string, number> = {
   'Argentina': 1,
   'Bolivia': 2,
@@ -91,7 +92,7 @@ export function RecruiterProfileEditorModal({ isOpen, onClose }: RecruiterProfil
   };
 
   const handleSave = async () => {
-    // Validar que se haya seleccionado un país
+    
     if (!formData.country) {
       alert('Por favor selecciona un país');
       return;
@@ -103,13 +104,13 @@ export function RecruiterProfileEditorModal({ isOpen, onClose }: RecruiterProfil
       return;
     }
 
-    // Validar que nombre y apellido no estén vacíos
+    
     if (!formData.firstName.trim() || !formData.lastName.trim()) {
       alert('Por favor ingresa nombre y apellido');
       return;
     }
 
-    // Llamar a updateRecruiterIdentity con los datos correctos
+    
     await updateRecruiterIdentity({
       firstName: formData.firstName,
       lastName: formData.lastName,
@@ -139,7 +140,7 @@ export function RecruiterProfileEditorModal({ isOpen, onClose }: RecruiterProfil
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="relative z-10 w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-white/10 dark:bg-zinc-950"
           >
-            {/* Header */}
+            {}
             <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-white/10">
               <h2 className="font-sans text-xl font-semibold text-black dark:text-white">
                 Editar Identidad Reclutador
@@ -149,10 +150,10 @@ export function RecruiterProfileEditorModal({ isOpen, onClose }: RecruiterProfil
               </button>
             </div>
 
-            {/* Body — sin overflow para que el dropdown no se recorte */}
+            {}
             <div className="p-6 space-y-6">
 
-              {/* Avatar */}
+              {}
               <div className="flex flex-col items-center gap-3">
                 <div
                   onClick={handleAvatarClick}
@@ -173,7 +174,7 @@ export function RecruiterProfileEditorModal({ isOpen, onClose }: RecruiterProfil
                 <p className="text-xs text-gray-500">Formato cuadrado recomendado</p>
               </div>
 
-              {/* Nombre y Apellido */}
+              {}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase tracking-wider text-gray-400">Nombre</label>
@@ -196,7 +197,7 @@ export function RecruiterProfileEditorModal({ isOpen, onClose }: RecruiterProfil
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                {/* País */}
+                {}
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase tracking-wider text-gray-400">País</label>
                   <div ref={countryRef} className="relative">
@@ -257,7 +258,7 @@ export function RecruiterProfileEditorModal({ isOpen, onClose }: RecruiterProfil
 
             </div>
 
-            {/* Footer */}
+            {}
             <div className="flex items-center justify-between border-t border-gray-200 px-6 py-4 dark:border-white/10">
               <Button variant="ghost" onClick={onClose} className="text-red-500 hover:bg-red-50">
                 Cancelar

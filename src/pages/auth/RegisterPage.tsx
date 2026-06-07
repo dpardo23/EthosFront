@@ -17,7 +17,9 @@ import { PasswordStrengthIndicator, usePasswordValidation } from '@/components/a
 import { TermsModal } from '@/components/auth/TermsModal';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
-// ─── Country Data ─────────────────────────────────────────────────────
+/**
+ * Registration page collecting name, email, password, role, and optional contact details.
+ */
 type Country = { code: string; name: string; dial: string; flag: string };
 
 const COUNTRIES: Country[] = [
@@ -43,7 +45,6 @@ const COUNTRIES: Country[] = [
   { code: 'IN', name: 'India',            dial: '+91',  flag: '🇮🇳' },
 ];
 
-// ─── Premium Input ────────────────────────────────────────────────────
 function PremiumInput({
   id,
   type,
@@ -95,7 +96,6 @@ function PremiumInput({
   );
 }
 
-// ─── Phone Input with Country Picker ─────────────────────────────────
 function PhoneInputField({
   country,
   onCountryChange,
@@ -211,7 +211,6 @@ function PhoneInputField({
   );
 }
 
-// ─── Role Card ────────────────────────────────────────────────────────
 function RoleCard({
   role,
   selected,
@@ -240,7 +239,7 @@ function RoleCard({
           : 'border-white/8 bg-white/[0.025] hover:border-violet-500/25 hover:bg-violet-500/4'
       )}
     >
-      {/* Selected glow overlay */}
+      {}
       {selected && (
         <motion.div
           layoutId={`role-glow-${role}`}
@@ -251,7 +250,7 @@ function RoleCard({
         />
       )}
 
-      {/* Animated border glow */}
+      {}
       <AnimatePresence>
         {selected && (
           <motion.div
@@ -266,7 +265,7 @@ function RoleCard({
         )}
       </AnimatePresence>
 
-      {/* Icon */}
+      {}
       <div
         className={cn(
           'relative z-10 flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-300',
@@ -278,7 +277,7 @@ function RoleCard({
         <Icon className={cn('h-4.5 w-4.5', selected ? 'text-white' : 'text-white/45')} />
       </div>
 
-      {/* Text */}
+      {}
       <div className="relative z-10">
         <p className={cn('text-sm font-semibold transition-colors', selected ? 'text-white' : 'text-white/55')}>
           {title}
@@ -286,7 +285,7 @@ function RoleCard({
         <p className="mt-0.5 text-[11px] leading-5 text-white/32">{description}</p>
       </div>
 
-      {/* Checkmark */}
+      {}
       <AnimatePresence>
         {selected && (
           <motion.div
@@ -399,7 +398,7 @@ export default function RegisterPage() {
       const { ROLE_INITIAL_PATHS } = await import('@/app/router/routes');
 
       if (authData?.token) {
-        // Backend returned a JWT: store session directly, skip a second POST /auth/login.
+        
         const rawRole = (authData.role || '').toLowerCase();
         const normalizedRole: ProfileRole = rawRole.includes('rec') ? 'recruiter' : 'professional';
         completeOAuthLogin({
@@ -422,7 +421,7 @@ export default function RegisterPage() {
         return;
       }
 
-      // Auto-login in backend failed: fall back to a separate POST /auth/login.
+      
       const loginResult = await login(email, password, selectedFrontendRole);
       if (loginResult) {
         toast.success('Cuenta creada e iniciada correctamente', {
@@ -432,7 +431,7 @@ export default function RegisterPage() {
         return;
       }
 
-      // Both paths failed: redirect to login with prefilled credentials.
+      
       toast.success('Cuenta creada correctamente', {
         description: 'Ahora puedes iniciar sesión con tus credenciales.',
       });
@@ -463,7 +462,7 @@ export default function RegisterPage() {
 
   return (
     <div className="w-full">
-      {/* Back link */}
+      {}
       <motion.div
         initial={{ opacity: 0, x: -8 }}
         animate={{ opacity: 1, x: 0 }}
@@ -485,14 +484,14 @@ export default function RegisterPage() {
         description="Construye tu portafolio digital y conecta con la comunidad tech."
       />
 
-      {/* Form card */}
+      {}
       <motion.div
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.55, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
         className="space-y-5 rounded-2xl border border-white/8 bg-white/[0.025] p-6 backdrop-blur-sm"
       >
-        {/* Role selector */}
+        {}
         <div className="space-y-2.5">
           <p className="text-xs font-semibold text-white/45">¿Cuál es tu perfil?</p>
           <div className="grid grid-cols-2 gap-3">
@@ -535,7 +534,7 @@ export default function RegisterPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Full name */}
+          {}
           <div className="space-y-1.5">
             <label htmlFor="register-name" className="block text-xs font-semibold text-white/55">
               Nombre completo

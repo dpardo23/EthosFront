@@ -2,6 +2,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ScrollText } from 'lucide-react';
 import { Button } from '@/shared/ui';
 
+/**
+ * Modal dialog displaying the terms of service and privacy policy during registration.
+ */
 interface TermsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -17,7 +20,7 @@ export function TermsModal({ isOpen, onClose }: TermsModalProps) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          {/* Backdrop */}
+          {}
           <motion.div
             className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             initial={{ opacity: 0 }}
@@ -26,7 +29,7 @@ export function TermsModal({ isOpen, onClose }: TermsModalProps) {
             onClick={onClose}
           />
 
-          {/* Modal */}
+          {}
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -35,7 +38,7 @@ export function TermsModal({ isOpen, onClose }: TermsModalProps) {
             onClick={(e) => e.stopPropagation()}
             className="relative z-10 flex w-full max-w-2xl max-h-[90vh] flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-2xl"
           >
-            {/* Header */}
+            {}
             <div className="flex items-center justify-between border-b border-border px-6 py-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -61,7 +64,7 @@ export function TermsModal({ isOpen, onClose }: TermsModalProps) {
               </button>
             </div>
 
-            {/* Content */}
+            {}
             <div className="flex-1 overflow-y-auto px-6 py-5">
               <div className="prose prose-sm max-w-none text-foreground prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground">
                 <h3>1. Aceptación de los Términos</h3>
@@ -165,7 +168,7 @@ export function TermsModal({ isOpen, onClose }: TermsModalProps) {
               </div>
             </div>
 
-            {/* Footer */}
+            {}
             <div className="border-t border-border px-6 py-4">
               <Button
                 onClick={onClose}

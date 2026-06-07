@@ -7,8 +7,9 @@ import type {
   PublicSoftSkill,
 } from '@/shared/services/portfolioService';
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
+/**
+ * Converts a public portfolio page to a downloadable PDF using html2canvas and jsPDF.
+ */
 function esc(s: string | null | undefined): string {
   if (!s) return '';
   return s

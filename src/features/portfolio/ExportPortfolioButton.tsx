@@ -6,6 +6,9 @@ import { exportPortfolioToPdf } from '@/shared/lib/exportPortfolioToPdf';
 import { cn } from '@/shared/lib/utils';
 import { toast } from 'sonner';
 
+/**
+ * Button component that triggers PDF export of the public portfolio page using exportPortfolioToPdf.
+ */
 interface ExportPortfolioButtonProps {
   className?: string;
 }

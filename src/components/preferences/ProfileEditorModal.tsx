@@ -4,9 +4,12 @@ import { X, Upload, User as ProfileIcon, Briefcase, Clock, MapPin, Search } from
 import { Button, LoadingSpinner } from '@/shared/ui';
 import { useAuthStore } from '@/store/authStore';
 import { useUiStore } from '@/store/uiStore';
-// Importamos tu cliente API configurado
+
 import api from '@/shared/api/api';
 
+/**
+ * Full-screen modal for editing the professional's basic profile: name, bio, location, seniority, and photo.
+ */
 const seniorityOptions = ['Junior', 'Mid', 'Senior', 'Lead', 'Architect'];
 const statusOptions = ['Disponible', 'Ocupado', 'Incógnito'];
 
@@ -75,7 +78,7 @@ export function ProfileEditorModal({ isOpen, onClose }: ProfileEditorModalProps)
 
       fetchProfile();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [isOpen]);
 
   const handleAvatarClick = () => fileInputRef.current?.click();

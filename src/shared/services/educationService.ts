@@ -1,14 +1,11 @@
 import { apiClient } from './apiClient'; 
 import { AcademicRecord } from '../types/education';
 
+/**
+ * API service layer for academic record CRUD.
+ */
 const ROUTE = '/v1/academic-records';
 
-/**
- * Normaliza cualquier forma de respuesta a un arreglo seguro de registros.
- * El backend puede devolver el arreglo directo, o anidado/paginado
- * (`data`, `records`, `content`, `items`, `results`). Cualquier otra cosa
- * (null, undefined, objeto suelto) colapsa a `[]` para blindar el render.
- */
 const toRecordArray = (payload: unknown): AcademicRecord[] => {
   if (Array.isArray(payload)) return payload as AcademicRecord[];
   if (payload && typeof payload === 'object') {

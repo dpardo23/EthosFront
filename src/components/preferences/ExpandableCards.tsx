@@ -17,15 +17,14 @@ import {
 } from 'lucide-react';
 import { Button, Card, LoadingSpinner } from '@/shared/ui';
 
-// =============================================
-// BIOGRAPHY CARD
-// =============================================
+/**
+ * Accordion-style expandable card group used to organise settings and preferences sections.
+ */
 interface BiographyCardProps {
   initialBio: string;
   onSave: (bio: string) => Promise<void>;
 }
 
-// Icono pequeño de lápiz para el botón de editar
 function PencilIcon({ className }: { className?: string }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -43,7 +42,7 @@ export function BiographyCard({ initialBio, onSave }: BiographyCardProps) {
   const [error, setError] = useState('');
   const maxChars = 500;
 
-  // Sincroniza la biografía si llega a cambiar desde la base de datos
+  
   useEffect(() => {
     setBio(initialBio || '');
   }, [initialBio]);
@@ -65,7 +64,7 @@ export function BiographyCard({ initialBio, onSave }: BiographyCardProps) {
     setIsSaving(true);
     try {
       await onSave(trimmedBio);
-      setIsEditing(false); // Vuelve al modo lectura dentro de la tarjeta expandida
+      setIsEditing(false); 
     } catch (err) {
       setError('Hubo un error al guardar. Inténtalo de nuevo.');
     } finally {
@@ -82,7 +81,7 @@ export function BiographyCard({ initialBio, onSave }: BiographyCardProps) {
   const toggleExpand = () => {
     if (isExpanded) {
       setIsExpanded(false);
-      // Reseteamos estados internos después de que termine la animación de cierre
+      
       setTimeout(() => {
         setIsEditing(false);
         setBio(initialBio || '');
@@ -99,7 +98,7 @@ export function BiographyCard({ initialBio, onSave }: BiographyCardProps) {
         isExpanded ? 'ring-2 ring-violet-500/50 shadow-md' : 'hover:border-violet-500/30 dark:hover:border-violet-500/50'
       }`}
     >
-      {/* HEADER DE LA TARJETA (Siempre visible, ahora es lo único que se ve al estar cerrado) */}
+      {}
       <div 
         className="flex items-center gap-2 sm:gap-3 cursor-pointer p-4 sm:p-6" 
         onClick={toggleExpand}
@@ -120,7 +119,7 @@ export function BiographyCard({ initialBio, onSave }: BiographyCardProps) {
         />
       </div>
 
-      {/* CONTENIDO EXPANDIBLE */}
+      {}
       <AnimatePresence initial={false} mode="wait">
         {isExpanded && (
           <motion.div
@@ -134,7 +133,7 @@ export function BiographyCard({ initialBio, onSave }: BiographyCardProps) {
             <div className="px-4 pb-4 sm:px-6 sm:pb-6 pt-2 border-t border-gray-100 dark:border-white/5">
               
               {!isEditing ? (
-                // --- MODO LECTURA ---
+                
                 <motion.div 
                   key="view-mode"
                   initial={{ opacity: 0, y: -10 }} 
@@ -156,7 +155,7 @@ export function BiographyCard({ initialBio, onSave }: BiographyCardProps) {
                   </div>
                 </motion.div>
               ) : (
-                // --- MODO EDICIÓN ---
+                
                 <motion.div 
                   key="edit-mode"
                   initial={{ opacity: 0, y: -10 }} 
@@ -208,9 +207,6 @@ export function BiographyCard({ initialBio, onSave }: BiographyCardProps) {
   );
 }
 
-// =============================================
-// SKILLS CARD (Sin cambios, funcional como estaba)
-// =============================================
 const skillIcons: Record<string, React.ElementType> = {
   Frontend: Code2,
   Backend: Database,
@@ -353,9 +349,6 @@ export function SkillsCard({ skills, onAddSkill, onRemoveSkill }: SkillsCardProp
   );
 }
 
-// =============================================
-// NAVIGATION CARDS (Projects & Experience)
-// =============================================
 interface NavigationCardProps {
   title: string;
   description: string;

@@ -1,8 +1,9 @@
 import { forwardRef, type InputHTMLAttributes, type TextareaHTMLAttributes, type SelectHTMLAttributes } from 'react';
 import { cn } from '../lib/utils';
 
-// ─── Input ────────────────────────────────────────────────────────────────────
-
+/**
+ * Controlled text input component with label, error, and icon slot props.
+ */
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string;
   label?: string;
@@ -27,8 +28,6 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
   ),
 );
 Input.displayName = 'Input';
-
-// ─── Textarea ─────────────────────────────────────────────────────────────────
 
 export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   error?: string;
@@ -68,8 +67,6 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
 );
 Textarea.displayName = 'Textarea';
 
-// ─── Select ───────────────────────────────────────────────────────────────────
-
 export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   error?: string;
   label?: string;
@@ -97,8 +94,6 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
   ),
 );
 Select.displayName = 'Select';
-
-// ─── SearchInput ──────────────────────────────────────────────────────────────
 
 export interface SearchInputProps extends InputHTMLAttributes<HTMLInputElement> {
   onSearch?: (value: string) => void;

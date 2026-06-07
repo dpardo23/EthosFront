@@ -18,8 +18,9 @@ import { toast } from 'sonner';
 import { listDocuments } from '@/shared/services/cvStudioService';
 import type { CvDocument } from '@/shared/services/cvStudioService';
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
+/**
+ * Portfolio settings page: controls slug, SEO metadata, visibility flags, and section toggles.
+ */
 function fmt(d: string) {
   return new Date(d + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'short' });
 }
@@ -27,15 +28,11 @@ function fmtPeriod(start: string, end: string | null, isCurrent: boolean) {
   return `${fmt(start)} – ${isCurrent || !end ? 'Actualidad' : fmt(end)}`;
 }
 
-// ── Skill Pill (used in config editor) ────────────────────────────────────────
-
 const LEVEL_PILL: Record<string, string> = {
   Junior: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400',
   Mid:    'bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400',
   Senior: 'bg-violet-500/10 border-violet-500/20 text-violet-600 dark:text-violet-400',
 };
-
-// ── Skeleton ───────────────────────────────────────────────────────────────────
 
 function PortfolioSkeleton() {
   return (
@@ -50,8 +47,6 @@ function PortfolioSkeleton() {
     </div>
   );
 }
-
-// ── Configuration Editor ───────────────────────────────────────────────────────
 
 type ItemSection = 'projects' | 'experiences' | 'education' | 'hardSkills' | 'softSkills';
 
@@ -123,8 +118,6 @@ function SelectableCard({ isSelected, onClick, children }: { isSelected: boolean
   );
 }
 
-// ── Curriculum section ─────────────────────────────────────────────────────────
-
 function CurriculumSection({ profileImageUrl }: { profileImageUrl?: string }) {
   const [docs, setDocs] = useState<CvDocument[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
@@ -139,7 +132,7 @@ function CurriculumSection({ profileImageUrl }: { profileImageUrl?: string }) {
       .finally(() => setLoadingDocs(false));
     portfolioService.getCurriculum()
       .then(r => { setSelectedId(r.cvDocumentId); setCurrentPdfUrl(r.cvPdfUrl); })
-      .catch(() => {/* no curriculum yet */});
+      .catch(() => {});
   }, []);
 
   const handleSelect = async (doc: CvDocument) => {
@@ -185,7 +178,7 @@ function CurriculumSection({ profileImageUrl }: { profileImageUrl?: string }) {
         Elige un currículum de tu CV Studio. Se compilará a PDF y se mostrará en tu portafolio público.
       </p>
 
-      {/* Compiling overlay */}
+      {}
       <AnimatePresence>
         {compiling && (
           <motion.div
@@ -290,7 +283,7 @@ function ConfigEditor({ }: { profileId: string }) {
     setSeoDescription(settings?.seoDescription ?? '');
   }, [settings?.seoTitle, settings?.seoDescription]);
 
-  // Fallback: si el usuario abre un accordion y los datos aún no llegaron, los pide.
+  
   useEffect(() => {
     if (openSection && !availableItems && !loadingItems) fetchAvailableItems();
   }, [openSection, availableItems, loadingItems, fetchAvailableItems]);
@@ -304,7 +297,7 @@ function ConfigEditor({ }: { profileId: string }) {
   const handleSlugSave = useCallback(async () => {
     const trimmed = slugInput.trim();
     if (!trimmed) return;
-    // Si el slug no cambió no hace falta llamar al backend
+    
     if (trimmed === settings?.slug) {
       setSlugEditing(false);
       return;
@@ -320,7 +313,7 @@ function ConfigEditor({ }: { profileId: string }) {
       } else {
         toast.error('No se pudo actualizar el slug');
       }
-      // Mantener el editor abierto y restaurar el slug anterior
+      
       setSlugInput(settings?.slug ?? '');
     }
   }, [slugInput, settings?.slug, updateSettings]);
@@ -360,13 +353,13 @@ function ConfigEditor({ }: { profileId: string }) {
 
   return (
     <div className="space-y-6">
-      {/* General */}
+      {}
       <div className="rounded-2xl border border-border bg-card p-5 space-y-5">
         <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
           <Settings2 className="h-4 w-4 text-violet-500" />Configuración general
         </h3>
 
-        {/* Published toggle */}
+        {}
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-foreground">Portafolio público</p>
@@ -383,7 +376,7 @@ function ConfigEditor({ }: { profileId: string }) {
           </button>
         </div>
 
-        {/* Slug + URL */}
+        {}
         <div>
           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">URL pública</label>
           {slugEditing ? (
@@ -444,7 +437,7 @@ function ConfigEditor({ }: { profileId: string }) {
           )}
         </div>
 
-        {/* Visibility toggles */}
+        {}
         <div>
           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mostrar en público</label>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -475,7 +468,7 @@ function ConfigEditor({ }: { profileId: string }) {
         </div>
       </div>
 
-      {/* SEO */}
+      {}
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
         <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
           <Search className="h-4 w-4 text-violet-500" />SEO
@@ -506,7 +499,7 @@ function ConfigEditor({ }: { profileId: string }) {
             className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-all resize-none"
           />
         </div>
-        {/* Preview chip */}
+        {}
         {(seoTitle || seoDescription) && (
           <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-0.5">
             <p className="text-[11px] text-muted-foreground/50 uppercase tracking-wider mb-1">Vista previa en buscador</p>
@@ -531,14 +524,14 @@ function ConfigEditor({ }: { profileId: string }) {
         </button>
       </div>
 
-      {/* Content selection */}
+      {}
       <div>
         <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
           <FolderKanban className="h-4 w-4 text-violet-500" />Contenido del portafolio
         </h3>
         <div className="space-y-2">
 
-          {/* PROJECTS */}
+          {}
           <AccordionSection
             icon={FolderKanban} iconColor="text-emerald-500 dark:text-emerald-400" iconBg="bg-emerald-500/10 border-emerald-500/20"
             title="Proyectos" count={availableItems?.projects.length ?? 0} selectedCount={countSelected('project')}
@@ -576,7 +569,7 @@ function ConfigEditor({ }: { profileId: string }) {
             )}
           </AccordionSection>
 
-          {/* EXPERIENCE */}
+          {}
           <AccordionSection
             icon={Briefcase} iconColor="text-blue-500 dark:text-blue-400" iconBg="bg-blue-500/10 border-blue-500/20"
             title="Experiencia" count={availableItems?.experiences.length ?? 0} selectedCount={countSelected('experience')}
@@ -616,7 +609,7 @@ function ConfigEditor({ }: { profileId: string }) {
             )}
           </AccordionSection>
 
-          {/* EDUCATION */}
+          {}
           <AccordionSection
             icon={GraduationCap} iconColor="text-amber-500 dark:text-amber-400" iconBg="bg-amber-500/10 border-amber-500/20"
             title="Educación" count={availableItems?.education.length ?? 0} selectedCount={countSelected('education')}
@@ -651,7 +644,7 @@ function ConfigEditor({ }: { profileId: string }) {
             )}
           </AccordionSection>
 
-          {/* HARD SKILLS */}
+          {}
           <AccordionSection
             icon={Code2} iconColor="text-violet-500 dark:text-violet-400" iconBg="bg-violet-500/10 border-violet-500/20"
             title="Habilidades técnicas" count={availableItems?.hardSkills.length ?? 0} selectedCount={countSelected('hard_skill')}
@@ -692,7 +685,7 @@ function ConfigEditor({ }: { profileId: string }) {
             )}
           </AccordionSection>
 
-          {/* SOFT SKILLS */}
+          {}
           <AccordionSection
             icon={Star} iconColor="text-rose-500 dark:text-rose-400" iconBg="bg-rose-500/10 border-rose-500/20"
             title="Habilidades blandas" count={availableItems?.softSkills.length ?? 0} selectedCount={countSelected('soft_skill')}
@@ -733,7 +726,7 @@ function ConfigEditor({ }: { profileId: string }) {
         </div>
       </div>
 
-      {/* Hint */}
+      {}
       <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
         <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
         <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
@@ -741,13 +734,11 @@ function ConfigEditor({ }: { profileId: string }) {
         </p>
       </div>
 
-      {/* Curriculum */}
+      {}
       <CurriculumSection profileImageUrl={undefined} />
     </div>
   );
 }
-
-// ── Page ───────────────────────────────────────────────────────────────────────
 
 type Tab = 'preview' | 'config';
 
@@ -759,18 +750,18 @@ export default function PortfolioPage() {
   const [previewLoading, setPreviewLoading] = useState(true);
   const [previewError, setPreviewError] = useState(false);
 
-  // Load settings once
+  
   useEffect(() => {
     fetchSettings();
   }, []);
 
-  // Pre-cargar los items disponibles en cuanto se cambia a la pestaña config.
-  // Así cuando el usuario abre un accordion, los datos ya están listos.
+  
+  
   useEffect(() => {
     if (activeTab === 'config') fetchAvailableItems();
   }, [activeTab]);
 
-  // Reload preview whenever the tab is shown OR settings change while on preview
+  
   useEffect(() => {
     if (activeTab !== 'preview') return;
     setPreviewLoading(true);
@@ -787,7 +778,7 @@ export default function PortfolioPage() {
     <div className="min-h-full bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
 
-        {/* Header */}
+        {}
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-6">
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-bold text-foreground tracking-tight">Mi Portafolio</h1>
@@ -816,7 +807,7 @@ export default function PortfolioPage() {
           </div>
         </div>
 
-        {/* Tabs */}
+        {}
         <div className="flex gap-1 mb-6 p-1 rounded-xl bg-muted/40 border border-border w-fit">
           {([['preview', 'Vista previa', Eye], ['config', 'Configurar', Settings2]] as const).map(([id, label, Icon]) => (
             <button
@@ -833,7 +824,7 @@ export default function PortfolioPage() {
           ))}
         </div>
 
-        {/* Tab content */}
+        {}
         <AnimatePresence mode="wait">
           {activeTab === 'preview' ? (
             <motion.div key="preview" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>

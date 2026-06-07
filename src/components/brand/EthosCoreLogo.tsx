@@ -2,6 +2,9 @@ import { motion } from 'framer-motion';
 import { cn } from '@/shared/lib/utils';
 import { useUiStore } from '@/store';
 
+/**
+ * EthosHub brand logo component used in the navbar, auth pages, and landing header.
+ */
 type LogoSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 interface EthosCoreLogoProps {
@@ -23,7 +26,7 @@ function OwlSVG({ size }: { size: number }) {
   const { resolvedTheme } = useUiStore();
   const isDark = resolvedTheme !== 'light';
 
-  // ── Theme-adaptive palette ──────────────────────────────────────────
+  
   const hoodieGrad0         = isDark ? '#1A0530' : '#EEE5FF';
   const hoodieGrad1         = isDark ? '#0A0A14' : '#DDD5F8';
   const faceGrad0           = isDark ? '#13102A' : '#F5F0FF';
@@ -77,7 +80,7 @@ function OwlSVG({ size }: { size: number }) {
         </filter>
       </defs>
 
-      {/* ── Hoodie silhouette with ear tufts ─────────────────────── */}
+      {}
       <path
         d="
           M40 84
@@ -101,7 +104,7 @@ function OwlSVG({ size }: { size: number }) {
         strokeLinejoin="round"
       />
 
-      {/* ── Head circle ──────────────────────────────────────────── */}
+      {}
       <circle
         cx="40"
         cy="44"
@@ -113,7 +116,7 @@ function OwlSVG({ size }: { size: number }) {
         filter="url(#softGlow)"
       />
 
-      {/* ── Facial disk (characteristic owl feature) ─────────────── */}
+      {}
       <ellipse
         cx="40"
         cy="45"
@@ -122,11 +125,11 @@ function OwlSVG({ size }: { size: number }) {
         fill="url(#owlFaceGrad)"
       />
 
-      {/* ── Eye ambient halos ─────────────────────────────────────── */}
+      {}
       <circle cx="31" cy="41" r="9"  fill="url(#eyeHaloL)" />
       <circle cx="49" cy="41" r="9"  fill="url(#eyeHaloR)" />
 
-      {/* ── Left code eye  <  ─────────────────────────────────────── */}
+      {}
       <path
         d="M35 35 L27 41 L35 47"
         stroke={eyeStroke}
@@ -136,7 +139,7 @@ function OwlSVG({ size }: { size: number }) {
         filter="url(#eyeGlow)"
       />
 
-      {/* ── Right code eye  >  ────────────────────────────────────── */}
+      {}
       <path
         d="M45 35 L53 41 L45 47"
         stroke={eyeStroke}
@@ -146,14 +149,14 @@ function OwlSVG({ size }: { size: number }) {
         filter="url(#eyeGlow)"
       />
 
-      {/* ── Beak ──────────────────────────────────────────────────── */}
+      {}
       <path
         d="M37.5 51 L40 56.5 L42.5 51 Z"
         fill={beakFill}
         opacity="0.88"
       />
 
-      {/* ── Hoodie pocket ─────────────────────────────────────────── */}
+      {}
       <path
         d="M27 73 Q40 69 53 73 L51 79 Q40 81 29 79 Z"
         fill="#A855F7"
@@ -163,7 +166,7 @@ function OwlSVG({ size }: { size: number }) {
         strokeOpacity="0.22"
       />
 
-      {/* ── Drawstrings ───────────────────────────────────────────── */}
+      {}
       <path
         d="M37 63 Q35 69 34 75"
         stroke="#A855F7"
@@ -246,7 +249,6 @@ export function EthosLogoIcon({
   return <OwlSVG size={size} />;
 }
 
-/* Large standalone mascot for hero / CTA usage */
 export function EthosOwlMascot({
   size = 120,
   className,

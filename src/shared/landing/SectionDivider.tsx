@@ -1,5 +1,8 @@
 import { cn } from '@/shared/lib/utils';
 
+/**
+ * Decorative SVG divider separating landing page sections with a wave or angle shape.
+ */
 export function SectionDivider({ className }: { className?: string }) {
   return (
     <div

@@ -1,5 +1,8 @@
 import api from '@/shared/api/api';
 
+/**
+ * API service layer for admin domain management operations.
+ */
 export type DomainResponse = {
   dominio: string;
   fecha_registro: string;

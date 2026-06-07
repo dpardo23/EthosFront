@@ -3,6 +3,9 @@ import { persist } from 'zustand/middleware';
 import type { ProfilePreferences, Language, PortfolioSection } from '@/shared/types';
 import { preferencesService } from '@/shared/services';
 
+/**
+ * Zustand store for user preferences page state including education, connections, and recruiter profile data.
+ */
 interface PreferencesStore {
   preferences: ProfilePreferences | null;
   loading: boolean;
@@ -33,7 +36,7 @@ export const usePreferencesStore = create<PreferencesStore>()(
 
       updatePreferences: async (updates: Partial<ProfilePreferences>) => {
         const currentPreferences = get().preferences;
-        // Optimistic update before API call
+        
         set({
           preferences: currentPreferences ? { ...currentPreferences, ...updates } : null,
           loading: true,
@@ -47,7 +50,7 @@ export const usePreferencesStore = create<PreferencesStore>()(
           );
           set({ loading: false });
         } catch {
-          // Rollback
+          
           if (currentPreferences) {
             set({ preferences: currentPreferences, error: 'Error al actualizar preferencias', loading: false });
           } else {

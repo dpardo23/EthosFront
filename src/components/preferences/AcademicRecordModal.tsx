@@ -22,6 +22,9 @@ import { Button } from '@/shared/ui';
 import type { AcademicRecord } from '@/shared/types';
 import api from '@/shared/api/api';
 
+/**
+ * Modal form for creating and editing academic record entries on the education preferences page.
+ */
 interface AcademicRecordModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -78,14 +81,14 @@ export function AcademicRecordModal({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // credential (PDF or image)
+  
   const [credentialFileName, setCredentialFileName] = useState<string | null>(null);
   const [credentialUploading, setCredentialUploading] = useState(false);
-  const [credentialPreview, setCredentialPreview] = useState<string | null>(null); // only for images
+  const [credentialPreview, setCredentialPreview] = useState<string | null>(null); 
   const [pdfOpen, setPdfOpen] = useState(false);
   const [imageLightbox, setImageLightbox] = useState(false);
 
-  // logo (image)
+  
   const [logoUploading, setLogoUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -160,7 +163,7 @@ export function AcademicRecordModal({
     }
   };
 
-  // ── Credential upload (PDF or image) ─────────────────────────────────────
+  
 
   const handleCredentialFile = async (file: File) => {
     const allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -203,7 +206,7 @@ export function AcademicRecordModal({
     if (file) handleCredentialFile(file);
   };
 
-  // ── Logo upload (image only) ──────────────────────────────────────────────
+  
 
   const handleLogoFile = async (file: File) => {
     const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/svg+xml'];
@@ -239,7 +242,7 @@ export function AcademicRecordModal({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -247,7 +250,7 @@ export function AcademicRecordModal({
             className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm"
           />
 
-          {/* Modal */}
+          {}
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -256,7 +259,7 @@ export function AcademicRecordModal({
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
           >
             <div className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
-              {/* Header */}
+              {}
               <div className="flex items-center justify-between border-b border-border px-6 py-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600">
@@ -280,18 +283,18 @@ export function AcademicRecordModal({
                 </button>
               </div>
 
-              {/* Form */}
+              {}
               <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6">
                 <div className="space-y-4">
 
-                  {/* Institution Name + Logo */}
+                  {}
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 text-sm font-medium text-foreground">
                       <Building2 className="h-4 w-4 text-muted-foreground" />
                       Institución *
                     </label>
                     <div className="flex items-center gap-3">
-                      {/* Logo preview / upload */}
+                      {}
                       <div className="relative shrink-0">
                         {formData.institutionLogoUrl ? (
                           <div className="group relative h-12 w-12 rounded-xl border border-border overflow-hidden">
@@ -350,7 +353,7 @@ export function AcademicRecordModal({
                     )}
                   </div>
 
-                  {/* Degree */}
+                  {}
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 text-sm font-medium text-foreground">
                       <GraduationCap className="h-4 w-4 text-muted-foreground" />
@@ -368,7 +371,7 @@ export function AcademicRecordModal({
                     {errors.degree && <p className="text-xs text-destructive">{errors.degree}</p>}
                   </div>
 
-                  {/* Field of Study */}
+                  {}
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 text-sm font-medium text-foreground">
                       <BookOpen className="h-4 w-4 text-muted-foreground" />
@@ -383,7 +386,7 @@ export function AcademicRecordModal({
                     />
                   </div>
 
-                  {/* Date Range */}
+                  {}
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <label className="flex items-center gap-2 text-sm font-medium text-foreground">
@@ -419,7 +422,7 @@ export function AcademicRecordModal({
                     </div>
                   </div>
 
-                  {/* Is Current */}
+                  {}
                   <label className="flex cursor-pointer items-center gap-3">
                     <input
                       type="checkbox"
@@ -430,7 +433,7 @@ export function AcademicRecordModal({
                     <span className="text-sm text-foreground">Actualmente estudiando aquí</span>
                   </label>
 
-                  {/* Description */}
+                  {}
                   <div className="space-y-2">
                     <label className="flex items-center justify-between text-sm font-medium text-foreground">
                       <span>Descripción</span>
@@ -448,7 +451,7 @@ export function AcademicRecordModal({
                     />
                   </div>
 
-                  {/* Credential upload (PDF or image) */}
+                  {}
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 text-sm font-medium text-foreground">
                       <FileText className="h-4 w-4 text-muted-foreground" />
@@ -462,7 +465,7 @@ export function AcademicRecordModal({
                       </div>
                     ) : credentialFileName ? (
                       <div className="overflow-hidden rounded-xl border border-border bg-muted/10">
-                        {/* File row */}
+                        {}
                         <div className="flex items-center gap-3 p-3">
                           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/50">
                             <FileText className="h-3.5 w-3.5 text-primary" />
@@ -474,7 +477,7 @@ export function AcademicRecordModal({
                             </p>
                           </div>
                           <div className="flex shrink-0 items-center gap-1">
-                            {/* Descargar */}
+                            {}
                             {formData.credentialUrl && (
                               <a
                                 href={resolveUrl(formData.credentialUrl) ?? '#'}
@@ -486,7 +489,7 @@ export function AcademicRecordModal({
                                 <Download className="h-3.5 w-3.5" />
                               </a>
                             )}
-                            {/* Toggle preview (imagen: lightbox / PDF: expand) */}
+                            {}
                             {credentialPreview ? (
                               <button
                                 type="button"
@@ -506,7 +509,7 @@ export function AcademicRecordModal({
                                 {pdfOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                               </button>
                             ) : null}
-                            {/* Eliminar */}
+                            {}
                             <button
                               type="button"
                               onClick={removeCredential}
@@ -518,7 +521,7 @@ export function AcademicRecordModal({
                           </div>
                         </div>
 
-                        {/* Thumbnail de imagen (clic → lightbox) */}
+                        {}
                         {credentialPreview && (
                           <div
                             className="border-t border-border cursor-zoom-in"
@@ -532,7 +535,7 @@ export function AcademicRecordModal({
                           </div>
                         )}
 
-                        {/* PDF inline expandible */}
+                        {}
                         {!credentialPreview && formData.credentialUrl && isPdf(formData.credentialUrl) && pdfOpen && (
                           <div className="border-t border-border bg-background">
                             <iframe
@@ -579,7 +582,7 @@ export function AcademicRecordModal({
                 </div>
               </form>
 
-              {/* Footer */}
+              {}
               <div className="flex flex-col gap-3 border-t border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                 <div>
                   {isEditMode && onDelete && (
@@ -614,7 +617,7 @@ export function AcademicRecordModal({
       )}
     </AnimatePresence>
 
-    {/* Image lightbox */}
+    {}
     {imageLightbox && credentialPreview && createPortal(
       <AnimatePresence>
         <motion.div
@@ -626,7 +629,7 @@ export function AcademicRecordModal({
           className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black/90 backdrop-blur-sm p-4"
           onClick={() => setImageLightbox(false)}
         >
-          {/* Toolbar */}
+          {}
           <div
             className="mb-3 flex items-center gap-2"
             onClick={(e) => e.stopPropagation()}
@@ -649,7 +652,7 @@ export function AcademicRecordModal({
             </button>
           </div>
 
-          {/* Image */}
+          {}
           <motion.img
             key="lightbox-img"
             initial={{ opacity: 0, scale: 0.95 }}

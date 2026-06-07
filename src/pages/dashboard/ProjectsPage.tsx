@@ -1,9 +1,4 @@
-/**
- * ProjectsPage.tsx — Premium refactor v5
- * - createPortal overlays contained in #portal-root (not full viewport)
- * - ProjectDetailModal: Edit + Delete actions in header and footer
- * - Optimistic CRUD: store updates local state before API call
- */
+
 
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -35,7 +30,9 @@ import {
   ChevronRight,
 } from 'lucide-react';
 
-/** GitHub mark SVG */
+/**
+ * Dashboard page listing all portfolio projects with create, edit, and delete capabilities.
+ */
 function GithubMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
@@ -62,8 +59,6 @@ const getFullUrl = (url: string | undefined | null) => {
   const base = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
   return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
 };
-
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const PROJECT_STATUSES: { value: ProjectStatus; label: string }[] = [
   { value: 'draft',       label: 'Borrador'    },
@@ -96,8 +91,6 @@ const SORT_OPTIONS: { value: ProjectSortOrder; label: string }[] = [
   { value: 'name_desc',       label: 'Nombre Z–A'         },
 ];
 
-// ─── Gradient cover map (mirrors CreateProjectModal PREDEFINED_COVERS) ─────────
-
 const GRADIENT_MAP: Record<string, string> = {
   'gradient:violet-space':  'linear-gradient(135deg, #1A0530 0%, #0D0820 50%, #05050D 100%)',
   'gradient:cyber-teal':    'linear-gradient(135deg, #002E3A 0%, #001A24 50%, #000C12 100%)',
@@ -109,8 +102,6 @@ const GRADIENT_MAP: Record<string, string> = {
 
 const resolveGradient = (thumbnail: string) =>
   GRADIENT_MAP[thumbnail] ?? 'linear-gradient(135deg, #1A0530 0%, #0E0E1C 100%)';
-
-// ─── Sort helper ──────────────────────────────────────────────────────────────
 
 const getTs = (p: Project) => {
   const t = new Date(p.updatedAt || p.createdAt).getTime();
@@ -127,8 +118,6 @@ const sortProjects = (list: Project[], order: ProjectSortOrder) =>
     return getTs(b) - getTs(a);
   });
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
 export default function ProjectsPage() {
   const { t } = useTranslation();
   const { profile: profile } = useAuthStore();
@@ -144,7 +133,7 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     if (profile?.profile_id) void fetchProjects(profile.profile_id);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  
   }, [profile?.profile_id]);
 
   const openEditModal = (project: Project) => {
@@ -172,12 +161,12 @@ export default function ProjectsPage() {
       transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
       className="space-y-6 pb-8"
     >
-      {/* ── Header card ──────────────────────────────────────────────────────── */}
+      {}
       <div className="relative overflow-hidden rounded-3xl border border-border bg-card px-6 py-6 sm:px-8 sm:py-7">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_0%_0%,_hsl(var(--primary)/0.12)_0%,_transparent_100%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_40%_60%_at_100%_100%,_hsl(var(--primary)/0.06)_0%,_transparent_100%)]" />
         <div className="relative grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-6 lg:items-center">
-          {/* Col left: badge · title · description */}
+          {}
           <div className="space-y-2.5">
             <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">
               <Code2 className="h-3 w-3 text-primary" />
@@ -190,7 +179,7 @@ export default function ProjectsPage() {
               Gestiona tu catálogo de proyectos y evidencias técnicas.
             </p>
           </div>
-          {/* Col right: 2×2 grid — filters top, counter+button bottom */}
+          {}
           <div className="grid grid-cols-2 gap-2.5">
             <Select
               value={filterStatus}
@@ -228,7 +217,7 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {/* ── Content ─────────────────────────────────────────────────────────── */}
+      {}
       {loading ? (
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {[1, 2, 3].map((i) => (
@@ -267,7 +256,7 @@ export default function ProjectsPage() {
         <MockEmptyState onAdd={() => setShowCreateModal(true)} />
       )}
 
-      {/* ── Project Detail Modal ─────────────────────────────────────────────── */}
+      {}
       <AnimatePresence>
         {selectedProject && (
           <ProjectDetailModal
@@ -285,7 +274,7 @@ export default function ProjectsPage() {
         )}
       </AnimatePresence>
 
-      {/* ── Modals ──────────────────────────────────────────────────────────── */}
+      {}
       <CreateProjectModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
@@ -306,8 +295,6 @@ export default function ProjectsPage() {
     </motion.div>
   );
 }
-
-// ─── ProjectCard ──────────────────────────────────────────────────────────────
 
 function ProjectCard({
   project,
@@ -334,14 +321,14 @@ function ProjectCard({
         'hover:shadow-[0_8px_32px_rgba(124,58,237,0.18)] dark:hover:shadow-[0_8px_32px_rgba(139,92,246,0.13)]',
       )}
     >
-      {/* Cover */}
+      {}
       <div className="relative aspect-[16/7] overflow-hidden bg-muted">
         {project.thumbnail?.startsWith('gradient:') ? (
           <div
             className="h-full w-full transition-transform duration-500 group-hover:scale-105"
             style={{ backgroundImage: resolveGradient(project.thumbnail) }}
           >
-            {/* Grid texture */}
+            {}
             <div
               className="absolute inset-0 opacity-[0.08]"
               style={{
@@ -362,9 +349,9 @@ function ProjectCard({
             <FolderKanban className="h-10 w-10 text-muted-foreground/20" />
           </div>
         )}
-        {/* Hover tint */}
+        {}
         <div className="absolute inset-0 bg-violet-500/0 group-hover:bg-violet-500/[0.03] transition-colors duration-300" />
-        {/* Explore hint */}
+        {}
         <div className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full border border-white/10 bg-black/50 px-2.5 py-1 text-[10px] font-medium text-white/80 opacity-0 group-hover:opacity-100 transition-opacity duration-200 backdrop-blur-sm">
           Ver detalle <ArrowRight className="h-2.5 w-2.5" />
         </div>
@@ -390,7 +377,7 @@ function ProjectCard({
         </div>
       </div>
 
-      {/* Body */}
+      {}
       <div className="p-5 flex flex-col flex-1">
         <div className="mb-3 flex items-center gap-1.5 min-h-[22px]">
           <span className={cn('rounded-full border px-2.5 py-0.5 text-[11px] font-semibold', STATUS_STYLES[project.status])}>
@@ -461,8 +448,6 @@ function ProjectCard({
   );
 }
 
-// ─── ProjectDetailModal — contained in #portal-root ──────────────────────────
-
 type DetailTab = 'overview' | 'technical' | 'media' | 'files';
 
 function ProjectDetailModal({
@@ -480,14 +465,14 @@ function ProjectDetailModal({
   const repoUrl = project.repositoryUrl;
   const [tab, setTab] = useState<DetailTab>('overview');
 
-  // ESC to close
+  
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
 
-  // Lock body scroll
+  
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = ''; };
@@ -506,7 +491,7 @@ function ProjectDetailModal({
   const portalRoot = document.getElementById('portal-root') ?? document.body;
   return createPortal(
     <>
-      {/* Backdrop — absolute, contained within #portal-root (content area only) */}
+      {}
       <motion.div
         key="backdrop"
         initial={{ opacity: 0 }}
@@ -517,7 +502,7 @@ function ProjectDetailModal({
         onClick={onClose}
       />
 
-      {/* Modal panel — absolute, contained within content area */}
+      {}
       <motion.div
         key="modal"
         initial={{ opacity: 0, scale: 0.97, y: 16 }}
@@ -532,10 +517,10 @@ function ProjectDetailModal({
           'bg-background border border-border shadow-2xl shadow-black/40',
         )}
       >
-        {/* Accent bar */}
+        {}
         <div className="h-[2px] bg-gradient-to-r from-violet-700 via-violet-500 to-violet-300 shrink-0" />
 
-        {/* Header */}
+        {}
         <div className="flex items-start justify-between gap-4 px-5 py-4 shrink-0 border-b border-border">
           <div className="min-w-0 flex-1">
             <div className="mb-1.5 flex flex-wrap items-center gap-2">
@@ -556,7 +541,7 @@ function ProjectDetailModal({
               <p className="mt-0.5 text-[13px] text-muted-foreground">{project.technicalInfo.role}</p>
             )}
           </div>
-          {/* Header actions */}
+          {}
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={onEdit}
@@ -582,7 +567,7 @@ function ProjectDetailModal({
           </div>
         </div>
 
-        {/* Tab bar */}
+        {}
         <div className="flex items-center gap-0.5 border-b border-border px-5 shrink-0 overflow-x-auto scrollbar-hide">
           {tabs.map(({ id, label, icon: Icon }) => {
             const disabled = (id === 'media' && !hasMedia) || (id === 'files' && !hasFiles);
@@ -608,10 +593,10 @@ function ProjectDetailModal({
           })}
         </div>
 
-        {/* Scrollable body */}
+        {}
         <div className="flex-1 overflow-y-auto">
 
-          {/* ── Cover */}
+          {}
           {project.thumbnail && (
             <div className="aspect-[21/7] overflow-hidden bg-muted">
               {project.thumbnail.startsWith('gradient:') ? (
@@ -640,7 +625,7 @@ function ProjectDetailModal({
 
           <div className="p-5 sm:p-6 space-y-6">
 
-            {/* ── OVERVIEW TAB ── */}
+            {}
             {tab === 'overview' && (
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
@@ -648,7 +633,7 @@ function ProjectDetailModal({
                 transition={{ duration: 0.2 }}
                 className="space-y-5"
               >
-                {/* Description */}
+                {}
                 <div>
                   <SectionLabel icon={FileText}>Descripción</SectionLabel>
                   <p className="text-[14px] leading-relaxed text-foreground/80">
@@ -656,7 +641,7 @@ function ProjectDetailModal({
                   </p>
                 </div>
 
-                {/* Meta grid */}
+                {}
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                   {project.technicalInfo.role && (
                     <InfoTile icon={ProfileIcon} label="Rol" value={project.technicalInfo.role} />
@@ -687,7 +672,7 @@ function ProjectDetailModal({
                   />
                 </div>
 
-                {/* Results */}
+                {}
                 {project.technicalInfo.results && (
                   <div className="rounded-xl border border-border bg-muted/20 p-4">
                     <div className="mb-2 flex items-center gap-2">
@@ -704,7 +689,7 @@ function ProjectDetailModal({
                   </div>
                 )}
 
-                {/* Visibility + Featured badges */}
+                {}
                 <div className="flex flex-wrap gap-2">
                   <span className={cn(
                     'flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] font-medium',
@@ -724,7 +709,7 @@ function ProjectDetailModal({
               </motion.div>
             )}
 
-            {/* ── TECHNICAL TAB ── */}
+            {}
             {tab === 'technical' && (
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
@@ -732,7 +717,7 @@ function ProjectDetailModal({
                 transition={{ duration: 0.2 }}
                 className="space-y-5"
               >
-                {/* Stack */}
+                {}
                 {tech.length > 0 && (
                   <div>
                     <SectionLabel icon={Tag}>Stack tecnológico</SectionLabel>
@@ -749,7 +734,7 @@ function ProjectDetailModal({
                   </div>
                 )}
 
-                {/* Repository */}
+                {}
                 {repoUrl && (
                   <div>
                     <SectionLabel icon={GithubMark}>Repositorio</SectionLabel>
@@ -768,7 +753,7 @@ function ProjectDetailModal({
                   </div>
                 )}
 
-                {/* Timeline */}
+                {}
                 {(project.technicalInfo.startDate || project.technicalInfo.endDate) && (
                   <div>
                     <SectionLabel icon={Activity}>Timeline</SectionLabel>
@@ -783,7 +768,7 @@ function ProjectDetailModal({
                   </div>
                 )}
 
-                {/* Results */}
+                {}
                 {project.technicalInfo.results && (
                   <div>
                     <SectionLabel icon={BarChart3}>Resultados obtenidos</SectionLabel>
@@ -797,7 +782,7 @@ function ProjectDetailModal({
               </motion.div>
             )}
 
-            {/* ── MEDIA TAB ── */}
+            {}
             {tab === 'media' && (
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
@@ -852,7 +837,7 @@ function ProjectDetailModal({
               </motion.div>
             )}
 
-            {/* ── FILES TAB ── */}
+            {}
             {tab === 'files' && (
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
@@ -894,7 +879,7 @@ function ProjectDetailModal({
           </div>
         </div>
 
-        {/* Sticky footer */}
+        {}
         <div className="flex items-center gap-2 border-t border-border bg-background/80 px-5 py-3.5 backdrop-blur-sm shrink-0 flex-wrap">
           {repoUrl && (
             <a
@@ -912,7 +897,7 @@ function ProjectDetailModal({
           >
             <ExternalLink className="h-3.5 w-3.5" /> Vista completa
           </Link>
-          {/* Mobile-only actions */}
+          {}
           <button
             onClick={onEdit}
             className="sm:hidden flex items-center justify-center gap-1.5 rounded-xl border border-border bg-muted/40 px-4 py-2.5 text-[13px] font-medium text-muted-foreground hover:border-violet-500/40 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
@@ -931,8 +916,6 @@ function ProjectDetailModal({
     portalRoot,
   );
 }
-
-// ─── Shared sub-components ────────────────────────────────────────────────────
 
 function SectionLabel({
   icon: Icon,
@@ -993,8 +976,6 @@ function EmptyTabState({
   );
 }
 
-// ─── DeleteProjectConfirmModal — contained in #portal-root ───────────────────
-
 function DeleteProjectConfirmModal({
   onClose,
   onConfirm,
@@ -1011,7 +992,7 @@ function DeleteProjectConfirmModal({
   const portalRoot = document.getElementById('portal-root') ?? document.body;
   return createPortal(
     <>
-      {/* Backdrop — absolute, contained within #portal-root (content area only) */}
+      {}
       <motion.div
         key="del-backdrop"
         initial={{ opacity: 0 }}
@@ -1022,7 +1003,7 @@ function DeleteProjectConfirmModal({
         onClick={onClose}
       />
 
-      {/* Dialog panel */}
+      {}
       <div className="absolute inset-0 z-[91] flex items-center justify-center p-4 pointer-events-none">
         <motion.div
           key="del-panel"
@@ -1032,7 +1013,7 @@ function DeleteProjectConfirmModal({
           transition={{ type: 'spring', stiffness: 340, damping: 28 }}
           className="pointer-events-auto w-full max-w-sm rounded-2xl border border-border bg-card/95 backdrop-blur-sm p-6 shadow-2xl shadow-black/20"
         >
-          {/* Header */}
+          {}
           <div className="mb-4 flex items-start justify-between gap-3">
             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-red-500/10">
               <Trash2 className="h-5 w-5 text-red-500" />
@@ -1052,7 +1033,7 @@ function DeleteProjectConfirmModal({
             </button>
           </div>
 
-          {/* Actions */}
+          {}
           <div className="flex gap-2.5 justify-end">
             <button
               onClick={onClose}
@@ -1073,8 +1054,6 @@ function DeleteProjectConfirmModal({
     portalRoot,
   );
 }
-
-// ─── MockEmptyState ───────────────────────────────────────────────────────────
 
 function MockEmptyState({ onAdd }: { onAdd: () => void }) {
   return (

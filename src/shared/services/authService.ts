@@ -1,6 +1,9 @@
 import type { Profile, ProfileRole } from '@/shared/types';
 import api from '@/shared/api/api';
 
+/**
+ * API service layer for authentication: wraps register, login, and OAuth sync endpoints.
+ */
 export type ProfileUpdatePayload = Partial<Profile> & {
   firstName?: string;
   lastName?: string;
@@ -57,8 +60,6 @@ export const ROLE_REDIRECT_PATHS: Record<ProfileRole, string> = {
   guest:        '/',
 };
 
-// Extract the remaining TTL (seconds) from the JWT `exp` claim.
-// Falls back to 3600 (Supabase default) if the token can't be decoded.
 function jwtExpiresIn(token: string): number {
   try {
     const payload = token.split('.')[1];
@@ -66,7 +67,7 @@ function jwtExpiresIn(token: string): number {
     if (typeof decoded.exp === 'number') {
       return Math.max(decoded.exp - Math.floor(Date.now() / 1000), 0);
     }
-  } catch { /* ignore */ }
+  } catch {  }
   return 3600;
 }
 
@@ -152,8 +153,6 @@ async function registerLocal(
   }
 }
 
-// ─── Profile fetch (role-aware) ──────────────────────────────────────────────
-
 type BasicProfileData = {
   profileId: string;
   firstName: string;
@@ -204,7 +203,6 @@ async function getRecruiterProfile(profileId: string): Promise<Partial<Profile>>
   };
 }
 
-/** Kept for backward compatibility — routes to the correct endpoint by role. */
 async function getProfile(profileId: string, role?: ProfileRole): Promise<Partial<Profile>> {
   if (role === 'recruiter') return getRecruiterProfile(profileId);
   return getBasicProfile();
@@ -243,10 +241,8 @@ async function updateProfile(
 }
 
 async function logout(): Promise<void> {
-  // Aquí podrías llamar a un endpoint de logout si fuera necesario
+  
 }
-
-// ─── Recruiter-specific company endpoints ────────────────────────────────────
 
 type CompanyProfileRequest = {
   companyName: string;

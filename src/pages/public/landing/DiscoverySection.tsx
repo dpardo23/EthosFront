@@ -4,6 +4,9 @@ import { ArrowRight, Code2, Briefcase } from 'lucide-react';
 import { SectionLabel, SectionDivider, GlowCard, PulseDot } from '@/shared/landing';
 import { easeOut, fadeUpView, slideUpView } from '@/shared/motion';
 
+/**
+ * Landing section showcasing the recruiter talent discovery feature.
+ */
 const DEV_POINTS = [
   { title: 'Un link, toda tu carrera',  desc: 'Tu stack real, proyectos y actividad en un solo lugar profesional.' },
   { title: 'Credibilidad verificada',   desc: 'GitHub conectado. Commits reales. No keywords vacíos.' },

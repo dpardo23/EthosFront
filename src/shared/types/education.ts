@@ -1,3 +1,6 @@
+/**
+ * TypeScript types for academic record domain objects.
+ */
 export interface AcademicRecord {
   academicRecordId?: string;
   profileId?: string;

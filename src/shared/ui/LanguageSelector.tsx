@@ -3,6 +3,9 @@ import { usePreferencesStore } from '@/store/preferencesStore';
 import { cn } from '@/shared/lib/utils';
 import type { Language } from '@/shared/types';
 
+/**
+ * Dropdown selector for switching the application's display language via i18n.
+ */
 const LANGUAGES: { code: Language; flag: string; label: string; nativeLabel: string }[] = [
   { code: 'es', flag: '🇪🇸', label: 'settings.lang.es', nativeLabel: 'Español' },
   { code: 'en', flag: '🇬🇧', label: 'settings.lang.en', nativeLabel: 'English' },

@@ -1,5 +1,8 @@
 import { easeOut } from './easings';
 
+/**
+ * Reusable Framer Motion animation variant presets (fadeUp, fadeIn, staggerContainer) used across landing and dashboard pages.
+ */
 export const fadeUpView = (delay = 0, duration = 0.65) => ({
   initial: { opacity: 0, y: 14 },
   whileInView: { opacity: 1, y: 0 },

@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { skillsService } from '@/shared/services';
 import type { HardSkill, SoftSkill, GlobalSkillTag, SkillLevel, SkillCategory } from '@/shared/types';
 
+/**
+ * Zustand store for hard and soft skills; manages the global tag catalog and per-profile skill CRUD.
+ */
 interface SkillsStore {
   hardSkills: HardSkill[];
   softSkills: SoftSkill[];
@@ -61,7 +64,7 @@ export const useSkillsStore = create<SkillsStore>((set, get) => ({
     }
     try {
       const results = await skillsService.searchTags(query);
-      // Exclude tags already added
+      
       const existing = get().hardSkills.map(s => s.skillTag.id);
       set({ searchResults: results.filter(t => !existing.includes(t.id)) });
     } catch {

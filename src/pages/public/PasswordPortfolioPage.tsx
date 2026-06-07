@@ -1,5 +1,8 @@
 import { Link, useParams } from 'react-router-dom';
 
+/**
+ * Password gate page shown when a portfolio is protected; validates the visitor-supplied password.
+ */
 export default function PasswordPortfolioPage() {
   const { slug } = useParams();
 

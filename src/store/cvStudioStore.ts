@@ -8,8 +8,11 @@ import {
   type CvDocumentRequest,
 } from '@/shared/services/cvStudioService';
 
+/**
+ * Zustand store for CV Studio editor state: active document content, Gemini AI conversation history, and compilation status.
+ */
 interface CvStudioState {
-  // ── Document list ────────────────────────────────────────────────────────────
+  
   documents: CvDocument[];
   isLoading: boolean;
   isSaving: boolean;
@@ -20,7 +23,7 @@ interface CvStudioState {
   editDocument: (id: string, req: CvDocumentRequest) => Promise<CvDocument>;
   removeDocument: (id: string) => Promise<void>;
 
-  // ── Editor persistence (survives SPA route changes, resets on page refresh) ─
+  
   editorContent: string;
   editorMode: 'markdown' | 'latex';
   activeTemplateId: string | null;
@@ -33,7 +36,7 @@ interface CvStudioState {
 }
 
 export const useCvStudioStore = create<CvStudioState>((set) => ({
-  // ── Document list ────────────────────────────────────────────────────────────
+  
   documents: [],
   isLoading: false,
   isSaving: false,
@@ -83,7 +86,7 @@ export const useCvStudioStore = create<CvStudioState>((set) => ({
     }
   },
 
-  // ── Editor persistence ───────────────────────────────────────────────────────
+  
   editorContent: '',
   editorMode: 'markdown',
   activeTemplateId: null,

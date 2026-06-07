@@ -1,5 +1,8 @@
 import { motion } from 'framer-motion';
 
+/**
+ * Static terms of service page.
+ */
 const LAST_UPDATED = '25 de mayo de 2026';
 
 const sections = [
@@ -109,7 +112,7 @@ contacto.bytebusters@gmail.com`,
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-black">
-      {/* Header */}
+      {}
       <section className="relative overflow-hidden border-b border-white/6 py-24">
         <div
           className="pointer-events-none absolute inset-0"
@@ -145,7 +148,7 @@ export default function TermsPage() {
         </div>
       </section>
 
-      {/* Content */}
+      {}
       <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
         <div className="space-y-12">
           {sections.map((section, i) => (

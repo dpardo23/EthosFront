@@ -18,6 +18,9 @@ import { cn } from '@/shared/lib/utils';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+/**
+ * Public-facing portfolio page rendered from a slug: shows projects, skills, experience, and PDF curriculum.
+ */
 function fmt(d: string) {
   return new Date(d + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'short' });
 }
@@ -210,10 +213,10 @@ function PublicProjectDetailModal({
           'bg-background border border-border shadow-2xl shadow-black/40',
         )}
       >
-        {/* Accent bar */}
+        {}
         <div className="h-[2px] bg-gradient-to-r from-violet-700 via-violet-500 to-violet-300 shrink-0" />
 
-        {/* Header */}
+        {}
         <div className="flex items-start justify-between gap-4 px-5 py-4 shrink-0 border-b border-border">
           <div className="min-w-0 flex-1">
             <div className="mb-1.5 flex flex-wrap items-center gap-2">
@@ -245,7 +248,7 @@ function PublicProjectDetailModal({
           </button>
         </div>
 
-        {/* Tab bar */}
+        {}
         <div className="flex items-center gap-0.5 border-b border-border px-5 shrink-0 overflow-x-auto scrollbar-hide">
           {tabs.map(({ id, label, icon: Icon }) => {
             const disabled = (id === 'media' && !hasMedia) || (id === 'files' && !hasFiles);
@@ -271,10 +274,10 @@ function PublicProjectDetailModal({
           })}
         </div>
 
-        {/* Scrollable body */}
+        {}
         <div className="flex-1 overflow-y-auto">
 
-          {/* Cover — solo visible en tabs overview y technical */}
+          {}
           {project.thumbnail && (tab === 'overview' || tab === 'technical') && (
             <div className="aspect-[21/7] overflow-hidden bg-muted">
               <img src={project.thumbnail} alt={project.title} className="h-full w-full object-cover" />
@@ -283,7 +286,7 @@ function PublicProjectDetailModal({
 
           <div className="p-5 sm:p-6 space-y-6">
 
-            {/* OVERVIEW TAB */}
+            {}
             {tab === 'overview' && (
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-5">
                 {project.description && (
@@ -317,7 +320,7 @@ function PublicProjectDetailModal({
               </motion.div>
             )}
 
-            {/* TECHNICAL TAB */}
+            {}
             {tab === 'technical' && (
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-5">
                 {tech.length > 0 && (
@@ -352,7 +355,7 @@ function PublicProjectDetailModal({
               </motion.div>
             )}
 
-            {/* MEDIA TAB — videos, imágenes, links, figma, slides (sin documents) */}
+            {}
             {tab === 'media' && (
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-4">
                 {hasMedia ? (
@@ -392,7 +395,7 @@ function PublicProjectDetailModal({
               </motion.div>
             )}
 
-            {/* FILES TAB — solo type === 'document' */}
+            {}
             {tab === 'files' && (
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="space-y-4">
                 {hasFiles ? (
@@ -400,7 +403,7 @@ function PublicProjectDetailModal({
                     const canEmbed = isEmbeddablePdf(f.url);
                     return (
                       <div key={i} className="overflow-hidden rounded-xl border border-border bg-muted/10">
-                        {/* PDF embeddable preview */}
+                        {}
                         {canEmbed && f.url && (
                           <div className="w-full" style={{ height: 480 }}>
                             <iframe
@@ -410,7 +413,7 @@ function PublicProjectDetailModal({
                             />
                           </div>
                         )}
-                        {/* Link row — always shown, embeds also show it as footer action */}
+                        {}
                         <div className="flex items-center justify-between p-3.5">
                           <div className="flex items-center gap-2 min-w-0">
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/50">
@@ -440,7 +443,7 @@ function PublicProjectDetailModal({
           </div>
         </div>
 
-        {/* Sticky footer */}
+        {}
         <div className="flex items-center gap-2 border-t border-border bg-background/80 px-5 py-3.5 backdrop-blur-sm shrink-0 flex-wrap">
           {project.repositoryUrl && (
             <a href={project.repositoryUrl} target="_blank" rel="noopener noreferrer"
@@ -488,8 +491,6 @@ function ProjectModalProvider({ children, showDashboardLink }: { children: React
     </ProjectModalContext.Provider>
   );
 }
-
-// ── Tab types ─────────────────────────────────────────────────────────────────
 
 type TabId = 'projects' | 'experience' | 'education' | 'skills' | 'curriculum';
 
@@ -540,8 +541,6 @@ function ProtectedSection({ isLocked, title, description, children }: {
   );
 }
 
-// ── Skeleton / Not Found ──────────────────────────────────────────────────────
-
 function PublicPortfolioSkeleton() {
   return (
     <div className="min-h-screen bg-background pt-20">
@@ -573,8 +572,6 @@ function PortfolioNotFound({ slug }: { slug?: string }) {
   );
 }
 
-// ── Hero (full → compact on scroll) ──────────────────────────────────────────
-
 function HeroSection() {
   const { portfolio, isPreview, isGuest, likesCount } = usePortfolio();
   const {
@@ -598,7 +595,7 @@ function HeroSection() {
     <div ref={heroRef} className="sticky top-16 z-30 transition-all duration-300">
       <AnimatePresence mode="wait" initial={false}>
         {collapsed ? (
-          /* ── Compact bar ── */
+          
           <motion.div
             key="compact"
             initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
@@ -636,7 +633,7 @@ function HeroSection() {
             )}
           </motion.div>
         ) : (
-          /* ── Full hero ── */
+          
           <motion.div
             key="full"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -649,7 +646,7 @@ function HeroSection() {
 
             <div className="relative px-5 py-6 sm:px-7 sm:py-7">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
-                {/* Avatar */}
+                {}
                 <div className="relative shrink-0">
                   {photoUrl ? (
                     <img src={photoUrl} alt={name}
@@ -667,7 +664,7 @@ function HeroSection() {
                   )}
                 </div>
 
-                {/* Info */}
+                {}
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
                     <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">{name}</h1>
@@ -727,7 +724,7 @@ function HeroSection() {
                   )}
                 </div>
 
-                {/* Stats column (desktop) */}
+                {}
                 <div className="hidden lg:flex flex-col gap-2 shrink-0 min-w-[110px]">
                   {[
                     { label: 'Visitas',      value: viewsCount.toLocaleString('es-ES'),                   icon: Eye,          color: 'text-violet-500' },
@@ -747,7 +744,7 @@ function HeroSection() {
                 </div>
               </div>
 
-              {/* Stats bar (mobile) */}
+              {}
               <div className="grid grid-cols-5 gap-2 mt-4 lg:hidden">
                 {[
                   { label: 'Visitas',   value: viewsCount.toLocaleString('es-ES'),                   icon: Eye,          color: 'text-violet-500' },
@@ -770,8 +767,6 @@ function HeroSection() {
     </div>
   );
 }
-
-// ── Tab bar ───────────────────────────────────────────────────────────────────
 
 function SectionTabBar() {
   const { portfolio } = usePortfolio();
@@ -817,8 +812,6 @@ function SectionTabBar() {
   );
 }
 
-// ── Projects panel ────────────────────────────────────────────────────────────
-
 const PAGE_SIZE = 9;
 
 function ProjectsPanel() {
@@ -840,10 +833,10 @@ function ProjectsPanel() {
       description="Crea una cuenta para ver proyectos, stack y resultados."
     >
       <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-4">
-        {/* Featured */}
+        {}
         {featured.map(p => <FeaturedProjectCard key={p.id} project={p} />)}
 
-        {/* Grid */}
+        {}
         {rest.length > 0 && (
           <div className={cn(
             'grid gap-4',
@@ -855,7 +848,7 @@ function ProjectsPanel() {
           </div>
         )}
 
-        {/* Load more */}
+        {}
         {hasMore && (
           <div className="flex justify-center pt-2">
             <button
@@ -873,8 +866,6 @@ function ProjectsPanel() {
     </ProtectedSection>
   );
 }
-
-// ── Experience panel ──────────────────────────────────────────────────────────
 
 function ExperiencePanel() {
   const { portfolio, isGuest, isPreview } = usePortfolio();
@@ -901,8 +892,6 @@ function ExperiencePanel() {
   );
 }
 
-// ── Education panel ───────────────────────────────────────────────────────────
-
 function EducationPanel() {
   const { portfolio, isGuest, isPreview } = usePortfolio();
   const { education } = portfolio;
@@ -928,8 +917,6 @@ function EducationPanel() {
   );
 }
 
-// ── Skills panel ──────────────────────────────────────────────────────────────
-
 function SkillsPanel() {
   const { portfolio, isGuest, isPreview } = usePortfolio();
   const { hardSkills, softSkills } = portfolio;
@@ -948,7 +935,7 @@ function SkillsPanel() {
     >
       <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-6">
 
-        {/* Hard skills */}
+        {}
         {hardSkills.length > 0 && (
           <div className="rounded-2xl border border-border bg-card p-5">
             <div className="flex items-center gap-2 mb-4">
@@ -959,7 +946,7 @@ function SkillsPanel() {
               <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[11px] font-bold text-muted-foreground">{filteredHard.length}</span>
             </div>
 
-            {/* Category filter */}
+            {}
             {categories.length > 2 && (
               <div className="flex flex-wrap gap-1.5 mb-4">
                 {categories.map(cat => (
@@ -995,7 +982,7 @@ function SkillsPanel() {
           </div>
         )}
 
-        {/* Soft skills */}
+        {}
         {softSkills.length > 0 && (
           <div className="rounded-2xl border border-border bg-card p-5">
             <div className="flex items-center gap-2 mb-4">
@@ -1020,8 +1007,6 @@ function SkillsPanel() {
   );
 }
 
-// ── Curriculum / About panel ──────────────────────────────────────────────────
-
 function CurriculumPanel() {
   const { portfolio, isGuest, isPreview } = usePortfolio();
   const { bio, email, website, cvPdfUrl, showGithubHeatmap, accentColor } = portfolio;
@@ -1029,7 +1014,7 @@ function CurriculumPanel() {
   return (
     <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-4">
 
-      {/* Bio */}
+      {}
       {bio && (
         <ProtectedSection
           isLocked={!isPreview && isGuest}
@@ -1048,7 +1033,7 @@ function CurriculumPanel() {
         </ProtectedSection>
       )}
 
-      {/* Contact */}
+      {}
       {(email || website) && (
         <ProtectedSection
           isLocked={!isPreview && isGuest}
@@ -1093,7 +1078,7 @@ function CurriculumPanel() {
         </ProtectedSection>
       )}
 
-      {/* CV PDF */}
+      {}
       {cvPdfUrl && (
         <motion.div variants={fadeIn} className="rounded-2xl border border-border bg-card p-5 sm:p-6">
           <div className="flex items-center gap-2 mb-4">
@@ -1112,7 +1097,7 @@ function CurriculumPanel() {
         </motion.div>
       )}
 
-      {/* GitHub heatmap */}
+      {}
       {showGithubHeatmap && (
         <motion.div variants={fadeIn} className="rounded-2xl border border-border bg-card p-5 sm:p-6">
           <div className="flex items-center gap-2 mb-1">
@@ -1134,8 +1119,6 @@ function CurriculumPanel() {
   );
 }
 
-// ── Active panel router ───────────────────────────────────────────────────────
-
 function ActiveSectionPanel() {
   const { activeTab } = useTab();
   return (
@@ -1148,7 +1131,7 @@ function ActiveSectionPanel() {
         {activeTab === 'curriculum' && <motion.div key="curriculum" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}><CurriculumPanel /></motion.div>}
       </AnimatePresence>
 
-      {/* Footer */}
+      {}
       <div className="flex flex-col items-center gap-3 pt-10">
         <EthosOwlMascot size={44} className="opacity-50" />
         <div className="flex items-center gap-2">
@@ -1160,8 +1143,6 @@ function ActiveSectionPanel() {
   );
 }
 
-// ── Empty panel ───────────────────────────────────────────────────────────────
-
 function EmptyPanel({ label }: { label: string }) {
   return (
     <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-12 text-center">
@@ -1170,8 +1151,6 @@ function EmptyPanel({ label }: { label: string }) {
     </div>
   );
 }
-
-// ── Portfolio Layout ──────────────────────────────────────────────────────────
 
 function getInitialTab(portfolio: PublicPortfolio): TabId {
   if (portfolio.projects.length > 0)    return 'projects';
@@ -1205,7 +1184,7 @@ export function PortfolioPublicView({
         if (!psData?.profile_id) return;
         const { data: count } = await supabase!.rpc('get_profile_likes_count', { p_basic_profile_id: psData.profile_id });
         if (typeof count === 'number') setLikesCount(count);
-      } catch { /* non-critical */ }
+      } catch {  }
     })();
   }, [slug, isPreview]);
 
@@ -1215,7 +1194,7 @@ export function PortfolioPublicView({
         <ProjectModalProvider showDashboardLink={isPreview || isOwner}>
         <div className={cn('bg-background', !isPreview && 'min-h-screen pt-20')}>
 
-          {/* Preview banner */}
+          {}
           {isPreview && (
             <div className="mx-auto max-w-5xl px-4 sm:px-6 pt-4 pb-2">
               <div className="flex items-center gap-3 rounded-2xl border border-blue-500/20 bg-blue-500/5 px-4 py-3">
@@ -1228,10 +1207,10 @@ export function PortfolioPublicView({
           )}
 
           <div className="mx-auto max-w-5xl px-4 sm:px-6">
-            {/* Hero */}
+            {}
             <HeroSection />
 
-            {/* Guest banner */}
+            {}
             {!isPreview && isGuest && (
               <motion.div
                 initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
@@ -1250,10 +1229,10 @@ export function PortfolioPublicView({
               </motion.div>
             )}
 
-            {/* Tabs */}
+            {}
             <SectionTabBar />
 
-            {/* Active panel */}
+            {}
             <ActiveSectionPanel />
           </div>
         </div>
@@ -1262,8 +1241,6 @@ export function PortfolioPublicView({
     </PortfolioContext.Provider>
   );
 }
-
-// ── Detail drawer contents (experience / education) ──────────────────────────
 
 function ProjectDetailContent({ project }: { project: PublicPortfolio['projects'][0] }) {
   const status = STATUS_INFO[project.status] ?? STATUS_INFO.draft;
@@ -1274,7 +1251,7 @@ function ProjectDetailContent({ project }: { project: PublicPortfolio['projects'
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="space-y-2">
         {project.isFeatured && (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-[11px] font-bold text-amber-600 dark:text-amber-400">
@@ -1297,14 +1274,14 @@ function ProjectDetailContent({ project }: { project: PublicPortfolio['projects'
         </div>
       </div>
 
-      {/* Thumbnail */}
+      {}
       {project.thumbnail && (
         <div className="overflow-hidden rounded-xl border border-border">
           <img src={project.thumbnail} alt={project.title} className="w-full object-cover max-h-56" />
         </div>
       )}
 
-      {/* Description */}
+      {}
       {project.description && (
         <div className="space-y-1.5">
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Descripción</p>
@@ -1312,7 +1289,7 @@ function ProjectDetailContent({ project }: { project: PublicPortfolio['projects'
         </div>
       )}
 
-      {/* Technologies */}
+      {}
       {project.technologies.length > 0 && (
         <div className="space-y-2">
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Stack tecnológico</p>
@@ -1324,7 +1301,7 @@ function ProjectDetailContent({ project }: { project: PublicPortfolio['projects'
         </div>
       )}
 
-      {/* Results */}
+      {}
       {project.results && (
         <div className="rounded-xl bg-emerald-500/5 border border-emerald-500/15 px-4 py-3 space-y-1.5">
           <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest flex items-center gap-1">
@@ -1334,7 +1311,7 @@ function ProjectDetailContent({ project }: { project: PublicPortfolio['projects'
         </div>
       )}
 
-      {/* Repository */}
+      {}
       {project.repositoryUrl && (
         <div className="space-y-1.5">
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Repositorio</p>
@@ -1347,7 +1324,7 @@ function ProjectDetailContent({ project }: { project: PublicPortfolio['projects'
         </div>
       )}
 
-      {/* Images */}
+      {}
       {images.length > 0 && (
         <div className="space-y-2">
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Imágenes</p>
@@ -1363,7 +1340,7 @@ function ProjectDetailContent({ project }: { project: PublicPortfolio['projects'
         </div>
       )}
 
-      {/* Videos */}
+      {}
       {videos.length > 0 && (
         <div className="space-y-2">
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Videos</p>
@@ -1380,7 +1357,7 @@ function ProjectDetailContent({ project }: { project: PublicPortfolio['projects'
         </div>
       )}
 
-      {/* Links */}
+      {}
       {links.length > 0 && (
         <div className="space-y-2">
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Enlaces</p>
@@ -1415,7 +1392,7 @@ function ExperienceDetailContent({ exp }: { exp: PublicPortfolio['experiences'][
 
   return (
     <div className="space-y-6">
-      {/* Company banner */}
+      {}
       {exp.companyImageUrl && (
         <div className="overflow-hidden rounded-xl border border-border -mx-1">
           <img src={exp.companyImageUrl} alt={`${exp.companyName} banner`}
@@ -1423,7 +1400,7 @@ function ExperienceDetailContent({ exp }: { exp: PublicPortfolio['experiences'][
         </div>
       )}
 
-      {/* Header: logo + título + empresa */}
+      {}
       <div className="flex items-start gap-4">
         <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-border bg-muted/50">
           {exp.logoUrl
@@ -1451,7 +1428,7 @@ function ExperienceDetailContent({ exp }: { exp: PublicPortfolio['experiences'][
         </div>
       </div>
 
-      {/* Período + ubicación */}
+      {}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <div className="flex items-center gap-2 rounded-xl border border-border bg-background/70 px-4 py-3">
           <Calendar className="h-4 w-4 text-blue-400 shrink-0" />
@@ -1465,7 +1442,7 @@ function ExperienceDetailContent({ exp }: { exp: PublicPortfolio['experiences'][
         )}
       </div>
 
-      {/* Descripción / logros */}
+      {}
       {exp.description && (
         <div className="space-y-1.5">
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Descripción y logros</p>
@@ -1473,7 +1450,7 @@ function ExperienceDetailContent({ exp }: { exp: PublicPortfolio['experiences'][
         </div>
       )}
 
-      {/* Tecnologías */}
+      {}
       {parseTech(exp.technologies).length > 0 && (
         <div className="space-y-2">
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tecnologías utilizadas</p>
@@ -1485,7 +1462,7 @@ function ExperienceDetailContent({ exp }: { exp: PublicPortfolio['experiences'][
         </div>
       )}
 
-      {/* Mapa */}
+      {}
       {mapSrc && (
         <div className="space-y-2">
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Ubicación</p>
@@ -1541,7 +1518,7 @@ function CredentialPreview({ url, label }: { url: string; label: string }) {
 function EducationDetailContent({ edu }: { edu: PublicPortfolio['education'][0] }) {
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex items-start gap-4">
         <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-border bg-muted/50">
           {edu.logoUrl
@@ -1566,7 +1543,7 @@ function EducationDetailContent({ edu }: { edu: PublicPortfolio['education'][0] 
         </div>
       </div>
 
-      {/* Type + GPA row */}
+      {}
       <div className="flex flex-wrap gap-2">
         {edu.educationType && (
           <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/25 bg-amber-500/10 px-3 py-1 text-[11px] font-semibold text-amber-700 dark:text-amber-400">
@@ -1580,13 +1557,13 @@ function EducationDetailContent({ edu }: { edu: PublicPortfolio['education'][0] 
         )}
       </div>
 
-      {/* Period */}
+      {}
       <div className="flex items-center gap-2 rounded-xl border border-border bg-background/70 px-4 py-3">
         <Calendar className="h-4 w-4 text-amber-400 shrink-0" />
         <span className="text-sm text-muted-foreground">{fmtPeriod(edu.startDate, edu.endDate, edu.inProgress)}</span>
       </div>
 
-      {/* Description */}
+      {}
       {edu.description && (
         <div className="space-y-1.5">
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Descripción</p>
@@ -1594,12 +1571,12 @@ function EducationDetailContent({ edu }: { edu: PublicPortfolio['education'][0] 
         </div>
       )}
 
-      {/* Credential preview */}
+      {}
       {edu.credentialUrl && (
         <CredentialPreview url={edu.credentialUrl} label="Certificado / Credencial" />
       )}
 
-      {/* Verification link */}
+      {}
       {edu.verificationUrl && (
         <div className="space-y-1.5">
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Verificación oficial</p>
@@ -1614,8 +1591,6 @@ function EducationDetailContent({ edu }: { edu: PublicPortfolio['education'][0] 
     </div>
   );
 }
-
-// ── Cards ─────────────────────────────────────────────────────────────────────
 
 function ExperienceCard({ exp }: { exp: PublicPortfolio['experiences'][0] }) {
   const [open, setOpen] = useState(false);
@@ -1892,8 +1867,6 @@ function EducationCard({ edu }: { edu: PublicPortfolio['education'][0] }) {
   );
 }
 
-// ── GitHub heatmap ────────────────────────────────────────────────────────────
-
 function GithubHeatmap() {
   const cells = Array.from({ length: 52 * 7 }, (_, i) => ({
     i,
@@ -1911,8 +1884,6 @@ function GithubHeatmap() {
     </div>
   );
 }
-
-// ── SEO ───────────────────────────────────────────────────────────────────────
 
 function useSeoMeta(portfolio: PublicPortfolio | null) {
   useEffect(() => {
@@ -1948,8 +1919,6 @@ function removeMeta(nameOrProp: string) {
   const isOg = nameOrProp.startsWith('og:') || nameOrProp.startsWith('twitter:');
   document.querySelector(`meta[${isOg ? 'property' : 'name'}="${nameOrProp}"]`)?.remove();
 }
-
-// ── Route component ───────────────────────────────────────────────────────────
 
 export default function PublicPortfolioPage() {
   const { slug } = useParams<{ slug: string }>();

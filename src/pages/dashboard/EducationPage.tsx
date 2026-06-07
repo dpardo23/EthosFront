@@ -14,6 +14,9 @@ import { educationService } from '@/shared/services/educationService';
 import { fileService } from '@/shared/services/fileService';
 import type { AcademicRecord } from '@/shared/types/education';
 
+/**
+ * Dashboard page for creating, editing, and deleting academic record entries.
+ */
 const API_BASE_URL = (import.meta.env.VITE_API_URL as string) || '';
 const getFullUrl = (url: string | undefined | null): string => {
   if (!url) return '';
@@ -44,7 +47,6 @@ const EMPTY_FORM: FormData = {
   gpa: '', verificationUrl: '', institutionLogoUrl: '', isVisible: true,
 };
 
-
 const EDU_TYPES: Record<string, string> = {
   university: 'Universidad',
   master_degree: 'Maestría / Posgrado',
@@ -71,7 +73,6 @@ const isImg = (s?: string) => !!s && (s.startsWith('data:image/') || (s.startsWi
 const SPRING = { type: 'spring' as const, stiffness: 380, damping: 30 };
 const SPRING_MODAL = { type: 'spring' as const, stiffness: 320, damping: 32 };
 
-// ─── Upload zone ─────────────────────────────────────────────────────────────
 interface UploadZoneProps {
   value: string;
   uploading: boolean;
@@ -133,7 +134,7 @@ function UploadZone({ value, uploading, isDragging, hint, accept, inputRef, onDr
 
   return (
     <div className="space-y-2">
-      {/* Mode tabs */}
+      {}
       <div className="flex rounded-lg border border-border bg-muted/30 p-0.5 gap-0.5">
         <button type="button" onClick={() => setMode('upload')}
           className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1 text-xs font-medium transition-colors ${
@@ -200,7 +201,6 @@ function UploadZone({ value, uploading, isDragging, hint, accept, inputRef, onDr
   );
 }
 
-// ─── Timeline line ────────────────────────────────────────────────────────────
 function TimelineLine() {
   return (
     <div className="absolute left-[19px] top-5 bottom-10 w-px overflow-hidden pointer-events-none">
@@ -218,7 +218,6 @@ function TimelineLine() {
   );
 }
 
-// ─── Custom checkbox ──────────────────────────────────────────────────────────
 function Checkbox({ checked, onChange, label }: { checked: boolean; onChange: () => void; label: string }) {
   return (
     <label className="flex cursor-pointer items-center gap-2.5 select-none" onClick={onChange}>
@@ -230,7 +229,6 @@ function Checkbox({ checked, onChange, label }: { checked: boolean; onChange: ()
   );
 }
 
-// ─── Empty state ──────────────────────────────────────────────────────────────
 function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/20 py-16 px-6 text-center">
@@ -248,7 +246,6 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
   );
 }
 
-// ─── Education card ───────────────────────────────────────────────────────────
 interface CardProps {
   rec: AcademicRecord;
   reorderMode: boolean;
@@ -275,7 +272,7 @@ function EducationCard({ rec, reorderMode, deleteConfirmId, isDeleting, onView, 
     >
       <div className="p-4 sm:p-5">
         <div className="flex gap-3">
-          {/* Logo */}
+          {}
           {isImg(rec.institutionLogoUrl ?? '') ? (
             <img src={rec.institutionLogoUrl!} alt={rec.institutionName}
               className="mt-0.5 h-11 w-11 shrink-0 rounded-xl object-contain bg-white p-1 border border-border" />
@@ -288,7 +285,7 @@ function EducationCard({ rec, reorderMode, deleteConfirmId, isDeleting, onView, 
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
-                {/* Degree + badges — siempre 1 línea */}
+                {}
                 <div className="flex items-center gap-1.5 overflow-hidden">
                   <h3 className="text-sm font-semibold text-foreground truncate shrink min-w-0">{rec.degree}</h3>
                   {rec.isCurrent && (
@@ -302,9 +299,9 @@ function EducationCard({ rec, reorderMode, deleteConfirmId, isDeleting, onView, 
                     </span>
                   )}
                 </div>
-                {/* Institución — siempre 1 línea */}
+                {}
                 <p className="text-sm font-medium text-primary truncate mt-0.5">{rec.institutionName}</p>
-                {/* Meta row — siempre 1 línea, sin wrap */}
+                {}
                 <div className="flex items-center gap-x-3 mt-1 overflow-hidden">
                   <span className="shrink-0 flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
                     <CalendarRange className="h-3 w-3" />
@@ -325,7 +322,7 @@ function EducationCard({ rec, reorderMode, deleteConfirmId, isDeleting, onView, 
                 </div>
               </div>
 
-              {/* Action buttons */}
+              {}
               {!reorderMode && !isConfirming && (
                 <div className="flex shrink-0 items-center gap-1" onClick={e => e.stopPropagation()}>
                   <button onClick={onView}
@@ -350,7 +347,7 @@ function EducationCard({ rec, reorderMode, deleteConfirmId, isDeleting, onView, 
               )}
             </div>
 
-            {/* Credential indicator — espacio fijo siempre reservado */}
+            {}
             <div className="mt-2.5 h-6 flex items-center">
               {rec.credentialUrl && (
                 <div className="inline-flex items-center gap-1.5 rounded-lg bg-muted/60 px-2.5 py-1 text-xs text-muted-foreground">
@@ -362,7 +359,7 @@ function EducationCard({ rec, reorderMode, deleteConfirmId, isDeleting, onView, 
           </div>
         </div>
 
-        {/* Inline delete confirm */}
+        {}
         <AnimatePresence>
           {isConfirming && (
             <motion.div
@@ -394,7 +391,6 @@ function EducationCard({ rec, reorderMode, deleteConfirmId, isDeleting, onView, 
   );
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
 export default function EducationPage() {
   const { profile: profile } = useAuthStore();
   const [records, setRecords] = useState<AcademicRecord[]>([]);
@@ -430,7 +426,7 @@ export default function EducationPage() {
     try {
       const data = await educationService.getRecords(profile.id);
       let list = Array.isArray(data) ? data : [];
-      // Restore saved custom order from localStorage
+      
       const savedOrder = localStorage.getItem(`ethoshub_edu_order_${profile.id}`);
       if (savedOrder) {
         try {
@@ -439,7 +435,7 @@ export default function EducationPage() {
           const sorted = ids.map(id => map.get(id)).filter(Boolean) as typeof list;
           const remaining = list.filter(r => !ids.includes(r.academicRecordId ?? ''));
           list = [...sorted, ...remaining];
-        } catch { /* ignore malformed storage */ }
+        } catch {  }
       }
       setRecords(list);
       setOrdered([...list]);
@@ -608,11 +604,11 @@ export default function EducationPage() {
     } catch { toast.error('Error al subir el certificado'); } finally { setUploadingCred(false); }
   };
 
-  // Blindaje final del render: aunque el estado quede corrupto por una
-  // respuesta no-array, todo el JSX consume este arreglo garantizado.
+  
+  
   const safeRecords = Array.isArray(records) ? records : [];
 
-  // Stats
+  
   const uniqueInstitutions = new Set(safeRecords.map(r => r.institutionName).filter(Boolean)).size;
   let totalYears = 0;
   safeRecords.forEach(r => {
@@ -628,7 +624,7 @@ export default function EducationPage() {
       err ? 'border-destructive focus:border-destructive' : 'border-border focus:border-primary'
     }`;
 
-  // ── Form modal (portaled) ─────────────────────────────────────────────────
+  
   const formModal = portalEl ? createPortal(
     <AnimatePresence>
       {isFormOpen && (
@@ -644,7 +640,7 @@ export default function EducationPage() {
             exit={{ opacity: 0, y: 32 }}
             transition={SPRING_MODAL}
           >
-            {/* Header */}
+            {}
             <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
@@ -663,7 +659,7 @@ export default function EducationPage() {
             <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
               <div className="flex-1 overflow-y-auto p-6 space-y-5">
 
-                {/* Institution + Type */}
+                {}
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
@@ -707,7 +703,7 @@ export default function EducationPage() {
                   </div>
                 </div>
 
-                {/* Degree + Field */}
+                {}
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
@@ -745,7 +741,7 @@ export default function EducationPage() {
                   </div>
                 </div>
 
-                {/* Dates */}
+                {}
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
@@ -772,7 +768,7 @@ export default function EducationPage() {
                   </div>
                 </div>
 
-                {/* GPA + Verification URL */}
+                {}
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
@@ -796,7 +792,7 @@ export default function EducationPage() {
                   </div>
                 </div>
 
-                {/* Checkbox */}
+                {}
                 <div className="flex flex-wrap gap-5">
                   <Checkbox
                     checked={form.isCurrent}
@@ -805,7 +801,7 @@ export default function EducationPage() {
                   />
                 </div>
 
-                {/* Uploads */}
+                {}
                 <div className="border-t border-border pt-5">
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Archivos adjuntos</p>
                   <div className="grid gap-4 sm:grid-cols-2">
@@ -843,7 +839,7 @@ export default function EducationPage() {
                 </div>
               </div>
 
-              {/* Footer */}
+              {}
               <div className="flex shrink-0 items-center justify-between border-t border-border bg-card px-6 py-4">
                 <div>
                   {editingRec?.academicRecordId && (
@@ -873,7 +869,7 @@ export default function EducationPage() {
     portalEl!
   ) : null;
 
-  // ── Detail panel (portaled) ───────────────────────────────────────────────
+  
   const detailPanel = portalEl ? createPortal(
     <AnimatePresence>
       {detailRec && (
@@ -889,7 +885,7 @@ export default function EducationPage() {
             initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
             transition={{ type: 'spring', stiffness: 340, damping: 36 }}
           >
-            {/* ── Panel header ── */}
+            {}
             <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4 bg-card/80 backdrop-blur-sm">
               <div className="flex items-center gap-3 min-w-0">
                 {isImg(detailRec.institutionLogoUrl ?? '') ? (
@@ -919,10 +915,10 @@ export default function EducationPage() {
               </div>
             </div>
 
-            {/* ── Scrollable body ── */}
+            {}
             <div className="flex-1 overflow-y-auto">
 
-              {/* Hero: credential/banner image */}
+              {}
               {isImg(detailRec.credentialUrl ?? '') && (
                 <div className="relative w-full h-44 overflow-hidden bg-muted">
                   <img
@@ -936,7 +932,7 @@ export default function EducationPage() {
 
               <div className="p-5 space-y-5">
 
-                {/* Status + type badges */}
+                {}
                 <div className="flex flex-wrap gap-2">
                   {detailRec.isCurrent && (
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
@@ -952,7 +948,7 @@ export default function EducationPage() {
                   )}
                 </div>
 
-                {/* Degree info block */}
+                {}
                 <div className="rounded-2xl border border-border bg-muted/30 overflow-hidden">
                   <div className="px-4 py-3 border-b border-border/60">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Título / Certificación</p>
@@ -976,7 +972,7 @@ export default function EducationPage() {
                   </div>
                 </div>
 
-                {/* Meta grid */}
+                {}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-xl border border-border bg-muted/20 p-3">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5 flex items-center gap-1">
@@ -1010,7 +1006,7 @@ export default function EducationPage() {
                   )}
                 </div>
 
-                {/* Verification URL */}
+                {}
                 {detailRec.verificationUrl && (
                   <a
                     href={detailRec.verificationUrl}
@@ -1029,7 +1025,7 @@ export default function EducationPage() {
                   </a>
                 )}
 
-                {/* Credential image / PDF */}
+                {}
                 {detailRec.credentialUrl && (
                   <div className="space-y-2">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -1037,7 +1033,7 @@ export default function EducationPage() {
                     </p>
 
                     {isImg(detailRec.credentialUrl) ? (
-                      /* ── Imagen: thumbnail + botones descarga y lightbox ── */
+                      
                       <div className="overflow-hidden rounded-xl border border-border bg-muted/10">
                         <div className="flex items-center gap-3 p-3">
                           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/50">
@@ -1075,7 +1071,7 @@ export default function EducationPage() {
                         </div>
                       </div>
                     ) : isPdf(detailRec.credentialUrl) ? (
-                      /* ── PDF: fila con descarga + toggle expand ── */
+                      
                       <div className="overflow-hidden rounded-xl border border-border bg-muted/10">
                         <div className="flex items-center gap-3 p-3">
                           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/50">
@@ -1123,7 +1119,7 @@ export default function EducationPage() {
               </div>
             </div>
 
-            {/* ── Panel footer ── */}
+            {}
             <div className="shrink-0 border-t border-border bg-card/80 backdrop-blur-sm px-5 py-3 flex items-center justify-between gap-2">
               <button
                 onClick={() => { setDetailRec(null); openEdit(detailRec); }}
@@ -1153,7 +1149,7 @@ export default function EducationPage() {
         transition={SPRING}
         className="space-y-6"
       >
-        {/* ── Header ─────────────────────────────────────────────────────── */}
+        {}
         <div className="relative overflow-hidden rounded-3xl border border-border bg-card px-6 py-6 sm:px-8 sm:py-7">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_0%_0%,_hsl(var(--primary)/0.12)_0%,_transparent_100%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_40%_60%_at_100%_100%,_hsl(var(--primary)/0.06)_0%,_transparent_100%)]" />
@@ -1186,7 +1182,7 @@ export default function EducationPage() {
           </div>
         </div>
 
-        {/* ── Toolbar ────────────────────────────────────────────────────── */}
+        {}
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
             Historial académico
@@ -1223,7 +1219,7 @@ export default function EducationPage() {
           </div>
         </div>
 
-        {/* ── Timeline ───────────────────────────────────────────────────── */}
+        {}
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -1296,7 +1292,7 @@ export default function EducationPage() {
       {formModal}
       {detailPanel}
 
-      {/* Lightbox para imagen de certificado */}
+      {}
       {detailLightbox && detailRec?.credentialUrl && isImg(detailRec.credentialUrl) && createPortal(
         <AnimatePresence>
           <motion.div

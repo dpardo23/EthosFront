@@ -37,6 +37,9 @@ import type {
   Notification,
 } from '../types';
 
+/**
+ * Barrel re-export and legacy mock-backed service adapters used during development before real endpoints were available.
+ */
 const DELAY_MS = 500;
 const API_BASE_URL = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '') as string;
 
@@ -83,9 +86,6 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   }
 }
 
-// =============================================
-// AUTH SERVICE
-// =============================================
 export const authService = {
   async login(email: string, _password: string, role: ProfileRole): Promise<Profile> {
     await delay(DELAY_MS);
@@ -121,7 +121,7 @@ export const authService = {
 
 // =============================================
 // SKILLS SERVICE
-// =============================================
+
 let softSkillsData = [...mockSoftSkills];
 
 export const skillsService = {
@@ -222,9 +222,6 @@ export const skillsService = {
 
 // =============================================
 // PROJECTS SERVICE 
-// =============================================
-
-// ── Tipos auxiliares ─────────────────────────────────────────────────────────
 
 interface BackendMediaDTO {
   type: string;
@@ -255,11 +252,8 @@ interface BackendProjectDTO {
   technologies: string[] | null;
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
 const allowedMediaTypes = new Set(['youtube', 'vimeo', 'figma', 'slides', 'document', 'link']);
 
-/** Convierte el label visible al valor raw que espera la BD */
 const STATUS_LABEL_TO_RAW: Record<string, string> = {
   'Borrador': 'draft',
   'En progreso': 'in_progress',
@@ -296,8 +290,6 @@ function normalizeUploadedUrl(url: string | null | undefined): string | null {
     return url.replace(/^https?:\/\/[^/]+\//, '');
   }
 }
-
-// ── Mapeador principal ────────────────────────────────────────────────────────
 
 function mapBackendProject(dto: BackendProjectDTO): Project {
   const detectMediaType = (m: BackendMediaDTO): string => {
@@ -363,8 +355,6 @@ function mapBackendProject(dto: BackendProjectDTO): Project {
     repositoryUrl: dto.repositoryUrl || undefined,
   }) as Project;
 }
-
-// ── Service ───────────────────────────────────────────────────────────────────
 
 let projectsData: Project[] = [];
 
@@ -437,7 +427,7 @@ export const projectsService = {
       if (refreshed) return refreshed;
     }
 
-    // Fallback local (no debería ocurrir)
+    
     const fallback: Project = {
       id: createdId || generateId(),
       profileId,
@@ -544,9 +534,6 @@ function buildPayload(
   };
 }
 
-// =============================================
-// CONNECTIONS SERVICE
-// =============================================
 export const connectionsService = {
   async getConnections(_profileId: string): Promise<OAuthConnection[]> {
     return apiRequest<OAuthConnection[]>('/v1/connections');
@@ -614,7 +601,7 @@ export const connectionsService = {
 
 // =============================================
 // VISIBILITY SERVICE
-// =============================================
+
 export const visibilityService = {
   async getSettings(profileId: string): Promise<VisibilitySettings | null> {
     await delay(DELAY_MS);
@@ -656,7 +643,7 @@ export const visibilityService = {
   },
 
   // updatePasswordProtection removed — password-based access control no longer used
-  // async updatePasswordProtection(profileId: string, enabled: boolean, password?: string): Promise<void> { ... }
+  
 
   async getPublicPortfolio(slug: string): Promise<{ profile: Profile; settings: VisibilitySettings } | null> {
     await delay(DELAY_MS);
@@ -710,7 +697,7 @@ export const visibilityService = {
 
 // =============================================
 // ANALYTICS SERVICE
-// =============================================
+
 export const analyticsService = {
   async getPlatformMetrics(): Promise<PlatformMetrics> {
     await delay(DELAY_MS);
@@ -730,7 +717,7 @@ export const analyticsService = {
 
 // =============================================
 // PREFERENCES SERVICE
-// =============================================
+
 let profilePreferencesData = { ...mockProfilePreferences };
 
 export const preferencesService = {
@@ -758,7 +745,7 @@ export const preferencesService = {
 
 // =============================================
 // NOTIFICATIONS SERVICE
-// =============================================
+
 let notificationsData = [...mockNotifications];
 
 export const notificationsService = {

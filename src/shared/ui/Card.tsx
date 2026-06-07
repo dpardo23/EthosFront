@@ -1,6 +1,9 @@
 import type { ReactNode } from 'react';
 import { cn } from '../lib/utils';
 
+/**
+ * Base card container component providing consistent padding, border, and shadow styles.
+ */
 interface CardBaseProps {
   children: ReactNode;
   className?: string;

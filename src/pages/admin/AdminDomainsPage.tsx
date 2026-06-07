@@ -5,6 +5,9 @@ import { toast } from 'sonner';
 import { Button, Input, Card, Badge } from '@/shared/ui';
 import { domainService, DomainResponse } from '@/shared/services/domainService';
 
+/**
+ * Admin page for managing allowed custom domains for public portfolio URLs.
+ */
 export default function AdminDomainsPage() {
   const [domains, setDomains] = useState<DomainResponse[]>([]);
   const [newDomain, setNewDomain] = useState('');
@@ -36,7 +39,7 @@ export default function AdminDomainsPage() {
       await domainService.addDomain(newDomain);
       toast.success('Dominio añadido exitosamente');
       setNewDomain('');
-      fetchDomains(); // Refrescar la lista de la tabla
+      fetchDomains(); 
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Error al añadir dominio');
     } finally {
@@ -55,7 +58,7 @@ export default function AdminDomainsPage() {
     try {
       await domainService.deleteDomain(dominio);
       toast.success('Dominio eliminado');
-      fetchDomains(); // Refrescar la lista de la tabla
+      fetchDomains(); 
     } catch (error) {
       toast.error('Error al eliminar dominio');
     }
@@ -73,7 +76,7 @@ export default function AdminDomainsPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
-        {/* Panel Izquierdo: Formulario de adición */}
+        {}
         <Card className="col-span-1 border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-zinc-950 h-fit">
           <div className="mb-4 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-500/20">
@@ -116,7 +119,7 @@ export default function AdminDomainsPage() {
           </div>
         </Card>
 
-        {/* Panel Derecho: Lista de dominios */}
+        {}
         <Card className="col-span-2 border-gray-200 bg-white p-0 dark:border-white/10 dark:bg-zinc-950 overflow-hidden">
           <div className="border-b border-gray-200 p-5 dark:border-white/10">
             <h2 className="font-semibold text-black dark:text-white flex items-center gap-2">
@@ -160,7 +163,7 @@ export default function AdminDomainsPage() {
                         </Badge>
                       </td>
                       <td className="px-5 py-4 text-right">
-                        {/* VALIDACIÓN VISUAL AQUÍ */}
+                        {}
                         {domain.dominio === 'gmail.com' ? (
                           <div className="inline-flex items-center justify-end gap-1 px-3 text-xs font-medium text-gray-400 dark:text-gray-500">
                             <Lock className="h-3 w-3" />

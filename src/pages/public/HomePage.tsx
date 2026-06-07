@@ -3,9 +3,7 @@ import { useAuthStore } from '@/store';
 import PublicLandingPage from './PublicLandingPage';
 
 /**
- * Smart HomePage Router
- * - Unauthenticated profiles see the public marketing landing page
- * - Authenticated profiles are redirected to their dashboard
+ * Public home page root: renders PublicLandingPage or redirects authenticated users to their dashboard.
  */
 export default function HomePage() {
   const { isAuthenticated } = useAuthStore();

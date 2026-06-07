@@ -6,6 +6,9 @@ import { EthosOwlMascot } from '@/components/brand/EthosCoreLogo';
 import { AmbientBackground, GradientText, PulseDot } from '@/shared/landing';
 import { easeOut, springConfig, fadeUp } from '@/shared/motion';
 
+/**
+ * Landing page hero section with headline, sub-copy, and primary CTA above the fold.
+ */
 const HERO_LINES: { words: { text: string; gradient?: boolean }[] }[] = [
   { words: [{ text: 'Tu' }, { text: 'código.' }] },
   { words: [{ text: 'Tu' }, { text: 'identidad.' }] },
@@ -70,7 +73,7 @@ export function HeroSection() {
       <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid items-center gap-8 sm:gap-12 lg:grid-cols-[1.3fr_0.7fr] lg:gap-8">
 
-          {/* Text column */}
+          {}
           <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
 
             <motion.div {...fadeUp(0, 0.5)}>
@@ -155,7 +158,7 @@ export function HeroSection() {
             </motion.p>
           </div>
 
-          {/* Mascot column */}
+          {}
           <div className="relative flex items-center justify-center">
             <div
               className="pointer-events-none absolute h-72 w-72 rounded-full sm:h-[420px] sm:w-[420px]"

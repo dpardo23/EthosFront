@@ -1,7 +1,10 @@
 import type { ProfileRole } from '@/shared/types';
 
+/**
+ * Centralized route path constants used throughout the app to avoid hard-coded strings.
+ */
 export const ROUTES = {
-  // ── Public ───────────────────────────────────────────────────────────────
+  
   HOME:           '/',
   LOGIN:          '/login',
   REGISTER:       '/register',
@@ -12,7 +15,7 @@ export const ROUTES = {
   TERMS:          '/terminos',
   ACCESS_DENIED:  '/access-denied',
 
-  // ── Professional ─────────────────────────────────────────────────────────
+  
   PROFESSIONAL_PORTFOLIO:    '/dashboard/portfolio',
   PROFESSIONAL_SKILLS:       '/dashboard/skills',
   PROFESSIONAL_PROJECTS:     '/dashboard/projects',
@@ -22,18 +25,18 @@ export const ROUTES = {
   PROFESSIONAL_CONNECTIONS:  '/dashboard/connections',
   PROFESSIONAL_CHAT:         '/dashboard/chat',
   PROFESSIONAL_VISIBILITY:   '/dashboard/visibility',
-  // Initial redirect after login — immutable
+  
   PROFESSIONAL_SETTINGS:     '/dashboard/profesional/configuracion',
 
-  // ── Recruiter ─────────────────────────────────────────────────────────────
+  
   RECRUITER_DASHBOARD:       '/recruiter/dashboard',
   RECRUITER_TALENT:          '/recruiter/talent-discovery',
   RECRUITER_CHAT:            '/recruiter/chat',
   RECRUITER_LIKES:           '/recruiter/likes',
-  // Initial redirect after login — immutable
+  
   RECRUITER_SETTINGS:        '/dashboard/reclutador/configuracion',
 
-  // ── Admin ─────────────────────────────────────────────────────────────────
+  
   ADMIN_DASHBOARD:           '/admin/dashboard',
   ADMIN_PROFILES:            '/admin/profiles',
   ADMIN_MODERATION:          '/admin/moderation',
@@ -42,7 +45,6 @@ export const ROUTES = {
   ADMIN_DOMAINS:             '/admin/domains',
 } as const;
 
-/** Destination immediately after a successful login — never overridden. */
 export const ROLE_INITIAL_PATHS: Record<ProfileRole, string> = {
   professional: ROUTES.PROFESSIONAL_SETTINGS,
   recruiter:    ROUTES.RECRUITER_SETTINGS,

@@ -1,25 +1,28 @@
-export const MAX_ATTACHMENT_BYTES = 30 * 1024 * 1024; // 30 MB
+/**
+ * Helpers for chat attachment handling: type detection, size formatting, and preview URL generation.
+ */
+export const MAX_ATTACHMENT_BYTES = 30 * 1024 * 1024; 
 
 export const ALLOWED_MIME_TYPES: Record<string, string> = {
-  // Images
+  
   'image/jpeg': 'image',
   'image/png': 'image',
   'image/gif': 'image',
   'image/webp': 'image',
   'image/svg+xml': 'image',
-  // Video
+  
   'video/mp4': 'video',
   'video/webm': 'video',
   'video/ogg': 'video',
   'video/quicktime': 'video',
-  // Audio
+  
   'audio/mpeg': 'audio',
   'audio/ogg': 'audio',
   'audio/wav': 'audio',
   'audio/webm': 'audio',
   'audio/aac': 'audio',
   'audio/flac': 'audio',
-  // Documents
+  
   'application/pdf': 'file',
   'application/msword': 'file',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'file',
@@ -29,7 +32,7 @@ export const ALLOWED_MIME_TYPES: Record<string, string> = {
   'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'file',
   'text/plain': 'file',
   'text/csv': 'file',
-  // Archives
+  
   'application/zip': 'file',
   'application/x-rar-compressed': 'file',
   'application/x-7z-compressed': 'file',

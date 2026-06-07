@@ -18,6 +18,9 @@ import { useUiStore } from '@/store/uiStore';
 import { useVisibilityStore } from '@/store/visibilityStore';
 import type { PortfolioSection, SectionVisibility } from '@/shared/types';
 
+/**
+ * Dashboard page controlling which profile sections are visible on the public portfolio.
+ */
 const sectionLabels: Record<PortfolioSection, string> = {
   bio: 'Biografia',
   skills: 'Skills',

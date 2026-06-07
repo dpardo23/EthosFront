@@ -8,7 +8,6 @@ import { useUiStore } from './store/uiStore';
 import './i18n';
 import './index.css';
 
-// Initialize theme before rendering to prevent flash
 const initTheme = () => {
   const stored = localStorage.getItem('ethoshub_ui');
   let theme: 'light' | 'dark' | 'system' = 'dark';
@@ -18,7 +17,7 @@ const initTheme = () => {
       const parsed = JSON.parse(stored);
       theme = parsed.state?.theme || 'dark';
     } catch {
-      // Use default
+      
     }
   }
   
@@ -35,7 +34,6 @@ const initTheme = () => {
 
 initTheme();
 
-// Initialize the store's theme on first load
 useUiStore.getState().initializeTheme();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

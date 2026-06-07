@@ -1,6 +1,9 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/shared/lib/utils';
 
+/**
+ * Card component with a mouse-tracking radial glow effect used in landing page feature sections.
+ */
 type GlowOrigin = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center';
 
 const GLOW_POSITIONS: Record<GlowOrigin, string> = {

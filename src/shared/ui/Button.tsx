@@ -2,6 +2,9 @@ import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import { Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
+/**
+ * Primary button component with variant, size, and loading-state props.
+ */
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'default' | 'link';
   size?: 'sm' | 'md' | 'lg' | 'icon';

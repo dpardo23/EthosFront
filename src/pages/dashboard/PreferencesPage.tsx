@@ -45,6 +45,9 @@ import { useUiStore } from '@/store/uiStore';
 import { cn } from '@/shared/lib/utils';
 import type { PortfolioSection } from '@/shared/types';
 
+/**
+ * User preferences page for notification settings, language, theme, and account privacy options.
+ */
 type SectionId =
   | 'identidad'
   | 'personalizacion'
@@ -55,9 +58,6 @@ const SECTION_VARIANTS = {
   animate: { opacity: 1, y: 0, transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] } },
   exit: { opacity: 0, y: -8, transition: { duration: 0.14 } },
 };
-
-
-// ─── Primitives ────────────────────────────────────────────────────────────
 
 function Toggle({
   checked,
@@ -171,8 +171,6 @@ function ToggleRow({
   );
 }
 
-// ─── Nominatim / Map helpers ───────────────────────────────────────────────
-
 interface NominatimResult {
   place_id: number;
   display_name: string;
@@ -209,8 +207,6 @@ async function nominatimReverse(lat: number, lng: number): Promise<string> {
     return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
   }
 }
-
-// ─── Map Picker Modal ──────────────────────────────────────────────────────
 
 interface MapPickerModalProps {
   initialLat?: number | null;
@@ -310,7 +306,7 @@ function MapPickerModal({ initialLat, initialLng, initialLocation, onConfirm, on
         exit={{ opacity: 0, scale: 0.96, y: 16 }}
         transition={{ type: 'spring', stiffness: 380, damping: 30 }}
       >
-        {/* Header */}
+        {}
         <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-3.5">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/10">
@@ -327,7 +323,7 @@ function MapPickerModal({ initialLat, initialLng, initialLocation, onConfirm, on
           </button>
         </div>
 
-        {/* Search */}
+        {}
         <div ref={dropRef} className="relative z-[1001] shrink-0 px-4 pt-3 pb-2">
           <div className="relative">
             <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -362,7 +358,7 @@ function MapPickerModal({ initialLat, initialLng, initialLocation, onConfirm, on
           )}
         </div>
 
-        {/* Map */}
+        {}
         <div style={{ height: 420 }} className="relative w-full">
           <MapContainer
             center={mapCenter} zoom={mapZoom}
@@ -387,7 +383,7 @@ function MapPickerModal({ initialLat, initialLng, initialLocation, onConfirm, on
           </MapContainer>
         </div>
 
-        {/* Footer */}
+        {}
         <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border bg-card px-5 py-3.5">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             {markerPos ? (
@@ -426,8 +422,6 @@ function MapPickerModal({ initialLat, initialLng, initialLocation, onConfirm, on
     : null;
 }
 
-// ─── Main Component ────────────────────────────────────────────────────────
-
 export default function PreferencesPage() {
   const { profile: authProfile } = useAuthStore();
   const { preferences, updatePreferences } = usePreferencesStore();
@@ -438,7 +432,7 @@ export default function PreferencesPage() {
 
   const [activeSection, setActiveSection] = useState<SectionId>('identidad');
 
-  // Profile form
+  
   const [profile, setProfile] = useState({
     photoUrl: '',
     firstName: '',
@@ -458,10 +452,10 @@ export default function PreferencesPage() {
   const [photoUrlError, setPhotoUrlError] = useState(false);
   const [profileSubmitted, setProfileSubmitted] = useState(false);
 
-  // Map picker modal
+  
   const [showMapPicker, setShowMapPicker] = useState(false);
 
-  // Email form - 3-step OTP flow
+  
   const [emailStep, setEmailStep] = useState<1 | 2 | 3>(1);
   const [emailOtp, setEmailOtp] = useState('');
   const [emailNew, setEmailNew] = useState('');
@@ -469,7 +463,7 @@ export default function PreferencesPage() {
   const [verifyingEmailOtp, setVerifyingEmailOtp] = useState(false);
   const [savingEmail, setSavingEmail] = useState(false);
 
-  // Password form - 3-step OTP flow
+  
   const [passStep, setPassStep] = useState<1 | 2 | 3>(1);
   const [otpCode, setOtpCode] = useState('');
   const [passForm, setPassForm] = useState({ next: '', confirm: '' });
@@ -479,7 +473,7 @@ export default function PreferencesPage() {
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [savingPass, setSavingPass] = useState(false);
 
-  // Account actions
+  
   const [showDelete, setShowDelete] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [showExportLoading, setShowExportLoading] = useState(false);
@@ -487,7 +481,7 @@ export default function PreferencesPage() {
   const [deleteOtp, setDeleteOtp] = useState('');
   const [sendingDeleteOtp, setSendingDeleteOtp] = useState(false);
 
-  // Crop modal
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [cropOffset, setCropOffset] = useState({ x: 0, y: 0 });
@@ -514,7 +508,7 @@ export default function PreferencesPage() {
             bio: d.bio || authProfile.bio || '',
             website: d.website || authProfile.website || '',
           });
-          // lat/lng stored in profile state, used as initialLat/Lng for MapPickerModal
+          
         })
         .catch((error: any) => {
           if (error?.response?.status !== 401) {
@@ -550,7 +544,7 @@ export default function PreferencesPage() {
     },
   };
 
-  // ─── Handlers ──────────────────────────────────────────────────────────
+  
 
   async function handleSaveProfile() {
     setProfileSubmitted(true);
@@ -727,7 +721,7 @@ export default function PreferencesPage() {
       addToast({ type: 'error', title: 'Ingresa un correo válido' });
       return;
     }
-    // Client-side check: new email can't be same as current
+    
     const currentEmail = authProfile?.email || '';
     if (emailNew.trim().toLowerCase() === currentEmail.trim().toLowerCase()) {
       addToast({ type: 'error', title: 'El nuevo correo no puede ser igual al actual' });
@@ -901,7 +895,7 @@ export default function PreferencesPage() {
     }
   }
 
-  // ─── Nav config ────────────────────────────────────────────────────────
+  
 
   const navItems: {
     id: SectionId;
@@ -924,11 +918,11 @@ export default function PreferencesPage() {
   const textareaCls =
     'flex w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:border-violet-500/60 transition-all';
 
-  // ─── Render ────────────────────────────────────────────────────────────
+  
 
   return (
     <div className="min-h-screen bg-background pb-12">
-      {/* ── Page header ─────────────────────────────────────────────── */}
+      {}
       <div
         className="relative mb-6 overflow-hidden rounded-2xl"
         style={{
@@ -994,7 +988,7 @@ export default function PreferencesPage() {
         </div>
       </div>
 
-      {/* ── Mobile nav ──────────────────────────────────────────────── */}
+      {}
       <div className="mb-4 flex gap-2 overflow-x-auto pb-1 scrollbar-hide lg:hidden">
         {navItems.map((item) => {
           const active = activeSection === item.id;
@@ -1016,9 +1010,9 @@ export default function PreferencesPage() {
         })}
       </div>
 
-      {/* ── Main layout ─────────────────────────────────────────────── */}
+      {}
       <div className="flex gap-6">
-        {/* Desktop sidebar nav */}
+        {}
         <aside className="hidden w-52 shrink-0 self-start lg:block sticky top-6">
           <nav className="space-y-0.5 rounded-2xl border border-border bg-card p-2">
             {navItems.map((item) => {
@@ -1061,10 +1055,10 @@ export default function PreferencesPage() {
 
         </aside>
 
-        {/* Section content */}
+        {}
         <main className="min-w-0 flex-1">
           <AnimatePresence mode="wait">
-            {/* ══ IDENTIDAD ════════════════════════════════════════════ */}
+            {}
             {activeSection === 'identidad' && (
               <motion.div
                 key="identidad"
@@ -1080,7 +1074,7 @@ export default function PreferencesPage() {
                   </div>
                 ) : (
                   <>
-                    {/* Avatar */}
+                    {}
                     <SectionCard
                       title="Foto de perfil"
                       description="Tu imagen pública en el portafolio y en el dashboard."
@@ -1095,7 +1089,7 @@ export default function PreferencesPage() {
                         onChange={handleFileChange}
                       />
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                        {/* Avatar preview */}
+                        {}
                         <div className="shrink-0">
                           <button
                             onClick={handleAvatarClick}
@@ -1182,7 +1176,7 @@ export default function PreferencesPage() {
                       </div>
                     </SectionCard>
 
-                    {/* Professional data */}
+                    {}
                     <SectionCard
                       title="Datos profesionales"
                       description="Nombre, nivel y disponibilidad que aparecen en tu portafolio."
@@ -1323,7 +1317,7 @@ export default function PreferencesPage() {
                       </div>
                     </SectionCard>
 
-                    {/* Bio */}
+                    {}
                     <SectionCard
                       title="Biografía profesional"
                       description="Tu presentación pública en el portafolio. Sé conciso y directo."
@@ -1361,7 +1355,7 @@ export default function PreferencesPage() {
               </motion.div>
             )}
 
-            {/* ══ PERSONALIZACIÓN ══════════════════════════════════════ */}
+            {}
             {activeSection === 'personalizacion' && (
               <motion.div
                 key="personalizacion"
@@ -1419,7 +1413,7 @@ export default function PreferencesPage() {
                   iconColor="emerald"
                 >
                   <div className="relative flex h-11 w-full items-center rounded-xl border border-border bg-muted/40 p-1">
-                    {/* Sliding indicator */}
+                    {}
                     {(['light', 'dark', 'system'] as const).map((t) =>
                       activeTheme === t ? (
                         <motion.div
@@ -1503,7 +1497,7 @@ export default function PreferencesPage() {
               </motion.div>
             )}
 
-            {/* ══ SEGURIDAD ════════════════════════════════════════════ */}
+            {}
             {activeSection === 'seguridad' && (
               <motion.div
                 key="seguridad"
@@ -1513,14 +1507,14 @@ export default function PreferencesPage() {
                 exit="exit"
                 className="space-y-4"
               >
-                {/* Password change — 3-step OTP flow */}
+                {}
                 <SectionCard
                   title="Cambiar contraseña"
                   description="Verificación por correo para proteger tu cuenta."
                   icon={Key}
                   iconColor="slate"
                 >
-                  {/* Step indicator */}
+                  {}
                   <div className="mb-5 flex items-center gap-2">
                     {([1, 2, 3] as const).map((s) => (
                       <div key={s} className="flex items-center gap-2">
@@ -1554,7 +1548,7 @@ export default function PreferencesPage() {
                   </div>
 
                   <AnimatePresence mode="wait">
-                    {/* ─ Step 1: Request OTP ─ */}
+                    {}
                     {passStep === 1 && (
                       <motion.div
                         key="pass-step-1"
@@ -1590,7 +1584,7 @@ export default function PreferencesPage() {
                       </motion.div>
                     )}
 
-                    {/* ─ Step 2: Enter OTP ─ */}
+                    {}
                     {passStep === 2 && (
                       <motion.div
                         key="pass-step-2"
@@ -1643,7 +1637,7 @@ export default function PreferencesPage() {
                       </motion.div>
                     )}
 
-                    {/* ─ Step 3: New password ─ */}
+                    {}
                     {passStep === 3 && (
                       <motion.div
                         key="pass-step-3"
@@ -1728,14 +1722,14 @@ export default function PreferencesPage() {
                   </AnimatePresence>
                 </SectionCard>
 
-                {/* Email change — 3-step OTP flow */}
+                {}
                 <SectionCard
                   title="Cambiar correo electrónico"
                   description="Verificación en tu correo actual para confirmar el cambio."
                   icon={Mail}
                   iconColor="blue"
                 >
-                  {/* Step indicator */}
+                  {}
                   <div className="mb-5 flex items-center gap-2">
                     {([1, 2, 3] as const).map((s) => (
                       <div key={s} className="flex items-center gap-2">
@@ -1769,7 +1763,7 @@ export default function PreferencesPage() {
                   </div>
 
                   <AnimatePresence mode="wait">
-                    {/* ─ Step 1 ─ */}
+                    {}
                     {emailStep === 1 && (
                       <motion.div
                         key="email-step-1"
@@ -1805,7 +1799,7 @@ export default function PreferencesPage() {
                       </motion.div>
                     )}
 
-                    {/* ─ Step 2 ─ */}
+                    {}
                     {emailStep === 2 && (
                       <motion.div
                         key="email-step-2"
@@ -1855,7 +1849,7 @@ export default function PreferencesPage() {
                       </motion.div>
                     )}
 
-                    {/* ─ Step 3 ─ */}
+                    {}
                     {emailStep === 3 && (
                       <motion.div
                         key="email-step-3"
@@ -1911,7 +1905,7 @@ export default function PreferencesPage() {
                   </AnimatePresence>
                 </SectionCard>
 
-                {/* Export data */}
+                {}
                 <SectionCard
                   title="Exportar mis datos"
                   description="Descarga una copia completa de tu información en EthosHub."
@@ -1936,7 +1930,7 @@ export default function PreferencesPage() {
                   </div>
                 </SectionCard>
 
-                {/* Danger zone */}
+                {}
                 <SectionCard
                   title="Zona de peligro"
                   description="Estas acciones son permanentes e irreversibles."
@@ -1971,7 +1965,7 @@ export default function PreferencesPage() {
         </main>
       </div>
 
-      {/* ── Map picker modal ─────────────────────────────────────────── */}
+      {}
       <AnimatePresence>
         {showMapPicker && (
           <MapPickerModal
@@ -1984,7 +1978,7 @@ export default function PreferencesPage() {
         )}
       </AnimatePresence>
 
-      {/* ── Crop image modal — portaled into #portal-root (scoped to content area) ── */}
+      {}
       {typeof document !== 'undefined' && document.getElementById('portal-root') &&
         createPortal(
           <AnimatePresence>
@@ -2022,7 +2016,7 @@ export default function PreferencesPage() {
                     </button>
                   </div>
 
-                  {/* Crop area */}
+                  {}
                   <div
                     className="relative mx-auto overflow-hidden rounded-2xl border-2 border-dashed border-violet-500/40 bg-muted/30"
                     style={{ width: 280, height: 280 }}
@@ -2047,7 +2041,7 @@ export default function PreferencesPage() {
                         userSelect: 'none',
                       }}
                     />
-                    {/* Rule-of-thirds grid */}
+                    {}
                     <div
                       className="pointer-events-none absolute inset-0"
                       style={{
@@ -2056,7 +2050,7 @@ export default function PreferencesPage() {
                         backgroundSize: '93.33px 93.33px',
                       }}
                     />
-                    {/* Corner handles */}
+                    {}
                     {(['top-2 left-2', 'top-2 right-2', 'bottom-2 left-2', 'bottom-2 right-2'] as const).map((pos) => (
                       <div
                         key={pos}
@@ -2086,7 +2080,7 @@ export default function PreferencesPage() {
         )
       }
 
-      {/* ── Export loading overlay (mascot) ─────────────────────────── */}
+      {}
       <AnimatePresence>
         {showExportLoading && (
           <>
@@ -2170,7 +2164,7 @@ export default function PreferencesPage() {
         )}
       </AnimatePresence>
 
-      {/* ── Delete confirmation modal (OTP flow) ───────────────────── */}
+      {}
       <AnimatePresence>
         {showDelete && (
           <>

@@ -4,6 +4,9 @@ import { ArrowRight, GitBranch, Star, MapPin, ExternalLink } from 'lucide-react'
 import { SectionDivider, GradientText } from '@/shared/landing';
 import { easeOut, fadeUpView, slideUpView, fadeView } from '@/shared/motion';
 
+/**
+ * Landing section with visual showcase of example portfolios and project cards.
+ */
 const TECH_WORDS = [
   'React', 'TypeScript', 'Go', 'Rust', 'Python', 'Node.js', 'Kubernetes',
   'Docker', 'GraphQL', 'PostgreSQL', 'AWS', 'Flutter', 'Swift', 'Terraform',

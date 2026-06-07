@@ -16,6 +16,9 @@ import { useAuthStore } from '@/store';
 import { Avatar } from '@/shared/ui';
 import { cn } from '@/shared/lib/utils';
 
+/**
+ * Recruiter dashboard home with summary of liked profiles, recent conversations, and quick actions.
+ */
 interface KPI {
   label: string;
   value: number | string;
@@ -162,7 +165,7 @@ export default function RecruiterDashboardPage() {
   return (
     <div className="space-y-8">
 
-      {/* Header */}
+      {}
       <motion.div
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -196,7 +199,7 @@ export default function RecruiterDashboardPage() {
         )}
       </motion.div>
 
-      {/* KPIs */}
+      {}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {kpis.map((kpi, i) => (
           <KPICard key={kpi.label} kpi={kpi} delay={i * 0.08} />
@@ -205,7 +208,7 @@ export default function RecruiterDashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
 
-        {/* Quick actions */}
+        {}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -237,7 +240,7 @@ export default function RecruiterDashboardPage() {
           </div>
         </motion.div>
 
-        {/* Recent likes */}
+        {}
         <motion.div
           initial={{ opacity: 0, x: 16 }}
           animate={{ opacity: 1, x: 0 }}

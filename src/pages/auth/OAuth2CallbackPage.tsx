@@ -7,6 +7,9 @@ import { ROLE_INITIAL_PATHS } from '@/app/router/routes';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import api from '@/shared/api/api';
 
+/**
+ * Handles the Supabase OAuth redirect: exchanges the code, calls oauth/sync, and routes by role.
+ */
 const PENDING_OAUTH_ROLE_KEY = 'ethoshub_pending_oauth_role';
 
 type JwtPayload = {
@@ -110,7 +113,7 @@ export default function OAuth2CallbackPage() {
       return;
     }
 
-    // ── Spring Boot legacy JWT flow ──────────────────────────────────────────
+    
     const token = searchParams.get('token');
     if (token) {
       const payload = decodeJwtPayload(token);
@@ -132,7 +135,7 @@ export default function OAuth2CallbackPage() {
       return;
     }
 
-    // ── Supabase SDK flow ────────────────────────────────────────────────────
+    
     if (!isSupabaseConfigured || !supabase) {
       toast.error('Respuesta OAuth incompleta');
       navigate('/login', { replace: true });
@@ -149,9 +152,9 @@ export default function OAuth2CallbackPage() {
       const user        = session.user;
       const accessToken = session.access_token;
 
-      // Priority: (1) app_metadata.role from Supabase JWT (set by backend on first sync)
-      //           (2) pendingRole saved in localStorage before OAuth redirect (new registration)
-      //           (3) default 'professional'
+      
+      
+      
       const appMetaRole      = (user.app_metadata as Record<string, string> | undefined)?.role;
       const pendingRole      = localStorage.getItem(PENDING_OAUTH_ROLE_KEY);
       const isNewRegistration = pendingRole !== null && !appMetaRole;
@@ -175,7 +178,7 @@ export default function OAuth2CallbackPage() {
       } catch (error: any) {
         const status: number | undefined = error.response?.status;
 
-        // Backend rejected — sign out to avoid ghost sessions
+        
         if (status !== undefined) {
           await supabase.auth.signOut();
           toast.error('Error al iniciar sesión', {
@@ -185,7 +188,7 @@ export default function OAuth2CallbackPage() {
           return;
         }
 
-        // Network/infra unreachable only — degrade gracefully
+        
         console.warn('Fallback: backend no disponible', error);
         const finalRole = mapRoleStringToProfileRole(roleToSync);
         const profile   = buildProfileFromSession(user, finalRole, user.id);

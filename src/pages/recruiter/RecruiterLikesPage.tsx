@@ -8,6 +8,9 @@ import { Avatar, EmptyState } from '@/shared/ui';
 import { toast } from 'sonner';
 import { cn } from '@/shared/lib/utils';
 
+/**
+ * Recruiter page listing all profiles the recruiter has liked for future reference.
+ */
 interface LikedProfile {
   like_id: string;
   basic_profile_id: string;
@@ -50,7 +53,7 @@ function LikedCard({
       transition={{ type: 'spring', stiffness: 300, damping: 28 }}
       className="group relative flex flex-col rounded-2xl border border-border bg-card p-5 transition-colors hover:border-violet-500/40 hover:shadow-[0_0_20px_rgba(139,92,246,0.12)]"
     >
-      {/* Remove like button */}
+      {}
       <button
         onClick={() => onUnlike(item.like_id, item.basic_profile_id)}
         title="Quitar me gusta"
@@ -59,7 +62,7 @@ function LikedCard({
         <X className="h-3.5 w-3.5" />
       </button>
 
-      {/* Avatar + name */}
+      {}
       <div className="flex items-center gap-3">
         <div className="relative">
           <Avatar
@@ -76,7 +79,7 @@ function LikedCard({
         </div>
       </div>
 
-      {/* Meta */}
+      {}
       <div className="mt-3 flex flex-wrap gap-1.5">
         {item.seniority && (
           <span className="rounded-full border border-border px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
@@ -91,12 +94,12 @@ function LikedCard({
         )}
       </div>
 
-      {/* Like date */}
+      {}
       <p className="mt-3 flex-1 text-[11px] text-muted-foreground/60">
         Guardado el {new Date(item.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
       </p>
 
-      {/* Actions */}
+      {}
       <div className="mt-4 flex gap-2 border-t border-border pt-4">
         <button
           onClick={() => onChat(item.basic_profile_id)}
@@ -181,7 +184,7 @@ export default function RecruiterLikesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2 text-rose-500">

@@ -7,8 +7,9 @@ import type {
   PublicSoftSkill,
 } from '@/shared/services/portfolioService';
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
+/**
+ * Generates a standalone HTML string from a public portfolio response for offline export.
+ */
 function esc(s: string | null | undefined): string {
   if (!s) return '';
   return s

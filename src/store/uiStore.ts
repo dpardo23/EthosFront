@@ -4,6 +4,9 @@ import { toast as sonnerToast } from 'sonner';
 import type { Toast, Theme } from '@/shared/types';
 import { generateId } from '@/shared/lib/utils';
 
+/**
+ * Zustand store for transient UI state: active toasts, modal visibility flags, and sidebar collapse state.
+ */
 interface UiStore {
   theme: Theme;
   resolvedTheme: 'light' | 'dark';
@@ -33,7 +36,7 @@ const applyTheme = (resolvedTheme: 'light' | 'dark') => {
 export const useUiStore = create<UiStore>()(
   persist(
     (set, get) => ({
-      theme: 'dark', // Default to dark for OLED experience
+      theme: 'dark', 
       resolvedTheme: 'dark',
       sidebarOpen: true,
       toasts: [],
@@ -50,7 +53,7 @@ export const useUiStore = create<UiStore>()(
         set({ resolvedTheme });
         applyTheme(resolvedTheme);
         
-        // Listen for system theme changes
+        
         if (typeof window !== 'undefined') {
           const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
           const handleChange = () => {
@@ -75,7 +78,7 @@ export const useUiStore = create<UiStore>()(
 
       addToast: (toast: Omit<Toast, 'id'>) => {
         const id = generateId();
-        // Fire sonner toast (visible UI)
+        
         const description = toast.message;
         if (toast.type === 'success') {
           sonnerToast.success(toast.title, { id, description });
@@ -86,7 +89,7 @@ export const useUiStore = create<UiStore>()(
         } else {
           sonnerToast(toast.title, { id, description });
         }
-        // Keep store in sync for any components that read toasts[]
+        
         set((state) => ({
           toasts: [...state.toasts, { ...toast, id }],
         }));

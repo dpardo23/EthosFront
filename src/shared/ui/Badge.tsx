@@ -1,6 +1,9 @@
 import type { ReactNode } from 'react';
 import { cn } from '../lib/utils';
 
+/**
+ * Pill-shaped label component used to display status tags, role badges, and category chips.
+ */
 export interface BadgeProps {
   children: ReactNode;
   variant?: 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'outline';

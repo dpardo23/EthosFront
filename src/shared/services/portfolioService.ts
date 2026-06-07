@@ -1,7 +1,8 @@
 import { apiClient } from './apiClient';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
+/**
+ * API service layer for portfolio settings, item selection, and public portfolio retrieval.
+ */
 export interface PortfolioSettings {
   portfolioSettingsId: string;
   isPublished: boolean;
@@ -204,8 +205,6 @@ export interface CurriculumResponse {
   cvDocumentId: string | null;
   cvPdfUrl: string | null;
 }
-
-// ── Service ───────────────────────────────────────────────────────────────────
 
 export const portfolioService = {
   getSettings: async (): Promise<PortfolioSettings> => {

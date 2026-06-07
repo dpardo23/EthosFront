@@ -22,6 +22,9 @@ import {
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import api from '@/shared/api/api';
 
+/**
+ * Recruiter real-time chat page for messaging professionals directly.
+ */
 interface ChatContact {
   chat_id: string;
   other_profile_id: string;
@@ -66,7 +69,6 @@ function AttachmentTypeIcon({ type }: { type: AttachmentCategory }) {
   }
 }
 
-/* ── WhatsApp-style typing indicator ── */
 function TypingIndicator({ avatarUrl, name }: { avatarUrl?: string | null; name?: string }) {
   return (
     <div className="flex items-end gap-2 justify-start px-1">
@@ -103,7 +105,6 @@ function TypingIndicator({ avatarUrl, name }: { avatarUrl?: string | null; name?
   );
 }
 
-/* ── Chat list item ── */
 function ChatListItem({ chat, isActive, onClick }: {
   chat: ChatContact; isActive: boolean; onClick: () => void;
 }) {
@@ -167,7 +168,6 @@ function ChatListItem({ chat, isActive, onClick }: {
   );
 }
 
-/* ── Dialogs ── */
 function DeleteConfirmDialog({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
   return (
     <motion.div
@@ -234,7 +234,6 @@ function DeleteMessageDialog({ onConfirm, onCancel }: { onConfirm: (forAll: bool
   );
 }
 
-/* ── Message bubble ── */
 function MessageBubble({ msg, isMine, onDelete }: {
   msg: Message; isMine: boolean; onDelete: (id: string) => void;
 }) {
@@ -305,7 +304,6 @@ function MessageBubble({ msg, isMine, onDelete }: {
   );
 }
 
-/* ── Decorative background shapes ── */
 function ChatBackground() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -338,7 +336,6 @@ function ChatBackground() {
   );
 }
 
-/* ── Empty state ── */
 function EmptyConversation() {
   return (
     <div className="relative flex flex-1 flex-col items-center justify-center gap-6 overflow-hidden">
@@ -380,8 +377,6 @@ function EmptyConversation() {
     </div>
   );
 }
-
-// ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function RecruiterChatPage() {
   const { chatId } = useParams<{ chatId?: string }>();
@@ -458,7 +453,7 @@ export default function RecruiterChatPage() {
 
   const clearTyping = useCallback(async () => {
     if (!activeChatId || !profile?.id || !supabase) return;
-    // Reset ref synchronously so next keystroke re-triggers sendTyping immediately
+    
     isTypingRef.current = false;
     await supabase.rpc('clear_typing', { p_chat_id: activeChatId, p_user_id: profile.id });
   }, [activeChatId, profile?.id]);
@@ -498,7 +493,7 @@ export default function RecruiterChatPage() {
         })
       );
       setChats(enriched);
-    } catch { /* silent */ }
+    } catch {  }
     finally { setLoadingChats(false); }
   }, [profile?.id]);
 
@@ -546,7 +541,7 @@ export default function RecruiterChatPage() {
         if (newMsg.chat_id !== activeChatId) return;
         setMessages(prev => prev.find(m => m.message_id === newMsg.message_id) ? prev : [...prev, newMsg]);
         if (newMsg.sender_id !== profile?.id) {
-          // Mark read immediately and clear badge since we're actively in this chat
+          
           sb.rpc('mark_messages_read', { p_chat_id: activeChatId, p_reader_id: profile!.id });
           setChats(prev => prev.map(c => c.chat_id === activeChatId
             ? { ...c, last_message: newMsg.content, last_message_at: newMsg.created_at, unread: 0 }
@@ -555,7 +550,7 @@ export default function RecruiterChatPage() {
           addNotification({ type: 'message', title: 'Nuevo mensaje',
             message: sender ? `${sender.other_name}: ${newMsg.content.slice(0, 60)}` : newMsg.content.slice(0, 60) });
         } else {
-          // Own message: just update last_message in list
+          
           setChats(prev => prev.map(c => c.chat_id === activeChatId
             ? { ...c, last_message: newMsg.content, last_message_at: newMsg.created_at }
             : c));
@@ -564,7 +559,7 @@ export default function RecruiterChatPage() {
       .on('postgres_changes', { event: 'UPDATE', schema: 'core', table: 'chat_messages' }, (payload) => {
         const updated = payload.new as Message;
         if (updated.chat_id !== activeChatId) return;
-        // This fires when is_read changes — updates read receipt checkmarks in realtime
+        
         setMessages(prev => prev.map(m => m.message_id === updated.message_id ? { ...m, is_read: updated.is_read, deleted_at: updated.deleted_at } : m));
       })
       .subscribe((status) => { if (status === 'SUBSCRIBED') loadMessages(activeChatId, deletedChatsRef.current.has(activeChatId)); });
@@ -701,12 +696,12 @@ export default function RecruiterChatPage() {
 
       <div className="flex h-[calc(100vh-112px)] overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
 
-        {/* ── Chat list sidebar ── */}
+        {}
         <div className={cn(
           'flex flex-col border-r border-border/60',
           activeChatId ? 'hidden md:flex md:w-72 lg:w-80' : 'flex w-full md:w-72 lg:w-80',
         )}>
-          {/* Sidebar header */}
+          {}
           <div className="flex h-16 shrink-0 items-center gap-3 border-b border-border/60 bg-gradient-to-r from-indigo-500/8 to-transparent px-4">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/20 to-indigo-600/10 shadow-sm">
               <MessageSquare className="h-4 w-4 text-indigo-400" />
@@ -723,7 +718,7 @@ export default function RecruiterChatPage() {
             )}
           </div>
 
-          {/* Search */}
+          {}
           <div className="px-3 py-2.5 border-b border-border/40">
             <div className="flex items-center gap-2 rounded-xl bg-muted/60 px-3 py-2 ring-1 ring-border/30 focus-within:ring-indigo-500/30 transition-all">
               <Search className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
@@ -736,7 +731,7 @@ export default function RecruiterChatPage() {
             </div>
           </div>
 
-          {/* Chat list */}
+          {}
           <div className="flex-1 overflow-y-auto p-2 space-y-0.5 scrollbar-thin">
             {loadingChats ? (
               Array.from({ length: 5 }).map((_, i) => (
@@ -785,13 +780,13 @@ export default function RecruiterChatPage() {
           </div>
         </div>
 
-        {/* ── Conversation area ── */}
+        {}
         <div className={cn('flex flex-1 flex-col min-w-0', !activeChatId && 'hidden md:flex')}>
           {!activeChatId ? (
             <EmptyConversation />
           ) : (
             <>
-              {/* ── Topbar ── */}
+              {}
               <div className="relative flex h-16 shrink-0 items-center gap-3 border-b border-border/60 bg-card/80 backdrop-blur-sm px-4">
                 <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent" />
 
@@ -869,10 +864,10 @@ export default function RecruiterChatPage() {
                 </div>
               </div>
 
-              {/* ── Messages + panel ── */}
+              {}
               <div className="flex flex-1 min-h-0">
                 <div className="flex flex-1 flex-col min-w-0">
-                  {/* Messages scroll area */}
+                  {}
                   <div className="relative flex-1 overflow-y-auto px-4 py-4 space-y-1">
                     <ChatBackground />
 
@@ -930,7 +925,7 @@ export default function RecruiterChatPage() {
                     <div ref={bottomRef} />
                   </div>
 
-                  {/* Attachment preview bar */}
+                  {}
                   <AnimatePresence>
                     {attachmentFile && (
                       <motion.div
@@ -964,9 +959,9 @@ export default function RecruiterChatPage() {
                     )}
                   </AnimatePresence>
 
-                  {/* Input bar */}
+                  {}
                   <div className="relative">
-                    {/* Emoji picker */}
+                    {}
                     <AnimatePresence>
                       {emojiOpen && (
                         <>
@@ -1002,7 +997,7 @@ export default function RecruiterChatPage() {
                       animate={inputFocused ? { borderColor: 'rgba(99,102,241,0.3)' } : {}}
                       className="flex shrink-0 items-center gap-2 border-t border-border/60 bg-card/90 backdrop-blur-sm px-4 py-3"
                     >
-                      {/* Attach button */}
+                      {}
                       <div className="relative">
                         <motion.button
                           whileHover={{ scale: 1.05 }}
@@ -1024,7 +1019,7 @@ export default function RecruiterChatPage() {
                         />
                       </div>
 
-                      {/* Text input */}
+                      {}
                       <div className="relative flex-1">
                         <input
                           ref={inputRef}
@@ -1048,7 +1043,7 @@ export default function RecruiterChatPage() {
                         </button>
                       </div>
 
-                      {/* Mic shortcut */}
+                      {}
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -1059,7 +1054,7 @@ export default function RecruiterChatPage() {
                         <Mic className="h-4 w-4" />
                       </motion.button>
 
-                      {/* Camera shortcut */}
+                      {}
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -1070,7 +1065,7 @@ export default function RecruiterChatPage() {
                         <Camera className="h-4 w-4" />
                       </motion.button>
 
-                      {/* Send */}
+                      {}
                       <motion.button
                         whileTap={{ scale: 0.85 }}
                         animate={text.trim() || attachmentFile
@@ -1094,7 +1089,7 @@ export default function RecruiterChatPage() {
                   </div>
                 </div>
 
-                {/* Contact panel */}
+                {}
                 <AnimatePresence>
                   {showPanel && activeContact && (
                     <ChatContactPanel

@@ -6,7 +6,9 @@ import { useAuthStore } from '@/store';
 import { EthosCoreLogo, EthosLogoIcon } from '@/components/brand/EthosCoreLogo';
 import i18n from '@/i18n';
 
-// ─── Language Switcher ───────────────────────────────────────────────
+/**
+ * Minimal layout shell for the public-facing portfolio pages with no app chrome.
+ */
 function LangSwitcher() {
   const [lang, setLang] = useState<'es' | 'en' | 'pt'>(
     (localStorage.getItem('ethoshub_language') as 'es' | 'en' | 'pt') ?? 'es'
@@ -69,7 +71,6 @@ function LangSwitcher() {
   );
 }
 
-// ─── Mobile Menu ─────────────────────────────────────────────────────
 function MobileMenu({
   open,
   isAuthenticated,
@@ -126,7 +127,6 @@ function MobileMenu({
   );
 }
 
-// ─── Navbar ──────────────────────────────────────────────────────────
 function Navbar() {
   const { isAuthenticated } = useAuthStore();
   const location = useLocation();
@@ -158,7 +158,7 @@ function Navbar() {
               : 'border border-white/6 bg-black/40 backdrop-blur-xl'
           }`}
         >
-          {/* Logo */}
+          {}
           <Link to="/" className="shrink-0">
             <div className="sm:hidden">
               <EthosLogoIcon size={28} />
@@ -168,7 +168,7 @@ function Navbar() {
             </div>
           </Link>
 
-          {/* Right actions */}
+          {}
           <div className="flex items-center gap-2">
             <div className="hidden sm:block">
               <LangSwitcher />
@@ -199,7 +199,7 @@ function Navbar() {
               </>
             )}
 
-            {/* Mobile hamburger */}
+            {}
             <button
               onClick={() => setMobileOpen((p) => !p)}
               className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/70 transition-colors hover:bg-white/8 hover:text-white md:hidden"
@@ -230,7 +230,6 @@ function Navbar() {
   );
 }
 
-// ─── Footer ──────────────────────────────────────────────────────────
 const SOCIAL_LINKS = [
   { label: '@EthosDevHub',    handle: 'TikTok',    href: '#' },
   { label: '@BuildWithEthos', handle: 'Instagram', href: '#' },
@@ -246,7 +245,7 @@ function Footer() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="grid gap-10 md:grid-cols-[1.5fr_0.75fr_0.75fr_0.75fr_0.75fr]">
 
-          {/* Brand */}
+          {}
           <div>
             <EthosCoreLogo size="md" />
             <p className="mt-4 max-w-xs text-sm leading-7 text-white/38">
@@ -268,7 +267,7 @@ function Footer() {
             </div>
           </div>
 
-          {/* Producto */}
+          {}
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-widest text-white/22">Producto</p>
             <div className="mt-4 flex flex-col gap-3 text-sm">
@@ -279,7 +278,7 @@ function Footer() {
             </div>
           </div>
 
-          {/* Empresa */}
+          {}
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-widest text-white/22">Empresa</p>
             <div className="mt-4 flex flex-col gap-3 text-sm text-white/42">
@@ -291,7 +290,7 @@ function Footer() {
             </div>
           </div>
 
-          {/* Legal */}
+          {}
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-widest text-white/22">Legal</p>
             <div className="mt-4 flex flex-col gap-3 text-sm">
@@ -302,7 +301,7 @@ function Footer() {
             </div>
           </div>
 
-          {/* Contacto */}
+          {}
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-widest text-white/22">Contacto</p>
             <div className="mt-4 flex flex-col gap-3">
@@ -326,7 +325,6 @@ function Footer() {
   );
 }
 
-// ─── Layout ──────────────────────────────────────────────────────────
 export function PublicPortfolioLayout() {
   useEffect(() => {
     document.documentElement.classList.add('dark');

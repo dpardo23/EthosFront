@@ -21,8 +21,9 @@ import {
 import type { Project } from '@/shared/types';
 import { cn } from '@/shared/lib/utils';
 
-// ── helpers ──────────────────────────────────────────────────────────────────
-
+/**
+ * Professional dashboard home: summary cards for profile completeness, recent activity, and quick actions.
+ */
 function formatPeriod(start: string, end: string | null, isCurrent: boolean) {
   const fmt = (d: string) =>
     new Date(d + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'short' });
@@ -47,8 +48,6 @@ const STATUS_MAP: Record<string, { label: string; color: string; dot: string }> 
   archived:    { label: 'Archivado',   color: 'text-zinc-500',   dot: 'bg-zinc-600' },
 };
 
-// ── Animated counter ──────────────────────────────────────────────────────────
-
 function AnimatedCounter({ value, suffix = '' }: { value: number; suffix?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const motionValue = useMotionValue(0);
@@ -67,8 +66,6 @@ function AnimatedCounter({ value, suffix = '' }: { value: number; suffix?: strin
 
   return <span ref={ref}>0{suffix}</span>;
 }
-
-// ── Metric card ───────────────────────────────────────────────────────────────
 
 function MetricCard({
   icon: Icon,
@@ -94,7 +91,7 @@ function MetricCard({
       transition={{ delay, type: 'spring', stiffness: 200, damping: 25 }}
       className="group relative rounded-2xl border border-border bg-card p-4 overflow-hidden hover:border-violet-500/20 transition-all duration-300"
     >
-      {/* Ambient glow */}
+      {}
       <div className={cn('absolute -top-6 -right-6 h-20 w-20 rounded-full blur-2xl opacity-15 group-hover:opacity-25 transition-opacity', color)} />
 
       <div className="relative z-10">
@@ -115,8 +112,6 @@ function MetricCard({
     </motion.div>
   );
 }
-
-// ── AI Recommendation ─────────────────────────────────────────────────────────
 
 function AIRec({
   icon: Icon,
@@ -167,8 +162,6 @@ function AIRec({
   );
 }
 
-// ── Section wrapper ───────────────────────────────────────────────────────────
-
 function Section({
   title,
   icon: Icon,
@@ -209,8 +202,6 @@ function Section({
   );
 }
 
-// ── Experience item ───────────────────────────────────────────────────────────
-
 function ExperienceItem({ exp, index }: { exp: DashboardExperience; index: number }) {
   return (
     <motion.div
@@ -219,7 +210,7 @@ function ExperienceItem({ exp, index }: { exp: DashboardExperience; index: numbe
       transition={{ delay: 0.05 * index, type: 'spring', stiffness: 300, damping: 30 }}
       className="relative flex gap-4 pb-5 last:pb-0"
     >
-      {/* Timeline line */}
+      {}
       <div className="absolute left-5 top-10 bottom-0 w-px bg-gradient-to-b from-violet-500/20 to-transparent last-of-type:hidden" />
 
       <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-muted/50">
@@ -255,8 +246,6 @@ function ExperienceItem({ exp, index }: { exp: DashboardExperience; index: numbe
   );
 }
 
-// ── Education item ────────────────────────────────────────────────────────────
-
 function EducationItem({ edu, index }: { edu: DashboardEducation; index: number }) {
   return (
     <motion.div
@@ -281,8 +270,6 @@ function EducationItem({ edu, index }: { edu: DashboardEducation; index: number 
     </motion.div>
   );
 }
-
-// ── Skill tag ─────────────────────────────────────────────────────────────────
 
 function SkillTag({ skill, index }: { skill: DashboardSkill; index: number }) {
   const levelColors: Record<string, string> = {
@@ -316,8 +303,6 @@ function SkillTag({ skill, index }: { skill: DashboardSkill; index: number }) {
   );
 }
 
-// ── Featured project card ─────────────────────────────────────────────────────
-
 function ProjectCard({ project, index }: { project: Project; index: number }) {
   const status = STATUS_MAP[project.status] ?? STATUS_MAP.draft;
 
@@ -329,7 +314,7 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
     >
       <Link to={`/dashboard/projects/${project.id}`} className="group block">
         <div className="relative rounded-2xl border border-white/[0.06] overflow-hidden hover:border-violet-500/20 transition-all duration-300 hover:shadow-[0_0_30px_rgba(139,92,246,0.08)]">
-          {/* Thumbnail */}
+          {}
           <div className="relative h-32 bg-muted/40">
             {project.thumbnail ? (
               <img
@@ -342,10 +327,10 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
                 <FolderKanban className="h-10 w-10 text-muted-foreground/30" />
               </div>
             )}
-            {/* Gradient overlay */}
+            {}
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-            {/* Featured badge */}
+            {}
             {project.isFeatured && (
               <div className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-amber-500/90 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur-sm">
                 <Star className="h-3 w-3 fill-white" />
@@ -353,14 +338,14 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
               </div>
             )}
 
-            {/* Status */}
+            {}
             <div className="absolute bottom-2 left-2 flex items-center gap-1">
               <span className={cn('h-1.5 w-1.5 rounded-full', status.dot)} />
               <span className={cn('text-[11px] font-medium', status.color)}>{status.label}</span>
             </div>
           </div>
 
-          {/* Info */}
+          {}
           <div className="p-3 space-y-2 bg-card">
             <p className="text-sm font-semibold text-foreground line-clamp-1 group-hover:text-violet-500 transition-colors">
               {project.title}
@@ -388,8 +373,6 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
     </motion.div>
   );
 }
-
-// ── Profile completion ────────────────────────────────────────────────────────
 
 function ProfileCompletion({
   data,
@@ -438,8 +421,6 @@ function ProfileCompletion({
   );
 }
 
-// ── Skeleton ──────────────────────────────────────────────────────────────────
-
 function DashboardSkeleton() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
@@ -458,8 +439,6 @@ function DashboardSkeleton() {
     </div>
   );
 }
-
-// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function DashboardHomePage() {
   const { profile } = useAuthStore();
@@ -506,7 +485,7 @@ export default function DashboardHomePage() {
   const featuredProjects = projects.filter((p) => p.isFeatured);
   const allProjects = projects;
 
-  // Build AI recommendations
+  
   const recs: Array<{ icon: typeof Zap; text: string; href: string; priority: 'high' | 'medium' | 'low' }> = [];
   if (!basic_info.photo_url) recs.push({ icon: AlertCircle, text: 'Agrega una foto de perfil para aumentar visibilidad', href: '/dashboard/preferences', priority: 'high' });
   if (!bio_headline) recs.push({ icon: Sparkles, text: 'Escribe una biografía que destaque tu expertise', href: '/dashboard/preferences', priority: 'high' });
@@ -519,14 +498,14 @@ export default function DashboardHomePage() {
     <div className="min-h-full bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
-        {/* ── Hero ─────────────────────────────────────────────────────── */}
+        {}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ type: 'spring', stiffness: 200, damping: 28 }}
           className="relative rounded-2xl border border-border overflow-hidden"
         >
-          {/* Banner */}
+          {}
           <div
             className="h-36 sm:h-44 w-full relative"
             style={{
@@ -535,12 +514,12 @@ export default function DashboardHomePage() {
                 : 'linear-gradient(135deg, #f5f0ff 0%, #ede9fe 50%, #e8e0ff 100%)',
             }}
           >
-            {/* Decorative orbs */}
+            {}
             <div className="absolute top-4 left-1/4 h-32 w-32 rounded-full bg-violet-600/15 blur-3xl" />
             <div className="absolute top-2 right-1/3 h-24 w-24 rounded-full bg-violet-400/10 blur-3xl" />
             <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/60 to-transparent" />
 
-            {/* Grid pattern */}
+            {}
             <div
               className="absolute inset-0 opacity-[0.04]"
               style={{
@@ -550,10 +529,10 @@ export default function DashboardHomePage() {
             />
           </div>
 
-          {/* Profile info */}
+          {}
           <div className="px-5 sm:px-8 pb-6 bg-card">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 -mt-12 sm:-mt-14">
-              {/* Avatar */}
+              {}
               <div className="flex items-end gap-4">
                 <div className="relative">
                   <div className="absolute inset-0 rounded-2xl bg-violet-500/20 blur-lg scale-110" />
@@ -563,7 +542,7 @@ export default function DashboardHomePage() {
                     size="xl"
                     className="relative ring-4 ring-card rounded-2xl"
                   />
-                  {/* Online indicator */}
+                  {}
                   <div className="absolute bottom-1 right-1 h-3.5 w-3.5 rounded-full bg-emerald-400 border-2 border-card shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
                 </div>
 
@@ -581,7 +560,7 @@ export default function DashboardHomePage() {
                 </div>
               </div>
 
-              {/* Actions */}
+              {}
               <div className="flex items-center gap-2 pb-1">
                 {profile?.slug && (
                   <Link
@@ -603,14 +582,14 @@ export default function DashboardHomePage() {
               </div>
             </div>
 
-            {/* Bio */}
+            {}
             {bio_headline && (
               <p className="mt-4 text-sm text-muted-foreground leading-relaxed max-w-2xl border-t border-border pt-4">
                 {bio_headline}
               </p>
             )}
 
-            {/* Stats row */}
+            {}
             <div className="flex flex-wrap gap-6 mt-4 pt-4 border-t border-border">
               {[
                 { label: 'Skills',       value: hard_skills.length + soft_skills.length, icon: Code2 },
@@ -628,7 +607,7 @@ export default function DashboardHomePage() {
           </div>
         </motion.div>
 
-        {/* ── Metrics ──────────────────────────────────────────────────── */}
+        {}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <MetricCard icon={Eye}             label="Visitas al perfil"     value={0}   suffix=""  color="bg-violet-500" delay={0.05} />
           <MetricCard icon={MousePointerClick} label="Interacciones"       value={0}   suffix=""  color="bg-blue-500"   delay={0.1}  />
@@ -636,13 +615,13 @@ export default function DashboardHomePage() {
           <MetricCard icon={GitBranch}       label="Habilidades técnicas"  value={hard_skills.length} color="bg-amber-500" delay={0.2} />
         </div>
 
-        {/* ── Main grid ────────────────────────────────────────────────── */}
+        {}
         <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
 
-          {/* Left column */}
+          {}
           <div className="space-y-5">
 
-            {/* AI Recommendations */}
+            {}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -670,7 +649,7 @@ export default function DashboardHomePage() {
               </div>
             </motion.div>
 
-            {/* Experience */}
+            {}
             <Section title="Experiencia" icon={Briefcase} href="/dashboard/experience" delay={0.25}>
               {experience.length === 0 ? (
                 <div className="py-6 text-center">
@@ -689,7 +668,7 @@ export default function DashboardHomePage() {
               )}
             </Section>
 
-            {/* Education */}
+            {}
             <Section title="Educación" icon={GraduationCap} href="/dashboard/education" delay={0.3}>
               {education.length === 0 ? (
                 <div className="py-6 text-center">
@@ -708,7 +687,7 @@ export default function DashboardHomePage() {
               )}
             </Section>
 
-            {/* Featured Projects */}
+            {}
             {featuredProjects.length > 0 && (
               <Section title="Proyectos destacados" icon={Star} href="/dashboard/projects" hrefLabel="Ver todos" delay={0.35}>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -719,7 +698,7 @@ export default function DashboardHomePage() {
               </Section>
             )}
 
-            {/* All projects if no featured */}
+            {}
             {featuredProjects.length === 0 && allProjects.length > 0 && (
               <Section title="Proyectos" icon={FolderKanban} href="/dashboard/projects" hrefLabel="Ver todos" delay={0.35}>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -730,7 +709,7 @@ export default function DashboardHomePage() {
               </Section>
             )}
 
-            {/* Empty projects CTA */}
+            {}
             {allProjects.length === 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
@@ -756,10 +735,10 @@ export default function DashboardHomePage() {
             )}
           </div>
 
-          {/* Right column */}
+          {}
           <div className="space-y-5">
 
-            {/* Profile completion */}
+            {}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -773,7 +752,7 @@ export default function DashboardHomePage() {
               <ProfileCompletion data={data} projectCount={projects_count} />
             </motion.div>
 
-            {/* Hard Skills */}
+            {}
             {hard_skills.length > 0 && (
               <Section title="Habilidades técnicas" icon={Code2} href="/dashboard/skills" hrefLabel="Gestionar" delay={0.28}>
                 <div className="space-y-1.5">
@@ -789,7 +768,7 @@ export default function DashboardHomePage() {
               </Section>
             )}
 
-            {/* Soft Skills */}
+            {}
             {soft_skills.length > 0 && (
               <Section title="Habilidades blandas" icon={Sparkles} href="/dashboard/skills" hrefLabel="Gestionar" delay={0.33}>
                 <div className="flex flex-wrap gap-1.5">
@@ -808,7 +787,7 @@ export default function DashboardHomePage() {
               </Section>
             )}
 
-            {/* Quick links */}
+            {}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}

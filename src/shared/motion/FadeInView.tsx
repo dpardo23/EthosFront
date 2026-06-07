@@ -2,6 +2,9 @@ import { motion } from 'framer-motion';
 import type { ReactNode } from 'react';
 import { easeOut } from './easings';
 
+/**
+ * Framer Motion wrapper that fades and slides its children into view when they enter the viewport.
+ */
 interface FadeInViewProps {
   children: ReactNode;
   delay?: number;

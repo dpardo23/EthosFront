@@ -4,6 +4,9 @@ import { Card } from '@/shared/ui';
 import { useAuthStore } from '@/store/authStore';
 import { companyProfileService } from '@/shared/services/companyProfileService';
 
+/**
+ * Settings cards for recruiter company profile fields: industry, size, website, and description.
+ */
 export function CompanyProfileCard() {
   const { profile, syncProfile } = useAuthStore();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -212,7 +215,7 @@ export function CompanyProfileCard() {
                 />
               </div>
 
-              {/* Sitio web y Teléfono lado a lado */}
+              {}
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-black dark:text-white">Sitio web</label>
                 <input

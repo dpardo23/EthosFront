@@ -11,8 +11,9 @@ import { useAuthStore, useSkillsStore, useUiStore } from '@/store';
 import { cn } from '@/shared/lib/utils';
 import type { SkillLevel, SkillCategory, GlobalSkillTag, HardSkill } from '@/shared/types';
 
-// ── Constants ────────────────────────────────────────────────────────────────
-
+/**
+ * Dashboard page for managing hard skills and soft skills via tag selection.
+ */
 const skillLevels: { value: SkillLevel; label: string }[] = [
   { value: 'Junior', label: 'Junior' },
   { value: 'Mid',    label: 'Mid'    },
@@ -45,8 +46,6 @@ const selectCls =
 const textareaCls =
   'flex w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:border-violet-500/60 transition-all';
 
-// ── Primitives ────────────────────────────────────────────────────────────────
-
 function ModalOverlay({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
   const portalRoot = typeof document !== 'undefined'
     ? document.getElementById('portal-root')
@@ -54,7 +53,7 @@ function ModalOverlay({ onClose, children }: { onClose: () => void; children: Re
 
   const content = (
     <>
-      {/* Backdrop — absolute so it's contained inside #portal-root, not covering Topbar/Sidebar */}
+      {}
       <motion.div
         className="absolute inset-0 z-40 bg-background/75 backdrop-blur-md"
         initial={{ opacity: 0 }}
@@ -62,7 +61,7 @@ function ModalOverlay({ onClose, children }: { onClose: () => void; children: Re
         exit={{ opacity: 0 }}
         transition={{ duration: 0.18 }}
       />
-      {/* Dialog — flex-centered, pointer-events passed through wrapper */}
+      {}
       <div className="absolute inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 16 }}
@@ -92,8 +91,6 @@ function LevelBadge({ level }: { level: string }) {
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
-
 export default function SkillsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -119,26 +116,26 @@ export default function SkillsPage() {
     removeSoftSkill,
   } = useSkillsStore();
 
-  // Modal visibility
+  
   const [showAddModal,     setShowAddModal]     = useState(false);
   const [showSoftModal,    setShowSoftModal]    = useState(false);
-  // Hard skill add/edit state
+  
   const [searchQuery,      setSearchQuery]      = useState('');
   const [selectedTag,      setSelectedTag]      = useState<GlobalSkillTag | null>(null);
   const [selectedLevel,    setSelectedLevel]    = useState<SkillLevel>('Mid');
   const [newTagName,       setNewTagName]       = useState('');
   const [newTagCategory,   setNewTagCategory]   = useState<SkillCategory>('Frontend');
   const [editingHardSkill, setEditingHardSkill] = useState<HardSkill | null>(null);
-  // Soft skill state
+  
   const [softSkillTitle,      setSoftSkillTitle]      = useState('');
   const [softSkillDesc,       setSoftSkillDesc]       = useState('');
   const [editingSoftSkill,    setEditingSoftSkill]    = useState<string | null>(null);
   const [softTitleError,      setSoftTitleError]      = useState(false);
   const [softDescError,       setSoftDescError]       = useState(false);
-  // Filter + delete
+  
   const [filterCategory,   setFilterCategory]   = useState<string>('all');
   const [deleteConfirm,    setDeleteConfirm]    = useState<{ type: 'hard' | 'soft'; id: string } | null>(null);
-  // Category hover dimming
+  
   const [hoveredCategory,  setHoveredCategory]  = useState<string | null>(null);
 
   const onboardingMode = searchParams.get('onboarding') === '1';
@@ -153,14 +150,14 @@ export default function SkillsPage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       searchTags(searchQuery);
-      // Al borrar la búsqueda limpiamos la selección previa para evitar
-      // que el botón "Agregar" quede habilitado con un tag no visible
+      
+      
       if (!searchQuery.trim()) setSelectedTag(null);
     }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery, searchTags]);
 
-  // ── Hard skill handlers ──────────────────────────────────────────────────
+  
 
   const openEditHard = (skill: HardSkill) => {
     setEditingHardSkill(skill);
@@ -238,7 +235,7 @@ export default function SkillsPage() {
     }
   };
 
-  // ── Soft skill handlers ──────────────────────────────────────────────────
+  
 
   const openEditSoft = (id: string) => {
     const s = softSkills.find(x => x.id === id);
@@ -277,7 +274,7 @@ export default function SkillsPage() {
     closeSoftModal();
   };
 
-  // ── Delete handler ───────────────────────────────────────────────────────
+  
 
   const handleDelete = async () => {
     if (!deleteConfirm || !profile) return;
@@ -285,7 +282,7 @@ export default function SkillsPage() {
       if (deleteConfirm.type === 'hard') await removeHardSkill(profile.id, deleteConfirm.id);
       else await removeSoftSkill(profile.id, deleteConfirm.id);
     } catch {
-      // toast already shown by the store
+      
     } finally {
       setDeleteConfirm(null);
     }
@@ -301,7 +298,7 @@ export default function SkillsPage() {
     navigate('/dashboard', { replace: true });
   };
 
-  // ── Derived state ────────────────────────────────────────────────────────
+  
 
   const topSkillsCount = hardSkills.filter(s => s.isTop).length;
   const orderedTop = [...hardSkills]
@@ -320,7 +317,7 @@ export default function SkillsPage() {
 
   const isEmpty = hardSkills.length === 0;
 
-  // ── Render ──────────────────────────────────────────────────────────────
+  
 
   return (
     <motion.div
@@ -330,7 +327,7 @@ export default function SkillsPage() {
       className="space-y-5"
     >
 
-        {/* ── Header card ──────────────────────────────────────────────── */}
+        {}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -385,7 +382,7 @@ export default function SkillsPage() {
           </div>
         </motion.div>
 
-        {/* ── Onboarding banner ────────────────────────────────────────── */}
+        {}
         {onboardingMode && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
@@ -405,7 +402,7 @@ export default function SkillsPage() {
           </motion.div>
         )}
 
-        {/* ── Top 3 Skills ─────────────────────────────────────────────── */}
+        {}
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -483,7 +480,7 @@ export default function SkillsPage() {
           </div>
         </motion.div>
 
-        {/* ── Category filter ──────────────────────────────────────────── */}
+        {}
         {!isEmpty && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -511,7 +508,7 @@ export default function SkillsPage() {
           </motion.div>
         )}
 
-        {/* ── Hard Skills matrix ───────────────────────────────────────── */}
+        {}
         {loading ? (
           <div className="space-y-4">
             {[1, 2, 3].map(i => (
@@ -580,7 +577,7 @@ export default function SkillsPage() {
                       <span className="text-sm font-medium text-foreground whitespace-nowrap">{skill.skillTag.name}</span>
                       <LevelBadge level={skill.level} />
 
-                      {/* Hover actions */}
+                      {}
                       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-0.5">
                         <button
                           onClick={() => openEditHard(skill)}
@@ -624,7 +621,7 @@ export default function SkillsPage() {
           </div>
         )}
 
-        {/* ── Soft Skills ──────────────────────────────────────────────── */}
+        {}
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -690,9 +687,9 @@ export default function SkillsPage() {
           )}
         </motion.div>
 
-      {/* ── Modals (portaled into #portal-root) ─────────────────────────── */}
+      {}
 
-      {/* Add / Edit Hard Skill */}
+      {}
       <AnimatePresence>
         {showAddModal && (
           <ModalOverlay onClose={closeAddModal}>
@@ -710,7 +707,7 @@ export default function SkillsPage() {
             <div className="space-y-4">
 
               {editingHardSkill ? (
-                /* Edit mode — show skill name as read-only chip */
+                
                 <div className="flex items-center gap-2.5 rounded-xl border border-border bg-muted/40 px-4 py-3">
                   <Code2 className="h-4 w-4 text-muted-foreground shrink-0" />
                   <span className="text-sm font-medium text-foreground flex-1">{editingHardSkill.skillTag.name}</span>
@@ -719,7 +716,7 @@ export default function SkillsPage() {
                   </span>
                 </div>
               ) : (
-                /* Add mode — search */
+                
                 <>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -829,7 +826,7 @@ export default function SkillsPage() {
         )}
       </AnimatePresence>
 
-      {/* Add / Edit Soft Skill */}
+      {}
       <AnimatePresence>
         {showSoftModal && (
           <ModalOverlay onClose={closeSoftModal}>
@@ -896,7 +893,7 @@ export default function SkillsPage() {
         )}
       </AnimatePresence>
 
-      {/* Delete confirm */}
+      {}
       <AnimatePresence>
         {deleteConfirm && (
           <ModalOverlay onClose={() => setDeleteConfirm(null)}>

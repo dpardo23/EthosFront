@@ -34,6 +34,9 @@ import { useUiStore } from '@/store/uiStore';
 import { cn } from '@/shared/lib/utils';
 import type { ProfilePreferences } from '@/shared/types';
 
+/**
+ * Account settings page covering password change, email change, OTP verification, and account deletion.
+ */
 type SettingsTab = 'profile' | 'account' | 'notifications' | 'appearance' | 'billing';
 
 export default function SettingsPage() {
@@ -60,17 +63,17 @@ export default function SettingsPage() {
     push_mentions: true,
   };
 
-  // --- NUEVO ESTADO PARA EL PERFIL BÁSICO ---
+  
   const [profileForm, setProfileForm] = useState({
     photoUrl: '',
     firstName: '',
     lastName: '',
     seniority: '',
     availabilityStatus: '',
-    location: '', // Nacionalidad / Ubicación
+    location: '', 
   });
 
-  // Cargar datos iniciales del perfil básico desde el backend
+  
   useEffect(() => {
     const fetchBasicProfile = async () => {
       try {
@@ -109,7 +112,7 @@ export default function SettingsPage() {
     { id: 'billing' as SettingsTab, label: t('settings.billing'), icon: CreditCard },
   ];
 
-  // --- NUEVA FUNCIÓN PARA GUARDAR EL PERFIL BÁSICO ---
+  
   const handleSaveProfile = async () => {
     if (!profileForm.firstName.trim() || !profileForm.lastName.trim()) {
       addToast({ type: 'error', title: 'Error', message: 'El nombre y apellido son obligatorios.' });
@@ -211,14 +214,14 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div>
         <h1 className="text-2xl font-bold text-foreground">{t('settings.title')}</h1>
         <p className="text-muted-foreground mt-1">{t('settings.subtitle')}</p>
       </div>
 
       <div className="flex flex-col gap-6 lg:flex-row">
-        {/* Sidebar */}
+        {}
         <nav className="lg:w-64 flex-shrink-0">
           <Card className="p-2">
             {tabs.map((tab) => (
@@ -239,7 +242,7 @@ export default function SettingsPage() {
           </Card>
         </nav>
 
-        {/* Content */}
+        {}
         <div className="flex-1 min-w-0">
           <AnimatePresence mode="wait">
             {activeTab === 'profile' && (
@@ -254,7 +257,7 @@ export default function SettingsPage() {
                   <div className="flex justify-center p-12"><LoadingSpinner size="lg" /></div>
                 ) : (
                   <>
-                    {/* Avatar */}
+                    {}
                     <Card className="p-6">
                       <h2 className="text-lg font-semibold text-foreground mb-4">
                         {t('settings.profilePhoto')}
@@ -280,7 +283,7 @@ export default function SettingsPage() {
                       </div>
                     </Card>
 
-                    {/* Profile Info */}
+                    {}
                     <Card className="p-6">
                       <h2 className="text-lg font-semibold text-foreground mb-4">
                         Datos del Perfil Básico
@@ -427,7 +430,7 @@ export default function SettingsPage() {
                   </div>
                 </Card>
 
-                {/* Export Data */}
+                {}
                 <Card className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -445,7 +448,7 @@ export default function SettingsPage() {
                   </div>
                 </Card>
 
-                {/* Delete Account */}
+                {}
                 <Card className="p-6 border-red-500/20">
                   <div className="flex items-center justify-between">
                     <div>
@@ -516,7 +519,7 @@ export default function SettingsPage() {
                 exit={{ opacity: 0, y: -20 }}
                 className="space-y-6"
               >
-                {/* Theme */}
+                {}
                 <Card className="p-6">
                   <div className="mb-5">
                     <h2 className="text-base font-semibold text-foreground">Tema de la interfaz</h2>
@@ -605,7 +608,7 @@ export default function SettingsPage() {
                   </div>
                 </Card>
 
-                {/* Language */}
+                {}
                 <Card className="p-6">
                   <div className="mb-4">
                     <h2 className="text-base font-semibold text-foreground">{t('settings.language')}</h2>
@@ -645,7 +648,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Modales al final ... */}
+      {}
       <Modal
         isOpen={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}

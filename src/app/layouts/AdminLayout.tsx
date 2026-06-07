@@ -11,19 +11,22 @@ import {
   AlertTriangle,
   Menu,
   X,
-  Globe, // Nuevo icono para dominios
+  Globe, 
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { useAuthStore, useUiStore } from '@/store';
 import { Avatar, Badge } from '@/shared/ui';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
+/**
+ * Layout shell for admin panel pages with admin-specific navigation and access guards.
+ */
 const adminNavItems = [
   { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Metricas Globales' },
   { path: '/admin/profiles', icon: Users, label: 'Gestion de Usuarios' },
   { path: '/admin/moderation', icon: AlertTriangle, label: 'Moderacion' },
   { path: '/admin/skills', icon: Code2, label: 'Normalizacion de Skills' },
-  { path: '/admin/domains', icon: Globe, label: 'Gestión de Dominios' }, // Nueva Pestaña
+  { path: '/admin/domains', icon: Globe, label: 'Gestión de Dominios' }, 
 ];
 
 export function AdminLayout() {

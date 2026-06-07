@@ -41,6 +41,9 @@ import { usePortfolioStore } from '@/store';
 import { cn } from '@/shared/lib/utils';
 import type { ProfilePreferences } from '@/shared/types';
 
+/**
+ * Recruiter-specific settings page for updating company profile, industry, and contact information.
+ */
 type SettingsTab = 'company' | 'account' | 'notifications' | 'privacy' | 'appearance' | 'billing';
 
 const INDUSTRIES = [
@@ -123,7 +126,7 @@ export default function RecruiterSettingsPage() {
         });
       })
       .catch(() => {
-        // keep defaults — new account may not have a profile row yet
+        
       })
       .finally(() => setFetchingProfile(false));
   }, [profile?.id]);
@@ -208,7 +211,7 @@ export default function RecruiterSettingsPage() {
       </div>
 
       <div className="flex flex-col gap-6 lg:flex-row">
-        {/* Sidebar */}
+        {}
         <nav className="lg:w-64 flex-shrink-0">
           <Card className="p-2">
             {tabs.map(tab => (
@@ -229,11 +232,11 @@ export default function RecruiterSettingsPage() {
           </Card>
         </nav>
 
-        {/* Content */}
+        {}
         <div className="flex-1 min-w-0">
           <AnimatePresence mode="wait">
 
-            {/* ── Empresa ─────────────────────────────────────────────── */}
+            {}
             {activeTab === 'company' && (
               <motion.div
                 key="company"
@@ -244,7 +247,7 @@ export default function RecruiterSettingsPage() {
                   <div className="flex justify-center p-12"><LoadingSpinner size="lg" /></div>
                 ) : (
                   <>
-                    {/* Logo */}
+                    {}
                     <Card className="p-6">
                       <h2 className="text-lg font-semibold text-foreground mb-4">Logo de la empresa</h2>
                       <div className="flex items-center gap-6">
@@ -266,12 +269,12 @@ export default function RecruiterSettingsPage() {
                       </div>
                     </Card>
 
-                    {/* Datos de empresa */}
+                    {}
                     <Card className="p-6">
                       <h2 className="text-lg font-semibold text-foreground mb-4">Datos de la empresa</h2>
                       <div className="space-y-4">
 
-                        {/* Nombre del reclutador */}
+                        {}
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                           <div>
                             <label className="block text-sm font-medium text-foreground mb-1">Nombre</label>
@@ -291,7 +294,7 @@ export default function RecruiterSettingsPage() {
                           </div>
                         </div>
 
-                        {/* Empresa */}
+                        {}
                         <div>
                           <label className="block text-sm font-medium text-foreground mb-1">
                             <Building2 className="inline w-4 h-4 mr-1 text-muted-foreground" />
@@ -304,7 +307,7 @@ export default function RecruiterSettingsPage() {
                           />
                         </div>
 
-                        {/* Industria */}
+                        {}
                         <div>
                           <label className="block text-sm font-medium text-foreground mb-1">Industria / Sector</label>
                           <select
@@ -318,7 +321,7 @@ export default function RecruiterSettingsPage() {
                         </div>
 
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                          {/* Sitio web */}
+                          {}
                           <div>
                             <label className="block text-sm font-medium text-foreground mb-1">
                               <Globe className="inline w-4 h-4 mr-1 text-muted-foreground" />
@@ -332,7 +335,7 @@ export default function RecruiterSettingsPage() {
                             />
                           </div>
 
-                          {/* Tamaño */}
+                          {}
                           <div>
                             <label className="block text-sm font-medium text-foreground mb-1">
                               <Users className="inline w-4 h-4 mr-1 text-muted-foreground" />
@@ -350,7 +353,7 @@ export default function RecruiterSettingsPage() {
                         </div>
 
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                          {/* País */}
+                          {}
                           <div>
                             <label className="block text-sm font-medium text-foreground mb-1">País (código ISO)</label>
                             <Input
@@ -361,7 +364,7 @@ export default function RecruiterSettingsPage() {
                             />
                           </div>
 
-                          {/* Teléfono */}
+                          {}
                           <div>
                             <label className="block text-sm font-medium text-foreground mb-1">
                               <Phone className="inline w-4 h-4 mr-1 text-muted-foreground" />
@@ -376,7 +379,7 @@ export default function RecruiterSettingsPage() {
                           </div>
                         </div>
 
-                        {/* Descripción */}
+                        {}
                         <div>
                           <label className="block text-sm font-medium text-foreground mb-1">
                             <FileText className="inline w-4 h-4 mr-1 text-muted-foreground" />
@@ -404,7 +407,7 @@ export default function RecruiterSettingsPage() {
               </motion.div>
             )}
 
-            {/* ── Cuenta ──────────────────────────────────────────────── */}
+            {}
             {activeTab === 'account' && (
               <motion.div
                 key="account"
@@ -479,7 +482,7 @@ export default function RecruiterSettingsPage() {
               </motion.div>
             )}
 
-            {/* ── Notificaciones ───────────────────────────────────────── */}
+            {}
             {activeTab === 'notifications' && (
               <motion.div
                 key="notifications"
@@ -508,7 +511,7 @@ export default function RecruiterSettingsPage() {
               </motion.div>
             )}
 
-            {/* ── Privacidad ───────────────────────────────────────────── */}
+            {}
             {activeTab === 'privacy' && (
               <motion.div
                 key="privacy"
@@ -540,7 +543,7 @@ export default function RecruiterSettingsPage() {
               </motion.div>
             )}
 
-            {/* ── Apariencia ───────────────────────────────────────────── */}
+            {}
             {activeTab === 'appearance' && (
               <motion.div
                 key="appearance"
@@ -641,7 +644,7 @@ export default function RecruiterSettingsPage() {
               </motion.div>
             )}
 
-            {/* ── Facturación ──────────────────────────────────────────── */}
+            {}
             {activeTab === 'billing' && (
               <motion.div
                 key="billing"
@@ -667,7 +670,7 @@ export default function RecruiterSettingsPage() {
         </div>
       </div>
 
-      {/* Modales */}
+      {}
       <Modal isOpen={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} title={t('settings.deleteAccountConfirm')}>
         <div className="space-y-4">
           <div className="flex items-start gap-3 p-4 bg-red-500/10 rounded-lg">

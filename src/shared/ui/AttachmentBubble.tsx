@@ -3,6 +3,9 @@ import { Download, FileText, Music, Video, ExternalLink, X, ZoomIn } from 'lucid
 import { cn } from '@/shared/lib/utils';
 import type { AttachmentCategory } from '@/shared/lib/chatAttachments';
 
+/**
+ * Chat bubble variant that renders a file or image attachment with preview and download affordances.
+ */
 interface Props {
   url: string;
   type: AttachmentCategory | null;
@@ -14,7 +17,7 @@ function fileNameFromUrl(url: string): string {
   try {
     const parts = new URL(url).pathname.split('/');
     const raw = decodeURIComponent(parts[parts.length - 1] ?? 'archivo');
-    // strip timestamp prefix like "1718000000000-name.pdf"
+    
     return raw.replace(/^\d{13}-/, '');
   } catch {
     return 'archivo';

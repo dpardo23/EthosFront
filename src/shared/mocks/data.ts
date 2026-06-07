@@ -19,9 +19,9 @@ import type {
   Notification,
 } from '../types';
 
-// =============================================
-// PROFILES
-// =============================================
+/**
+ * Static mock dataset used by the explore page and admin pages during development.
+ */
 export const mockProfiles: Profile[] = [
   {
     id: '1',
@@ -105,9 +105,6 @@ export const mockProfiles: Profile[] = [
   },
 ];
 
-// =============================================
-// SKILLS
-// =============================================
 export const mockGlobalSkillTags: GlobalSkillTag[] = [
   { id: 's1', name: 'React', category: 'Frontend', isNormalized: true },
   { id: 's2', name: 'TypeScript', category: 'Frontend', isNormalized: true },
@@ -133,7 +130,7 @@ export const mockGlobalSkillTags: GlobalSkillTag[] = [
   { id: 's22', name: 'GraphQL', category: 'Backend', isNormalized: true },
   { id: 's23', name: 'REST API', category: 'Backend', isNormalized: true },
   { id: 's24', name: 'Agile/Scrum', category: 'Soft Skill', isNormalized: true },
-  // Duplicados para normalización
+  
   { id: 's25', name: 'ReactJS', category: 'Frontend', isNormalized: false },
   { id: 's26', name: 'React.js', category: 'Frontend', isNormalized: false },
   { id: 's27', name: 'Nodejs', category: 'Backend', isNormalized: false },
@@ -165,9 +162,6 @@ export const mockSoftSkills: SoftSkill[] = [
   { id: 'ss3', profileId: '1', title: 'Resolución de problemas', description: 'Identifiqué y resolví un cuello de botella en producción que afectaba a 10,000 usuarios diarios.', createdAt: '2023-06-03T10:00:00Z' },
 ];
 
-// =============================================
-// CONNECTIONS
-// =============================================
 export const mockConnections: OAuthConnection[] = [
   {
     id: 'c1',
@@ -231,9 +225,6 @@ export const mockRecommendations: Recommendation[] = [
   { id: 'r3', authorName: 'Sofia Morales', authorPosition: 'Product Manager', authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face', content: 'Excelente comunicación y siempre cumple con los deadlines. Un placer trabajar con él.', relationship: 'Compañera de proyecto', isPublic: false, createdAt: '2023-06-10T09:00:00Z' },
 ];
 
-// =============================================
-// VISIBILITY
-// =============================================
 export const mockVisibilitySettings: VisibilitySettings[] = [
   {
     profileId: '1',
@@ -297,9 +288,6 @@ export const mockModerationHistory: ModerationAction[] = [
   { id: 'ma2', portfolioId: '5', adminId: '3', adminName: 'Admin EthosHub', actionType: 'deactivate', previousState: 'active', newState: 'deactivated', reason: 'Contenido inapropiado reportado', createdAt: '2024-01-08T14:30:00Z' },
 ];
 
-// =============================================
-// ANALYTICS
-// =============================================
 export const mockPlatformMetrics: PlatformMetrics = {
   totalProfiles: 15420,
   activeProfiles: 8234,
@@ -338,9 +326,6 @@ export const mockTimeSeriesData: TimeSeriesData[] = (() => {
   return data;
 })();
 
-// =============================================
-// PREFERENCES
-// =============================================
 export const mockProfilePreferences: ProfilePreferences = {
   profileId: '1',
   language: 'es',
@@ -366,9 +351,6 @@ export const mockProfilePreferences: ProfilePreferences = {
   },
 };
 
-// =============================================
-// NOTIFICATIONS
-// =============================================
 export const mockNotifications: Notification[] = [
   { id: 'n1', profileId: '1', type: 'endorsement', title: 'Nueva validación', message: 'Ana García validó tu skill de React', isRead: false, createdAt: '2024-01-15T10:00:00Z' },
   { id: 'n2', profileId: '1', type: 'visit', title: 'Nueva visita', message: 'Tu portafolio recibió 5 nuevas visitas hoy', isRead: false, createdAt: '2024-01-15T09:00:00Z' },
@@ -376,8 +358,5 @@ export const mockNotifications: Notification[] = [
   { id: 'n4', profileId: '1', type: 'system', title: 'Actualización del sistema', message: 'Nuevas funcionalidades disponibles en tu dashboard', isRead: true, createdAt: '2024-01-13T10:00:00Z' },
 ];
 
-// =============================================
-// SLUG AVAILABILITY
-// =============================================
 export const reservedSlugs = ['admin', 'api', 'login', 'dashboard', 'explorar', 'settings', 'help', 'support'];
 export const takenSlugs = ['carlos-mendoza', 'maria-lopez', 'pedro-ramirez', 'ana-garcia'];

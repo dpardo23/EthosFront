@@ -1,6 +1,9 @@
 import { motion } from 'framer-motion';
 import { cn } from '@/shared/lib/utils';
 
+/**
+ * Animated pulsing dot indicator used in the landing hero to signal live/active state.
+ */
 interface PulseDotProps {
   size?: 'sm' | 'md';
   className?: string;
