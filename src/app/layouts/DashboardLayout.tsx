@@ -10,24 +10,24 @@ import {
   Briefcase,
   GraduationCap,
   Settings,
-  Bell,
   Menu,
   X,
   LogOut,
   ChevronDown,
   Globe,
   User as ProfileIcon,
-  Search,
-  Shield,
   ChevronLeft,
   ChevronRight,
   ExternalLink,
   SplitSquareHorizontal,
   LayoutDashboard,
   LayoutGrid,
+  MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { useAuthStore, useUiStore, useNotificationsStore } from '@/store';
+import { supabase } from '@/lib/supabase';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import { Avatar } from '@/shared/ui';
 import { EthosCoreLogo, EthosLogoIcon } from '@/components/brand/EthosCoreLogo';
 import type { ProfileRole } from '@/shared/types';
@@ -48,13 +48,8 @@ const professionalNavItems: NavItem[] = [
   { path: '/dashboard/education',                   icon: GraduationCap,         label: 'Educación' },
   { path: '/dashboard/cv-studio',                   icon: SplitSquareHorizontal, label: 'CV Studio' },
   { path: '/dashboard/connections',                 icon: Link2,                 label: 'Conexiones' },
+  { path: '/dashboard/chat',                        icon: MessageSquare,         label: 'Chat' },
   { path: '/dashboard/profesional/configuracion',   icon: Settings,              label: 'Configuración' },
-];
-
-const recruiterNavItems: NavItem[] = [
-  { path: '/recruiter/dashboard',                   icon: LayoutDashboard, label: 'Panel Principal' },
-  { path: '/recruiter/talent-discovery',            icon: Search,          label: 'Buscar Talento' },
-  { path: '/dashboard/reclutador/configuracion',    icon: Settings,        label: 'Configuración' },
 ];
 
 const adminNavItems: NavItem[] = [
@@ -63,7 +58,6 @@ const adminNavItems: NavItem[] = [
 ];
 
 function getNavItems(role: ProfileRole): NavItem[] {
-  if (role === 'recruiter') return recruiterNavItems;
   if (role === 'admin') return adminNavItems;
   return professionalNavItems;
 }
@@ -245,15 +239,6 @@ function SidebarContent({
 
       {/* Footer */}
       <div className="shrink-0 border-t border-border p-2 space-y-1">
-        {!collapsed && profile?.role === 'professional' && profile?.slug && (
-          <Link
-            to={`/p/${profile.slug}`}
-            className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs text-muted-foreground hover:text-violet-500 hover:bg-violet-500/5 transition-colors"
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-            <span>Ver portafolio público</span>
-          </Link>
-        )}
         <button
           onClick={onToggleCollapse}
           className={cn(
@@ -281,15 +266,14 @@ export function DashboardLayout() {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile: profile, logout } = useAuthStore();
+  const { profile: profile, logout, isAuthResolved } = useAuthStore();
   const { sidebarOpen, setSidebarOpen, resolvedTheme, initializeTheme } = useUiStore();
-  const { unreadCount } = useNotificationsStore();
+  const { addNotification } = useNotificationsStore();
 
   const [collapsed, setCollapsed] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  const notifRef = useRef<HTMLDivElement>(null);
+  const globalChatChannelRef = useRef<RealtimeChannel | null>(null);
 
   const navItems = getNavItems(profile?.role || 'professional');
   const isDark = resolvedTheme === 'dark';
@@ -314,6 +298,47 @@ export function DashboardLayout() {
   // Close mobile sidebar on route change
   useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
 
+  // Track current path in a ref so the Realtime callback can read it without
+  // the channel being torn down and rebuilt on every navigation.
+  const pathnameRef = useRef(location.pathname);
+  useEffect(() => { pathnameRef.current = location.pathname; }, [location.pathname]);
+
+  // Global Realtime channel: notify when a new message arrives for this user
+  // even if they're not on the chat page. Created once per session (profile + auth).
+  useEffect(() => {
+    if (!profile?.id || !supabase || !isAuthResolved) return;
+    const sb = supabase;
+
+    // Re-inject JWT before subscribing to avoid race with async checkAuth on reload.
+    const token = sessionStorage.getItem('ethoshub_access_token');
+    if (token && !token.startsWith('mock-')) sb.realtime.setAuth(token);
+
+    if (globalChatChannelRef.current) sb.removeChannel(globalChatChannelRef.current);
+
+    const channel = sb
+      .channel(`global-chat-pro:${profile.id}`)
+      .on(
+        'postgres_changes',
+        // Filter server-side: only messages NOT sent by this user arriving in their chats.
+        // RLS already restricts to rows the user can see, so no extra data leaks.
+        { event: 'INSERT', schema: 'core', table: 'chat_messages', filter: `sender_id=neq.${profile.id}` },
+        (payload) => {
+          const msg = payload.new as { sender_id: string; content: string; chat_id: string };
+          // Suppress bell notification when the user is already on the chat page.
+          if (pathnameRef.current.startsWith('/dashboard/chat')) return;
+          addNotification({
+            type: 'message',
+            title: 'Nuevo mensaje',
+            message: msg.content.slice(0, 80),
+          });
+        }
+      )
+      .subscribe();
+
+    globalChatChannelRef.current = channel;
+    return () => { sb.removeChannel(channel); globalChatChannelRef.current = null; };
+  }, [profile?.id, isAuthResolved, addNotification]);
+
   // Theme sync
   useEffect(() => { if (initializeTheme) initializeTheme(); }, [initializeTheme]);
   useEffect(() => {
@@ -324,7 +349,6 @@ export function DashboardLayout() {
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) setShowProfileMenu(false);
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setShowNotifications(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -421,52 +445,6 @@ export function DashboardLayout() {
           <div className="flex-1" />
 
           <div className="flex items-center gap-1.5">
-
-            {/* Notifications */}
-            <div className="relative" ref={notifRef}>
-              <button
-                onClick={() => setShowNotifications(v => !v)}
-                className="relative flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                aria-label="Notificaciones"
-              >
-                <Bell className="h-4 w-4" />
-                {unreadCount > 0 && (
-                  <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute right-1.5 top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white"
-                  >
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </motion.span>
-                )}
-              </button>
-
-              <AnimatePresence>
-                {showNotifications && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                    className={cn('absolute right-0 top-[calc(100%+8px)] z-[100] w-80 p-4', dropdownCls)}
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-sm font-semibold text-popover-foreground">Notificaciones</p>
-                      {unreadCount > 0 && (
-                        <span className="rounded-full bg-violet-500/15 px-2 py-0.5 text-xs font-medium text-violet-500 dark:text-violet-300">
-                          {unreadCount} nuevas
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {unreadCount > 0
-                        ? `Tienes ${unreadCount} notificaciones sin leer.`
-                        : 'Todo al día. No hay notificaciones nuevas.'}
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
 
             {/* Profile menu */}
             <div className="relative" ref={profileMenuRef}>

@@ -302,7 +302,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="tu@email.com"
-              autoComplete="profileHandle"
+              autoComplete="email"
               required
               icon={Mail}
             />

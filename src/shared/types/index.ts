@@ -131,19 +131,28 @@ export interface ProjectFile {
 }
 
 // =============================================
-// CONNECTIONS (GitHub/LinkedIn)
+// CONNECTIONS
 // =============================================
-export type ConnectionProvider = 'github' | 'linkedin';
-export type ConnectionStatus = 'connected' | 'disconnected' | 'expired';
+export type ConnectionProvider =
+  | 'email' | 'github' | 'google' | 'gmail'
+  | 'linkedin' | 'slack' | 'website' | 'devto';
+export type ConnectionStatus = 'connected' | 'disconnected' | 'pending';
+export type ApiHealth = 'healthy' | 'degraded' | 'down';
 
 export interface OAuthConnection {
   id: string;
   profileId: string;
   provider: ConnectionProvider;
   status: ConnectionStatus;
-  lastSynced?: string;
+  profileHandle?: string;
+  providerUrl?: string;
   tokenExpiresAt?: string;
-  apiHealth: 'healthy' | 'degraded' | 'down';
+  scopes?: string;
+  lastSyncedAt?: string;
+  apiHealth: ApiHealth;
+  providerMetadata?: Record<string, unknown>;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface GithubRepository {
@@ -212,6 +221,10 @@ export interface VisibilitySettings {
   sections: Record<PortfolioSection, SectionVisibility>;
   seo: SeoMetadata;
   openGraph: OpenGraphData;
+  showConnections: boolean;
+  showGithubHeatmap: boolean;
+  seoTitle: string;
+  seoDescription: string;
 }
 
 export interface SeoMetadata {
@@ -280,7 +293,7 @@ export interface TimeSeriesData {
 // =============================================
 // PREFERENCES
 // =============================================
-export type Language = 'es' | 'en';
+export type Language = 'es' | 'en' | 'pt';
 export type Theme = 'light' | 'dark' | 'system';
 
 export interface NotificationPreferences {
@@ -315,7 +328,7 @@ export interface ProfilePreferences {
 // =============================================
 // NOTIFICATIONS
 // =============================================
-export type NotificationType = 'endorsement' | 'visit' | 'recommendation' | 'system';
+export type NotificationType = 'endorsement' | 'visit' | 'recommendation' | 'system' | 'message';
 
 export interface Notification {
   id: string;
@@ -341,6 +354,11 @@ export interface AcademicRecord {
   isCurrent: boolean;
   description?: string;
   credentialUrl?: string;
+  institutionLogoUrl?: string;
+  educationType?: string;
+  gpa?: number | null;
+  verificationUrl?: string;
+  isVisible?: boolean;
   createdAt: string;
   updatedAt: string;
 }

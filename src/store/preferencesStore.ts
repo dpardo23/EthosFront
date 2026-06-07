@@ -32,25 +32,27 @@ export const usePreferencesStore = create<PreferencesStore>()(
       },
 
       updatePreferences: async (updates: Partial<ProfilePreferences>) => {
-        set({ loading: true, error: null });
+        const currentPreferences = get().preferences;
+        // Optimistic update before API call
+        set({
+          preferences: currentPreferences ? { ...currentPreferences, ...updates } : null,
+          loading: true,
+          error: null,
+        });
         try {
-          const currentPreferences = get().preferences;
-          if (!currentPreferences) {
-            throw new Error('Preferences not loaded');
-          }
-
           await Promise.all(
             Object.entries(updates).map(([key, value]) =>
               preferencesService.updatePreference(key as keyof ProfilePreferences, value)
             )
           );
-
-          set({
-            preferences: { ...currentPreferences, ...updates },
-            loading: false,
-          });
+          set({ loading: false });
         } catch {
-          set({ error: 'Error al actualizar preferencias', loading: false });
+          // Rollback
+          if (currentPreferences) {
+            set({ preferences: currentPreferences, error: 'Error al actualizar preferencias', loading: false });
+          } else {
+            set({ error: 'Error al actualizar preferencias', loading: false });
+          }
         }
       },
 

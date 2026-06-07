@@ -248,6 +248,7 @@ export default function ProjectsPage() {
           {filtered.map((project) => (
             <motion.div
               key={project.id}
+              className="h-full"
               variants={{
                 hidden: { opacity: 0, y: 24, scale: 0.97 },
                 show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 320, damping: 28 } },
@@ -329,7 +330,7 @@ function ProjectCard({
       className={cn(
         'group relative cursor-pointer overflow-hidden rounded-2xl border bg-card shadow-sm',
         'border-border hover:border-violet-500/40',
-        'transition-shadow duration-300',
+        'transition-shadow duration-300 h-full flex flex-col',
         'hover:shadow-[0_8px_32px_rgba(124,58,237,0.18)] dark:hover:shadow-[0_8px_32px_rgba(139,92,246,0.13)]',
       )}
     >
@@ -390,8 +391,8 @@ function ProjectCard({
       </div>
 
       {/* Body */}
-      <div className="p-5">
-        <div className="mb-3 flex flex-wrap items-center gap-1.5">
+      <div className="p-5 flex flex-col flex-1">
+        <div className="mb-3 flex items-center gap-1.5 min-h-[22px]">
           <span className={cn('rounded-full border px-2.5 py-0.5 text-[11px] font-semibold', STATUS_STYLES[project.status])}>
             {STATUS_LABELS[project.status]}
           </span>
@@ -400,27 +401,29 @@ function ProjectCard({
           </span>
         </div>
 
-        <h3 className="text-[15px] font-semibold leading-snug text-foreground group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors duration-200">
-          {project.title}
-        </h3>
-        <p className="mt-1.5 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
-          {project.description}
-        </p>
+        <div className="flex-1">
+          <h3 className="line-clamp-1 text-[15px] font-semibold leading-snug text-foreground group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors duration-200">
+            {project.title}
+          </h3>
+          <p className="mt-1.5 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
+            {project.description}
+          </p>
 
-        <div className="mt-3 h-[26px] flex gap-1.5 overflow-hidden">
-          {tech.slice(0, 4).map((t) => (
-            <span
-              key={t}
-              className="shrink-0 max-w-[90px] truncate rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-foreground/70"
-            >
-              {t}
-            </span>
-          ))}
-          {tech.length > 4 && (
-            <span className="shrink-0 rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] text-muted-foreground">
-              +{tech.length - 4}
-            </span>
-          )}
+          <div className="mt-3 h-[26px] flex gap-1.5 overflow-hidden">
+            {tech.slice(0, 4).map((t) => (
+              <span
+                key={t}
+                className="shrink-0 max-w-[90px] truncate rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-foreground/70"
+              >
+                {t}
+              </span>
+            ))}
+            {tech.length > 4 && (
+              <span className="shrink-0 rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] text-muted-foreground">
+                +{tech.length - 4}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="mt-4 flex items-center justify-between border-t border-border pt-4">

@@ -1,7 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import { ROUTES } from './routes';
-import { DashboardLayout, AdminLayout, AuthLayout, PublicPortfolioLayout } from '../layouts';
+import { DashboardLayout, AdminLayout, AuthLayout, PublicPortfolioLayout, RecruiterLayout } from '../layouts';
 import { ProtectedRoute } from './ProtectedRoute';
 import RouteErrorBoundary from './RouteErrorBoundary';
 import { Skeleton } from '@/shared/ui';
@@ -36,8 +36,9 @@ const AccessDeniedPage           = lazy(() => import('@/pages/AccessDeniedPage')
 const RecruiterSettingsPage      = lazy(() => import('@/pages/dashboard/RecruiterSettingsPage'));
 const RecruiterDashboardPage     = lazy(() => import('@/pages/recruiter/RecruiterDashboardPage'));
 const TalentDiscoveryPage        = lazy(() => import('@/pages/recruiter/TalentDiscoveryPage'));
-const RecruiterPortfolioPage     = lazy(() => import('@/pages/recruiter/RecruiterPortfolioPage'));
-const RecruiterProjectDetailPage = lazy(() => import('@/pages/recruiter/RecruiterProjectDetailPage'));
+const RecruiterChatPage          = lazy(() => import('@/pages/recruiter/RecruiterChatPage'));
+const RecruiterLikesPage         = lazy(() => import('@/pages/recruiter/RecruiterLikesPage'));
+const ProfessionalChatPage       = lazy(() => import('@/pages/dashboard/ProfessionalChatPage'));
 const PrivacyPage                = lazy(() => import('@/pages/public/PrivacyPage'));
 const TermsPage                  = lazy(() => import('@/pages/public/TermsPage'));
 
@@ -87,6 +88,8 @@ export const router = createBrowserRouter([
       { path: 'dashboard/projects',                                    element: <S page={ProjectsPage} /> },
       { path: 'dashboard/projects/:projectId',                         element: <S page={ProjectDetailPage} /> },
       { path: 'dashboard/connections',                                  element: <S page={ConnectionsPage} /> },
+      { path: 'dashboard/chat',                                         element: <S page={ProfessionalChatPage} /> },
+      { path: 'dashboard/chat/:chatId',                                 element: <S page={ProfessionalChatPage} /> },
       { path: 'dashboard/visibility',                                   element: <S page={VisibilityPage} /> },
       { path: 'dashboard/experience',                                   element: <S page={ExperiencePage} /> },
       { path: 'dashboard/education',                                    element: <S page={EducationPage} /> },
@@ -101,15 +104,16 @@ export const router = createBrowserRouter([
   {
     element: (
       <ProtectedRoute allowedRoles={['recruiter', 'admin']}>
-        <DashboardLayout />
+        <RecruiterLayout />
       </ProtectedRoute>
     ),
     errorElement: <RouteErrorBoundary />,
     children: [
       { path: 'recruiter/dashboard',                                   element: <S page={RecruiterDashboardPage} /> },
       { path: 'recruiter/talent-discovery',                            element: <S page={TalentDiscoveryPage} /> },
-      { path: 'recruiter/talent/:profileId/portfolio',                 element: <S page={RecruiterPortfolioPage} /> },
-      { path: 'recruiter/talent/:profileId/portfolio/:projectId',      element: <S page={RecruiterProjectDetailPage} /> },
+      { path: 'recruiter/chat',                                        element: <S page={RecruiterChatPage} /> },
+      { path: 'recruiter/chat/:chatId',                                element: <S page={RecruiterChatPage} /> },
+      { path: 'recruiter/likes',                                       element: <S page={RecruiterLikesPage} /> },
       // Canonical post-login destination for recruiters
       { path: 'dashboard/reclutador/configuracion',                    element: <S page={RecruiterSettingsPage} /> },
     ],

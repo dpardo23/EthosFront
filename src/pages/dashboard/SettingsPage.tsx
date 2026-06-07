@@ -7,7 +7,6 @@ import {
   Lock,
   Bell,
   Palette,
-  Shield,
   CreditCard,
   Eye,
   EyeOff,
@@ -23,11 +22,11 @@ import {
   Button,
   Card,
   Input,
-  Switch,
   Avatar,
   Badge,
   Modal,
   LoadingSpinner,
+  LanguageSelector,
 } from '@/shared/ui';
 import { useAuthStore } from '@/store/authStore';
 import { usePreferencesStore } from '@/store/preferencesStore';
@@ -35,10 +34,10 @@ import { useUiStore } from '@/store/uiStore';
 import { cn } from '@/shared/lib/utils';
 import type { ProfilePreferences } from '@/shared/types';
 
-type SettingsTab = 'profile' | 'account' | 'notifications' | 'privacy' | 'appearance' | 'billing';
+type SettingsTab = 'profile' | 'account' | 'notifications' | 'appearance' | 'billing';
 
 export default function SettingsPage() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { profile, logout } = useAuthStore();
   const { preferences, updatePreferences } = usePreferencesStore();
   const { addToast, setTheme, theme: activeTheme } = useUiStore();
@@ -50,29 +49,15 @@ export default function SettingsPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
 
-  const safePreferences: ProfilePreferences = preferences ?? {
-    profileId: profile?.id ?? '',
-    language: 'es',
-    theme: 'light',
-    showGithubHeatmap: true,
-    showLinkedinRecommendations: true,
-    sectionOrder: ['bio', 'skills', 'projects', 'experience', 'contact'],
-    notifications: {
-      connections: true,
-      messages: true,
-      projectViews: true,
-      weeklyDigest: true,
-      marketing: false,
-      push_connections: true,
-      push_messages: true,
-      push_mentions: true,
-    },
-    privacy: {
-      showEmail: false,
-      showLocation: true,
-      showConnections: true,
-      allowMessages: true,
-    },
+  const safeNotifications = preferences?.notifications ?? {
+    connections: true,
+    messages: true,
+    projectViews: true,
+    weeklyDigest: true,
+    marketing: false,
+    push_connections: true,
+    push_messages: true,
+    push_mentions: true,
   };
 
   // --- NUEVO ESTADO PARA EL PERFIL BÁSICO ---
@@ -120,7 +105,6 @@ export default function SettingsPage() {
     { id: 'profile' as SettingsTab, label: t('settings.profile'), icon: ProfileIcon },
     { id: 'account' as SettingsTab, label: t('settings.account'), icon: Lock },
     { id: 'notifications' as SettingsTab, label: t('settings.notifications'), icon: Bell },
-    { id: 'privacy' as SettingsTab, label: t('settings.privacy'), icon: Shield },
     { id: 'appearance' as SettingsTab, label: t('settings.appearance'), icon: Palette },
     { id: 'billing' as SettingsTab, label: t('settings.billing'), icon: CreditCard },
   ];
@@ -507,53 +491,11 @@ export default function SettingsPage() {
                       >
                         <span className="text-foreground">{item.label}</span>
                         <Switch
-                          checked={safePreferences.notifications[item.key as keyof ProfilePreferences['notifications']] ?? true}
+                          checked={safeNotifications[item.key as keyof ProfilePreferences['notifications']] ?? true}
                           onChange={(checked) =>
                             updatePreferences({
                               notifications: {
-                                ...safePreferences.notifications,
-                                [item.key]: checked,
-                              },
-                            })
-                          }
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              </motion.div>
-            )}
-
-            {activeTab === 'privacy' && (
-              <motion.div
-                key="privacy"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="space-y-6"
-              >
-                <Card className="p-6">
-                  <h2 className="text-lg font-semibold text-foreground mb-4">
-                    {t('settings.profilePrivacy')}
-                  </h2>
-                  <div className="space-y-4">
-                    {[
-                      { key: 'showEmail', label: t('settings.showEmail') },
-                      { key: 'showLocation', label: t('settings.showLocation') },
-                      { key: 'showConnections', label: t('settings.showConnections') },
-                      { key: 'allowMessages', label: t('settings.allowMessages') },
-                    ].map((item) => (
-                      <div
-                        key={item.key}
-                        className="flex items-center justify-between py-2 border-b border-border last:border-0"
-                      >
-                        <span className="text-foreground">{item.label}</span>
-                        <Switch
-                          checked={safePreferences.privacy[item.key as keyof ProfilePreferences['privacy']] ?? true}
-                          onChange={(checked) =>
-                            updatePreferences({
-                              privacy: {
-                                ...safePreferences.privacy,
+                                ...safeNotifications,
                                 [item.key]: checked,
                               },
                             })
@@ -665,18 +607,11 @@ export default function SettingsPage() {
 
                 {/* Language */}
                 <Card className="p-6">
-                  <h2 className="text-lg font-semibold text-foreground mb-4">
-                    {t('settings.language')}
-                  </h2>
-                  <select
-                    value={i18n.language}
-                    onChange={(e) => i18n.changeLanguage(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground"
-                  >
-                    <option value="en">English</option>
-                    <option value="es">Español</option>
-                    <option value="pt">Português</option>
-                  </select>
+                  <div className="mb-4">
+                    <h2 className="text-base font-semibold text-foreground">{t('settings.language')}</h2>
+                    <p className="mt-0.5 text-[13px] text-muted-foreground">{t('settings.languageDesc')}</p>
+                  </div>
+                  <LanguageSelector />
                 </Card>
               </motion.div>
             )}

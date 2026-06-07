@@ -21,7 +21,6 @@ interface VisibilityStore {
   updateSlug: (profileId: string, slug: string) => Promise<void>;
   updateSectionVisibility: (profileId: string, section: PortfolioSection, visibility: SectionVisibility) => Promise<void>;
   updateSeoSettings: (profileId: string, seo: { title: string; description: string }) => Promise<void>;
-  updatePasswordProtection: (profileId: string, enabled: boolean, password?: string) => Promise<void>;
   fetchPublicPortfolio: (slug: string) => Promise<void>;
   verifyPassword: (slug: string, password: string) => Promise<boolean>;
   fetchPublicPortfolios: () => Promise<void>;
@@ -98,21 +97,6 @@ export const useVisibilityStore = create<VisibilityStore>((set) => ({
       }));
     } catch {
       set({ error: 'Error al actualizar SEO', loading: false });
-    }
-  },
-
-  updatePasswordProtection: async (profileId: string, enabled: boolean, password?: string) => {
-    set({ loading: true, error: null });
-    try {
-      await visibilityService.updatePasswordProtection(profileId, enabled, password);
-      set((state) => ({
-        settings: state.settings
-          ? { ...state.settings, isPasswordProtected: enabled, password }
-          : null,
-        loading: false,
-      }));
-    } catch {
-      set({ error: 'Error al actualizar protección', loading: false });
     }
   },
 

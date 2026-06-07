@@ -1,9 +1,7 @@
 /**
- * ConnectionsPage.tsx — Premium v3
- * - 7-provider catalogue: GitHub, Google, Gmail, LinkedIn, Slack, Sitio Web, dev.to
- * - 2-step AddConnectionModal: catalog → configure (OAuth UI / URL input)
- * - AnimatePresence x-slide between modal steps; createPortal → #portal-root
- * - "profile" terminology throughout; never "profile"
+ * ConnectionsPage.tsx
+ * Real data from /v1/connections (Spring Boot → core.profile_connections).
+ * 7-provider catalogue: GitHub, Google, Gmail, LinkedIn, Slack, Sitio Web, dev.to
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -31,117 +29,19 @@ import {
   ShieldCheck,
   Loader2,
   Link as LinkIcon,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/shared/ui';
 import { useAuthStore } from '@/store/authStore';
 import { useUiStore } from '@/store/uiStore';
+import { useConnectionsStore } from '@/store/connectionsStore';
 import { cn, formatDate } from '@/shared/lib/utils';
-
-// ─── Local types ──────────────────────────────────────────────────────────────
-
-type LocalProvider = 'github' | 'linkedin' | 'website' | 'devto' | 'google' | 'gmail' | 'slack';
-type LocalStatus   = 'connected' | 'disconnected' | 'pending';
-type ApiHealth     = 'healthy' | 'degraded' | 'down';
-
-interface LocalConnection {
-  id: string;
-  provider: LocalProvider;
-  status: LocalStatus;
-  label: string;
-  profileHandle?: string;
-  url?: string;
-  lastSynced?: string;
-  tokenExpiresAt?: string;
-  apiHealth: ApiHealth;
-}
-
-// ─── Mock data ─────────────────────────────────────────────────────────────────
-
-const MOCK_CONNECTIONS: LocalConnection[] = [
-  {
-    id: 'conn-github',
-    provider: 'github',
-    status: 'connected',
-    label: 'GitHub',
-    profileHandle: 'dpardo',
-    url: 'https://github.com/dpardo',
-    lastSynced: '2026-05-27T10:30:00Z',
-    tokenExpiresAt: '2026-11-27T10:30:00Z',
-    apiHealth: 'healthy',
-  },
-  {
-    id: 'conn-linkedin',
-    provider: 'linkedin',
-    status: 'connected',
-    label: 'LinkedIn',
-    profileHandle: 'Diego Pardo',
-    url: 'https://linkedin.com/in/dpardo',
-    lastSynced: '2026-05-26T14:00:00Z',
-    tokenExpiresAt: '2026-08-26T14:00:00Z',
-    apiHealth: 'healthy',
-  },
-  {
-    id: 'conn-website',
-    provider: 'website',
-    status: 'connected',
-    label: 'Sitio web',
-    url: 'https://dpardo.dev',
-    lastSynced: '2026-05-28T08:15:00Z',
-    apiHealth: 'degraded',
-  },
-  {
-    id: 'conn-devto',
-    provider: 'devto',
-    status: 'disconnected',
-    label: 'dev.to',
-    profileHandle: 'dpardo',
-    url: 'https://dev.to/dpardo',
-    apiHealth: 'down',
-  },
-];
-
-// ─── SVG brand icons ──────────────────────────────────────────────────────────
-
-function DevToIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
-      <path d="M7.42 10.05c-.18-.16-.46-.23-.84-.23H6l.02 2.44.04 2.45.56-.02c.41 0 .63-.07.83-.26.24-.24.26-.36.26-2.2 0-1.91-.02-1.96-.29-2.18zM0 4.94v14.12h24V4.94H0zM8.56 15.3c-.44.58-1.06.77-2.53.77H4.71V8.53h1.4c1.67 0 2.16.18 2.6.9.27.43.29.6.32 2.57.05 2.23-.02 2.73-.47 3.3zm5.09-5.47h-2.47v1.77h1.52v1.28l-.72.04-.75.03v1.77l1.22.03 1.2.04v1.28h-1.6c-1.53 0-1.6-.01-1.87-.3l-.3-.28v-3.16c0-3.02.01-3.18.25-3.48.23-.31.25-.31 1.88-.31h1.64v1.3zm4.68 5.45c-.17.43-.64.79-1 .79-.18 0-.45-.15-.67-.39-.32-.32-.45-.63-.82-2.08l-.9-3.39-.45-1.67h.76c.4 0 .75.02.75.05 0 .06 1.16 4.54 1.26 4.83.04.15.32-.7.73-2.3l.66-2.52.74-.04c.4-.02.73 0 .73.04 0 .14-1.67 6.38-1.8 6.68z" />
-    </svg>
-  );
-}
-
-function GoogleIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden fill="none">
-      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
-      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-    </svg>
-  );
-}
-
-function GmailIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
-      <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" strokeWidth="1.75" fill="none" />
-      <path d="M2 6l10 7 10-7" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function SlackIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
-      <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" />
-    </svg>
-  );
-}
+import type { OAuthConnection, ConnectionProvider, ApiHealth } from '@/shared/types';
 
 // ─── Provider catalogue ────────────────────────────────────────────────────────
 
 interface ProviderMeta {
-  id: LocalProvider;
+  id: ConnectionProvider;
   label: string;
   description: string;
   icon: React.ElementType;
@@ -253,6 +153,17 @@ const PROVIDER_CATALOGUE: ProviderMeta[] = [
   },
 ];
 
+function getProviderMeta(provider: ConnectionProvider): ProviderMeta {
+  return PROVIDER_CATALOGUE.find((p) => p.id === provider) ?? {
+    id: provider,
+    label: provider,
+    description: '',
+    icon: LinkIcon,
+    iconBg: 'bg-muted',
+    iconColor: 'text-foreground',
+  };
+}
+
 // ─── Modal step animation ──────────────────────────────────────────────────────
 
 const stepVariants: Variants = {
@@ -273,73 +184,77 @@ const stepVariants: Variants = {
 
 export default function ConnectionsPage() {
   const { t } = useTranslation();
-  const { profile: profile } = useAuthStore();
+  const { profile } = useAuthStore();
   const { addToast } = useUiStore();
+  const {
+    connections,
+    loading,
+    fetchConnections,
+    disconnect,
+    reconnect,
+    syncConnection,
+    addConnection,
+  } = useConnectionsStore();
 
-  const [connections, setConnections] = useState<LocalConnection[]>(MOCK_CONNECTIONS);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [busyId, setBusyId]             = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   void t;
-  void profile;
 
-  const handleDisconnect = (id: string) => {
-    setBusyId(id);
-    setTimeout(() => {
-      setConnections(prev =>
-        prev.map(c => c.id === id ? { ...c, status: 'disconnected', apiHealth: 'down' } : c)
-      );
-      setBusyId(null);
-      addToast({ type: 'success', title: 'Conexión desconectada' });
-    }, 700);
-  };
-
-  const handleReconnect = (id: string) => {
-    setBusyId(id);
-    setTimeout(() => {
-      setConnections(prev =>
-        prev.map(c =>
-          c.id === id
-            ? { ...c, status: 'connected', apiHealth: 'healthy', lastSynced: new Date().toISOString() }
-            : c
-        )
-      );
-      setBusyId(null);
-      addToast({ type: 'success', title: 'Conexión restablecida' });
-    }, 900);
-  };
-
-  const handleAddConnection = (provider: LocalProvider, url?: string) => {
-    const meta = PROVIDER_CATALOGUE.find(p => p.id === provider)!;
-    if (connections.some(c => c.provider === provider)) {
-      addToast({ type: 'error', title: `${meta.label} ya está conectado` });
-      return;
+  useEffect(() => {
+    if (profile?.id) {
+      fetchConnections(profile.id);
     }
-    const newConn: LocalConnection = {
-      id: `conn-${provider}-${Date.now()}`,
-      provider,
-      status: 'pending',
-      label: meta.label,
-      url,
-      lastSynced: undefined,
-      apiHealth: 'healthy',
-    };
-    setConnections(prev => [...prev, newConn]);
-    setShowAddModal(false);
-    addToast({ type: 'success', title: `${meta.label} añadido` });
-    setTimeout(() => {
-      setConnections(prev =>
-        prev.map(c =>
-          c.id === newConn.id
-            ? { ...c, status: 'connected', lastSynced: new Date().toISOString() }
-            : c
-        )
-      );
-    }, 1200);
+  }, [profile?.id, fetchConnections]);
+
+  const handleDisconnect = async (id: string) => {
+    setBusyId(id);
+    try {
+      await disconnect(id);
+      addToast({ type: 'success', title: 'Conexión desconectada' });
+    } catch {
+      addToast({ type: 'error', title: 'No se pudo desconectar' });
+    } finally {
+      setBusyId(null);
+    }
   };
 
-  const connected    = connections.filter(c => c.status === 'connected');
-  const disconnected = connections.filter(c => c.status !== 'connected');
+  const handleReconnect = async (id: string) => {
+    setBusyId(id);
+    try {
+      await reconnect(id);
+      addToast({ type: 'success', title: 'Conexión restablecida' });
+    } catch {
+      addToast({ type: 'error', title: 'No se pudo reconectar' });
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleSync = async (id: string) => {
+    setBusyId(id);
+    try {
+      await syncConnection(id);
+      addToast({ type: 'success', title: 'Sincronizado correctamente' });
+    } catch {
+      addToast({ type: 'error', title: 'Error al sincronizar' });
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleAddConnection = async (provider: ConnectionProvider, url?: string, handle?: string) => {
+    try {
+      await addConnection(provider, handle, url);
+      setShowAddModal(false);
+      addToast({ type: 'success', title: `${getProviderMeta(provider).label} conectado` });
+    } catch {
+      addToast({ type: 'error', title: 'No se pudo agregar la conexión' });
+    }
+  };
+
+  const connected    = connections.filter((c) => c.status === 'connected');
+  const disconnected = connections.filter((c) => c.status !== 'connected');
 
   return (
     <motion.div
@@ -348,7 +263,7 @@ export default function ConnectionsPage() {
       transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
       className="space-y-6 pb-8"
     >
-      {/* ── Header card ──────────────────────────────────────────────────────── */}
+      {/* ── Header card ────────────────────────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-3xl border border-border bg-card px-6 py-6 sm:px-8 sm:py-7">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_0%_0%,_hsl(var(--primary)/0.12)_0%,_transparent_100%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_40%_60%_at_100%_100%,_hsl(var(--primary)/0.06)_0%,_transparent_100%)]" />
@@ -374,10 +289,10 @@ export default function ConnectionsPage() {
           </div>
           <div className="grid grid-cols-2 gap-2.5 shrink-0">
             {[
-              { label: 'Total',     value: connections.length,                                         icon: Activity,    color: 'text-foreground'       },
-              { label: 'Activas',   value: connected.length,                                           icon: CheckCircle2, color: 'text-emerald-500'     },
-              { label: 'Inactivas', value: disconnected.length,                                        icon: XCircle,     color: 'text-muted-foreground' },
-              { label: 'API OK',    value: connections.filter(c => c.apiHealth === 'healthy').length,  icon: Zap,         color: 'text-violet-500'       },
+              { label: 'Total',     value: connections.length,                                          icon: Activity,     color: 'text-foreground'       },
+              { label: 'Activas',   value: connected.length,                                            icon: CheckCircle2, color: 'text-emerald-500'      },
+              { label: 'Inactivas', value: disconnected.length,                                         icon: XCircle,      color: 'text-muted-foreground' },
+              { label: 'API OK',    value: connections.filter((c) => c.apiHealth === 'healthy').length, icon: Zap,          color: 'text-violet-500'       },
             ].map(({ label, value, icon: Icon, color }) => (
               <motion.div
                 key={label}
@@ -393,6 +308,15 @@ export default function ConnectionsPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Loading skeleton ─────────────────────────────────────────────────── */}
+      {loading && connections.length === 0 && (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-44 rounded-2xl border border-border bg-card animate-pulse" />
+          ))}
+        </div>
+      )}
 
       {/* ── Active connections ───────────────────────────────────────────────── */}
       {connected.length > 0 && (
@@ -414,7 +338,7 @@ export default function ConnectionsPage() {
               show: { transition: { staggerChildren: 0.06, delayChildren: 0.04 } },
             }}
           >
-            {connected.map(conn => (
+            {connected.map((conn) => (
               <motion.div
                 key={conn.id}
                 variants={{
@@ -427,6 +351,7 @@ export default function ConnectionsPage() {
                   busy={busyId === conn.id}
                   onReconnect={() => handleReconnect(conn.id)}
                   onDisconnect={() => handleDisconnect(conn.id)}
+                  onSync={() => handleSync(conn.id)}
                 />
               </motion.div>
             ))}
@@ -458,6 +383,7 @@ export default function ConnectionsPage() {
                   busy={busyId === conn.id}
                   onReconnect={() => handleReconnect(conn.id)}
                   onDisconnect={() => handleDisconnect(conn.id)}
+                  onSync={() => handleSync(conn.id)}
                 />
               </motion.div>
             ))}
@@ -465,8 +391,8 @@ export default function ConnectionsPage() {
         </section>
       )}
 
-      {/* ── Empty state ─────────────────────────────────────────────────────── */}
-      {connections.length === 0 && (
+      {/* ── Empty state ──────────────────────────────────────────────────────── */}
+      {!loading && connections.length === 0 && (
         <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-14 text-center">
           <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-muted/50">
             <Activity className="h-7 w-7 text-muted-foreground/30" />
@@ -482,11 +408,11 @@ export default function ConnectionsPage() {
         </div>
       )}
 
-      {/* ── Add connection modal ─────────────────────────────────────────────── */}
+      {/* ── Add connection modal ──────────────────────────────────────────────── */}
       <AnimatePresence>
         {showAddModal && (
           <AddConnectionModal
-            existingProviders={connections.map(c => c.provider)}
+            existingProviders={connections.map((c) => c.provider)}
             onClose={() => setShowAddModal(false)}
             onAdd={handleAddConnection}
           />
@@ -503,11 +429,13 @@ function ConnectionCard({
   busy,
   onReconnect,
   onDisconnect,
+  onSync,
 }: {
-  connection: LocalConnection;
+  connection: OAuthConnection;
   busy: boolean;
   onReconnect: () => void;
   onDisconnect: () => void;
+  onSync: () => void;
 }) {
   const meta      = getProviderMeta(connection.provider);
   const isActive  = connection.status === 'connected';
@@ -534,10 +462,14 @@ function ConnectionCard({
             <StatusDot status={connection.status} />
           </div>
           {connection.profileHandle && (
-            <p className="text-[12px] text-muted-foreground truncate">@{connection.profileHandle}</p>
+            <p className="text-[12px] text-muted-foreground truncate">
+              {connection.provider === 'email' ? connection.profileHandle : `@${connection.profileHandle}`}
+            </p>
           )}
-          {!connection.profileHandle && connection.url && (
-            <p className="text-[12px] text-muted-foreground truncate">{connection.url.replace('https://', '')}</p>
+          {!connection.profileHandle && connection.providerUrl && (
+            <p className="text-[12px] text-muted-foreground truncate">
+              {connection.providerUrl.replace('https://', '')}
+            </p>
           )}
         </div>
         <HealthBadge health={connection.apiHealth} />
@@ -547,7 +479,7 @@ function ConnectionCard({
         <MetaTile
           icon={Clock}
           label="Sincronizado"
-          value={connection.lastSynced ? formatDate(connection.lastSynced) : '—'}
+          value={connection.lastSyncedAt ? formatDate(connection.lastSyncedAt) : '—'}
         />
         <MetaTile
           icon={Activity}
@@ -560,16 +492,26 @@ function ConnectionCard({
         />
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         {isActive || isPending ? (
-          <button
-            onClick={onDisconnect}
-            disabled={busy || isPending}
-            className="flex items-center gap-1.5 rounded-xl border border-red-500/25 bg-red-500/5 px-3 py-1.5 text-[12px] font-medium text-red-500 hover:bg-red-500/15 transition-colors disabled:opacity-40"
-          >
-            <Unplug className="h-3 w-3" />
-            {busy ? 'Procesando…' : 'Desconectar'}
-          </button>
+          <>
+            <button
+              onClick={onSync}
+              disabled={busy || isPending}
+              className="flex items-center gap-1.5 rounded-xl border border-violet-500/25 bg-violet-500/5 px-3 py-1.5 text-[12px] font-medium text-violet-600 dark:text-violet-400 hover:bg-violet-500/15 transition-colors disabled:opacity-40"
+            >
+              <RefreshCw className={cn('h-3 w-3', busy && 'animate-spin')} />
+              Sincronizar
+            </button>
+            <button
+              onClick={onDisconnect}
+              disabled={busy || isPending}
+              className="flex items-center gap-1.5 rounded-xl border border-red-500/25 bg-red-500/5 px-3 py-1.5 text-[12px] font-medium text-red-500 hover:bg-red-500/15 transition-colors disabled:opacity-40"
+            >
+              <Unplug className="h-3 w-3" />
+              {busy ? 'Procesando…' : 'Desconectar'}
+            </button>
+          </>
         ) : (
           <button
             onClick={onReconnect}
@@ -580,9 +522,9 @@ function ConnectionCard({
             {busy ? 'Reconectando…' : 'Reconectar'}
           </button>
         )}
-        {connection.url && (
+        {connection.providerUrl && (
           <a
-            href={connection.url}
+            href={connection.providerUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 rounded-xl border border-border bg-muted/40 px-3 py-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground hover:border-border/80 transition-colors"
@@ -596,20 +538,20 @@ function ConnectionCard({
   );
 }
 
-// ─── AddConnectionModal — portal contained in #portal-root ───────────────────
+// ─── AddConnectionModal ────────────────────────────────────────────────────────
 
 function AddConnectionModal({
   existingProviders,
   onClose,
   onAdd,
 }: {
-  existingProviders: LocalProvider[];
+  existingProviders: ConnectionProvider[];
   onClose: () => void;
-  onAdd: (provider: LocalProvider, url?: string) => void;
+  onAdd: (provider: ConnectionProvider, url?: string, handle?: string) => Promise<void>;
 }) {
-  const [step, setStep]         = useState<'catalog' | 'configure'>('catalog');
-  const [selected, setSelected] = useState<ProviderMeta | null>(null);
-  const [direction, setDirection] = useState<number>(1);
+  const [step, setStep]             = useState<'catalog' | 'configure'>('catalog');
+  const [selected, setSelected]     = useState<ProviderMeta | null>(null);
+  const [direction, setDirection]   = useState<number>(1);
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [urlError, setUrlError]     = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -647,7 +589,7 @@ function AddConnectionModal({
     setIsConnecting(false);
   };
 
-  const handleConnect = () => {
+  const handleConnect = async () => {
     if (!selected) return;
     if (selected.isManual) {
       const trimmed = websiteUrl.trim();
@@ -659,17 +601,21 @@ function AddConnectionModal({
       setUrlError(null);
     }
     setIsConnecting(true);
-    setTimeout(() => {
-      onAdd(selected.id, selected.isManual ? websiteUrl.trim() : undefined);
+    try {
+      await onAdd(
+        selected.id,
+        selected.isManual ? websiteUrl.trim() : undefined,
+        undefined,
+      );
+    } finally {
       setIsConnecting(false);
-    }, 820);
+    }
   };
 
   const portalRoot = document.getElementById('portal-root') ?? document.body;
 
   return createPortal(
     <>
-      {/* Backdrop */}
       <motion.div
         key="add-conn-backdrop"
         initial={{ opacity: 0 }}
@@ -679,8 +625,6 @@ function AddConnectionModal({
         className="absolute inset-0 z-[80] bg-background/75 backdrop-blur-md"
         onClick={step === 'configure' ? handleBack : onClose}
       />
-
-      {/* Panel */}
       <div className="absolute inset-0 z-[81] flex items-center justify-center p-4 pointer-events-none">
         <motion.div
           key="add-conn-panel"
@@ -780,7 +724,7 @@ function AddConnectionModal({
                   </div>
                   <div className="px-5 pb-4 border-t border-border/50 pt-3">
                     <p className="text-[11px] text-muted-foreground/60 text-center">
-                      Las conexiones simulan autenticación OAuth en modo demo.
+                      Los cambios se persisten en tu perfil profesional.
                     </p>
                   </div>
                 </motion.div>
@@ -834,7 +778,6 @@ function ConfigureStep({
 }) {
   return (
     <div className="p-5">
-      {/* Provider hero */}
       <div className="flex items-center gap-4 mb-6">
         <div className={cn('flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-sm', provider.iconBg)}>
           <provider.icon className={cn('h-7 w-7', provider.iconColor)} />
@@ -846,7 +789,6 @@ function ConfigureStep({
       </div>
 
       {provider.isManual ? (
-        /* URL input */
         <div className="space-y-2 mb-6">
           <label className="text-[12px] font-semibold text-foreground/80">URL del sitio</label>
           <div
@@ -883,7 +825,6 @@ function ConfigureStep({
           </AnimatePresence>
         </div>
       ) : (
-        /* OAuth permissions */
         <div className="mb-6">
           <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-3">
             Permisos solicitados
@@ -899,7 +840,6 @@ function ConfigureStep({
         </div>
       )}
 
-      {/* CTA button */}
       <button
         onClick={onConnect}
         disabled={isConnecting}
@@ -926,8 +866,8 @@ function ConfigureStep({
 
       <p className="mt-3 text-center text-[10px] text-muted-foreground/50">
         {provider.isManual
-          ? 'La URL se verifica automáticamente en modo demo.'
-          : 'Autenticación segura via OAuth 2.0. Tus credenciales nunca se almacenan.'}
+          ? 'La URL se guarda en tu perfil profesional.'
+          : 'La conexión se registra de forma segura en tu perfil.'}
       </p>
     </div>
   );
@@ -935,7 +875,7 @@ function ConfigureStep({
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
 
-function StatusDot({ status }: { status: LocalStatus }) {
+function StatusDot({ status }: { status: OAuthConnection['status'] }) {
   return (
     <span
       className={cn(
@@ -975,22 +915,43 @@ function MetaTile({ icon: Icon, label, value }: { icon: React.ElementType; label
   );
 }
 
-// ─── Provider meta (all 7 providers) ──────────────────────────────────────────
+// ─── SVG brand icons ──────────────────────────────────────────────────────────
 
-function getProviderMeta(provider: LocalProvider): {
-  label: string;
-  icon: React.ElementType;
-  iconBg: string;
-  iconColor: string;
-} {
-  const map: Record<LocalProvider, { label: string; icon: React.ElementType; iconBg: string; iconColor: string }> = {
-    github:   { label: 'GitHub',    icon: Github,      iconBg: 'bg-zinc-900',                iconColor: 'text-white' },
-    google:   { label: 'Google',    icon: GoogleIcon,  iconBg: 'bg-white border border-border', iconColor: ''        },
-    gmail:    { label: 'Gmail',     icon: GmailIcon,   iconBg: 'bg-[#EA4335]',               iconColor: 'text-white' },
-    linkedin: { label: 'LinkedIn',  icon: Linkedin,    iconBg: 'bg-[#0A66C2]',               iconColor: 'text-white' },
-    slack:    { label: 'Slack',     icon: SlackIcon,   iconBg: 'bg-[#4A154B]',               iconColor: 'text-white' },
-    website:  { label: 'Sitio web', icon: Globe,       iconBg: 'bg-violet-600',              iconColor: 'text-white' },
-    devto:    { label: 'dev.to',    icon: DevToIcon,   iconBg: 'bg-zinc-900',                iconColor: 'text-white' },
-  };
-  return map[provider];
+function DevToIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+      <path d="M7.42 10.05c-.18-.16-.46-.23-.84-.23H6l.02 2.44.04 2.45.56-.02c.41 0 .63-.07.83-.26.24-.24.26-.36.26-2.2 0-1.91-.02-1.96-.29-2.18zM0 4.94v14.12h24V4.94H0zM8.56 15.3c-.44.58-1.06.77-2.53.77H4.71V8.53h1.4c1.67 0 2.16.18 2.6.9.27.43.29.6.32 2.57.05 2.23-.02 2.73-.47 3.3zm5.09-5.47h-2.47v1.77h1.52v1.28l-.72.04-.75.03v1.77l1.22.03 1.2.04v1.28h-1.6c-1.53 0-1.6-.01-1.87-.3l-.3-.28v-3.16c0-3.02.01-3.18.25-3.48.23-.31.25-.31 1.88-.31h1.64v1.3zm4.68 5.45c-.17.43-.64.79-1 .79-.18 0-.45-.15-.67-.39-.32-.32-.45-.63-.82-2.08l-.9-3.39-.45-1.67h.76c.4 0 .75.02.75.05 0 .06 1.16 4.54 1.26 4.83.04.15.32-.7.73-2.3l.66-2.52.74-.04c.4-.02.73 0 .73.04 0 .14-1.67 6.38-1.8 6.68z" />
+    </svg>
+  );
 }
+
+function GoogleIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden fill="none">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+    </svg>
+  );
+}
+
+function GmailIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" aria-hidden>
+      <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" strokeWidth="1.75" fill="none" />
+      <path d="M2 6l10 7 10-7" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function SlackIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+      <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" />
+    </svg>
+  );
+}
+
+// Suppress unused import — Trash2 kept for future delete-connection button
+void Trash2;

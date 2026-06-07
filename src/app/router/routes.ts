@@ -20,6 +20,7 @@ export const ROUTES = {
   PROFESSIONAL_EDUCATION:    '/dashboard/education',
   PROFESSIONAL_CV:           '/dashboard/cv-studio',
   PROFESSIONAL_CONNECTIONS:  '/dashboard/connections',
+  PROFESSIONAL_CHAT:         '/dashboard/chat',
   PROFESSIONAL_VISIBILITY:   '/dashboard/visibility',
   // Initial redirect after login — immutable
   PROFESSIONAL_SETTINGS:     '/dashboard/profesional/configuracion',
@@ -27,6 +28,8 @@ export const ROUTES = {
   // ── Recruiter ─────────────────────────────────────────────────────────────
   RECRUITER_DASHBOARD:       '/recruiter/dashboard',
   RECRUITER_TALENT:          '/recruiter/talent-discovery',
+  RECRUITER_CHAT:            '/recruiter/chat',
+  RECRUITER_LIKES:           '/recruiter/likes',
   // Initial redirect after login — immutable
   RECRUITER_SETTINGS:        '/dashboard/reclutador/configuracion',
 

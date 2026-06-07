@@ -61,7 +61,6 @@ function ModalOverlay({ onClose, children }: { onClose: () => void; children: Re
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.18 }}
-        onClick={onClose}
       />
       {/* Dialog — flex-centered, pointer-events passed through wrapper */}
       <div className="absolute inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">

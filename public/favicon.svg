@@ -1,0 +1,110 @@
+<svg width="80" height="88" viewBox="0 0 80 88" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    /* Light mode (default) */
+    .hoodie-grad-0  { stop-color: #EEE5FF; }
+    .hoodie-grad-1  { stop-color: #DDD5F8; }
+    .face-grad-0    { stop-color: #F5F0FF; }
+    .face-grad-1    { stop-color: #EAE0FF; }
+    .head-fill      { fill: #F8F5FF; }
+    .head-stroke    { stroke: #7C3AED; stroke-opacity: 0.55; }
+    .eye-stroke     { stroke: #7C3AED; }
+    .hoodie-stroke  { stroke: #7C3AED; stroke-opacity: 0.7; }
+    .beak-fill      { fill: #9333EA; }
+
+    /* Dark mode */
+    @media (prefers-color-scheme: dark) {
+      .hoodie-grad-0  { stop-color: #1A0530; }
+      .hoodie-grad-1  { stop-color: #0A0A14; }
+      .face-grad-0    { stop-color: #13102A; }
+      .face-grad-1    { stop-color: #0C0C1C; }
+      .head-fill      { fill: #0E0E1C; }
+      .head-stroke    { stroke: #7C3AED; stroke-opacity: 0.45; }
+      .eye-stroke     { stroke: #A855F7; }
+      .hoodie-stroke  { stroke: #A855F7; stroke-opacity: 0.55; }
+      .beak-fill      { fill: #C084FC; }
+    }
+  </style>
+
+  <defs>
+    <linearGradient id="fav-hoodieGrad" x1="40" y1="0" x2="40" y2="88" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   class="hoodie-grad-0" />
+      <stop offset="100%" class="hoodie-grad-1" />
+    </linearGradient>
+    <radialGradient id="fav-faceGrad" cx="50%" cy="40%" r="55%">
+      <stop offset="0%"   class="face-grad-0" />
+      <stop offset="100%" class="face-grad-1" />
+    </radialGradient>
+    <radialGradient id="fav-eyeHaloL" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#A855F7" stop-opacity="0.28" />
+      <stop offset="100%" stop-color="#A855F7" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="fav-eyeHaloR" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#A855F7" stop-opacity="0.28" />
+      <stop offset="100%" stop-color="#A855F7" stop-opacity="0" />
+    </radialGradient>
+    <filter id="fav-eyeGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="1.8" result="blur" />
+      <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+    </filter>
+    <filter id="fav-softGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.5" result="blur" />
+      <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Hoodie silhouette with ear tufts -->
+  <path
+    d="M40 84 C22 84 11 73 11 61 L9 48 C9 34 17 22 28 18 L20 4 L34 16 C36 15 38 14 40 14 C42 14 44 15 46 16 L60 4 L52 18 C63 22 71 34 71 48 L69 61 C69 73 58 84 40 84Z"
+    fill="url(#fav-hoodieGrad)"
+    class="hoodie-stroke"
+    stroke-width="1.1"
+    stroke-linejoin="round"
+  />
+
+  <!-- Head circle -->
+  <circle cx="40" cy="44" r="23"
+    class="head-fill head-stroke"
+    stroke-width="1"
+    filter="url(#fav-softGlow)"
+  />
+
+  <!-- Facial disk -->
+  <ellipse cx="40" cy="45" rx="16" ry="15" fill="url(#fav-faceGrad)" />
+
+  <!-- Eye halos -->
+  <circle cx="31" cy="41" r="9" fill="url(#fav-eyeHaloL)" />
+  <circle cx="49" cy="41" r="9" fill="url(#fav-eyeHaloR)" />
+
+  <!-- Left code eye  < -->
+  <path d="M35 35 L27 41 L35 47"
+    class="eye-stroke"
+    stroke-width="2.6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+    filter="url(#fav-eyeGlow)"
+  />
+
+  <!-- Right code eye  > -->
+  <path d="M45 35 L53 41 L45 47"
+    class="eye-stroke"
+    stroke-width="2.6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+    filter="url(#fav-eyeGlow)"
+  />
+
+  <!-- Beak -->
+  <path d="M37.5 51 L40 56.5 L42.5 51 Z" class="beak-fill" opacity="0.88" />
+
+  <!-- Hoodie pocket -->
+  <path d="M27 73 Q40 69 53 73 L51 79 Q40 81 29 79 Z"
+    fill="#A855F7" opacity="0.07"
+    stroke="#A855F7" stroke-width="0.8" stroke-opacity="0.22"
+  />
+
+  <!-- Drawstrings -->
+  <path d="M37 63 Q35 69 34 75" stroke="#A855F7" stroke-width="0.75" stroke-linecap="round" opacity="0.28" />
+  <path d="M43 63 Q45 69 46 75" stroke="#A855F7" stroke-width="0.75" stroke-linecap="round" opacity="0.28" />
+</svg>

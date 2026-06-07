@@ -1,7 +1,32 @@
 import axios, { type AxiosError } from 'axios';
 
-const ACCESS_TOKEN_KEY = 'ethoshub_access_token';
-const TOKEN_TYPE_KEY   = 'ethoshub_token_type';
+const ACCESS_TOKEN_KEY  = 'ethoshub_access_token';
+const TOKEN_TYPE_KEY    = 'ethoshub_token_type';
+const EXPIRES_AT_KEY    = 'ethoshub_access_expires_at';
+
+// Tokens live in sessionStorage (tab-isolated). Fall back to localStorage
+// for backwards-compat with any tab that stored them there previously.
+function readToken(): string | null {
+  return sessionStorage.getItem(ACCESS_TOKEN_KEY) ?? localStorage.getItem(ACCESS_TOKEN_KEY);
+}
+function readTokenType(): string {
+  return sessionStorage.getItem(TOKEN_TYPE_KEY) ?? localStorage.getItem(TOKEN_TYPE_KEY) ?? 'Bearer';
+}
+function readExpiresAt(): string | null {
+  return sessionStorage.getItem(EXPIRES_AT_KEY) ?? localStorage.getItem(EXPIRES_AT_KEY);
+}
+
+// Read the `exp` claim directly from the JWT payload (base64url-encoded JSON).
+// This is the ground truth — independent of the timestamp we store in localStorage.
+function isJwtExpired(token: string): boolean {
+  try {
+    const payload = token.split('.')[1];
+    const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+    return typeof decoded.exp === 'number' && Math.floor(Date.now() / 1000) > decoded.exp;
+  } catch {
+    return false;
+  }
+}
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
@@ -20,8 +45,8 @@ api.interceptors.request.use(
     // This prevents overwriting the Supabase OAuth access token with a stale
     // localStorage token during the OAuth callback flow.
     if (!config.headers.Authorization) {
-      const token     = localStorage.getItem(ACCESS_TOKEN_KEY);
-      const tokenType = localStorage.getItem(TOKEN_TYPE_KEY) || 'Bearer';
+      const token     = readToken();
+      const tokenType = readTokenType();
       if (token) {
         config.headers.Authorization = `${tokenType} ${token}`;
       }
@@ -38,19 +63,25 @@ api.interceptors.response.use(
     const status = error.response?.status;
 
     if (status === 401 || status === 403) {
-      // Only trigger global logout when the stored token is genuinely expired.
-      // A 401 on a fresh (non-expired) token means the endpoint is unavailable or
-      // the backend has a configuration issue — let the caller's .catch() handle it
-      // instead of nuking the session and flashing the user to /login.
-      const expiresAt = localStorage.getItem('ethoshub_access_expires_at');
-      const tokenPresent = !!localStorage.getItem(ACCESS_TOKEN_KEY);
-      const isExpired = !tokenPresent || (!!expiresAt && Date.now() > Number(expiresAt) * 1000);
+      const token     = readToken();
+      const expiresAt = readExpiresAt();
 
-      if (isExpired) {
+      // isExpired is true when:
+      // (a) no token at all, OR
+      // (b) localStorage timestamp says it's expired, OR
+      // (c) the JWT `exp` claim itself is past (catches the case where the
+      //     frontend stored a longer TTL than the real token lifetime, e.g.
+      //     hardcoded 86400 vs actual Supabase 3600)
+      const isExpiredByStore = !token || (!!expiresAt && Date.now() > Number(expiresAt) * 1000);
+      const isExpiredByJwt   = token ? isJwtExpired(token) : true;
+
+      if (isExpiredByStore || isExpiredByJwt) {
+        sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+        sessionStorage.removeItem(TOKEN_TYPE_KEY);
+        sessionStorage.removeItem(EXPIRES_AT_KEY);
         localStorage.removeItem(ACCESS_TOKEN_KEY);
         localStorage.removeItem(TOKEN_TYPE_KEY);
-        // Notify the app — ProtectedRoute listens and triggers logout + React Router redirect.
-        // Never use window.location here: it causes a full page reload (the visible "flash").
+        localStorage.removeItem(EXPIRES_AT_KEY);
         window.dispatchEvent(new CustomEvent('auth:unauthorized'));
       }
     }

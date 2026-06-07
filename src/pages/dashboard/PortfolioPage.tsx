@@ -6,6 +6,7 @@ import {
   FolderKanban, Building2, Calendar, CircleDot,
   Star, Eye, Settings2, Check, CheckSquare, Square,
   Loader2, ToggleLeft, ToggleRight, AlertCircle, Copy, ChevronDown,
+  Search, Users, FileText, ExternalLink, RefreshCw,
 } from 'lucide-react';
 import { useAuthStore, usePortfolioStore } from '@/store';
 import type { PublicPortfolio } from '@/shared/services/portfolioService';
@@ -14,6 +15,8 @@ import { ExportPortfolioButton } from '@/features/portfolio/ExportPortfolioButto
 import { PortfolioPublicView } from '@/pages/public/PublicPortfolioPage';
 import { cn } from '@/shared/lib/utils';
 import { toast } from 'sonner';
+import { listDocuments } from '@/shared/services/cvStudioService';
+import type { CvDocument } from '@/shared/services/cvStudioService';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -120,11 +123,162 @@ function SelectableCard({ isSelected, onClick, children }: { isSelected: boolean
   );
 }
 
+// ── Curriculum section ─────────────────────────────────────────────────────────
+
+function CurriculumSection({ profileImageUrl }: { profileImageUrl?: string }) {
+  const [docs, setDocs] = useState<CvDocument[]>([]);
+  const [loadingDocs, setLoadingDocs] = useState(true);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [currentPdfUrl, setCurrentPdfUrl] = useState<string | null>(null);
+  const [compiling, setCompiling] = useState(false);
+
+  useEffect(() => {
+    listDocuments()
+      .then(setDocs)
+      .catch(() => toast.error('No se pudieron cargar los currículums'))
+      .finally(() => setLoadingDocs(false));
+    portfolioService.getCurriculum()
+      .then(r => { setSelectedId(r.cvDocumentId); setCurrentPdfUrl(r.cvPdfUrl); })
+      .catch(() => {/* no curriculum yet */});
+  }, []);
+
+  const handleSelect = async (doc: CvDocument) => {
+    if (compiling) return;
+    setCompiling(true);
+    try {
+      const result = await portfolioService.compileCurriculum(doc.id, profileImageUrl);
+      setSelectedId(result.cvDocumentId);
+      setCurrentPdfUrl(result.cvPdfUrl);
+      toast.success('Currículum compilado y guardado en tu portafolio');
+    } catch (e: unknown) {
+      const msg = (e as any)?.response?.data?.message ?? 'Error al compilar el currículum';
+      toast.error(msg);
+    } finally {
+      setCompiling(false);
+    }
+  };
+
+  const modeLabel = (mode: string) => mode === 'latex' ? 'LaTeX' : 'Markdown';
+  const modeColor = (mode: string) =>
+    mode === 'latex'
+      ? 'bg-orange-500/10 border-orange-500/20 text-orange-600 dark:text-orange-400'
+      : 'bg-sky-500/10 border-sky-500/20 text-sky-600 dark:text-sky-400';
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+          <FileText className="h-4 w-4 text-violet-500" />Currículum
+        </h3>
+        {currentPdfUrl && (
+          <a
+            href={currentPdfUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground hover:border-violet-500/30 hover:text-violet-600 transition-all"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />Ver PDF actual
+          </a>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground -mt-2">
+        Elige un currículum de tu CV Studio. Se compilará a PDF y se mostrará en tu portafolio público.
+      </p>
+
+      {/* Compiling overlay */}
+      <AnimatePresence>
+        {compiling && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="flex flex-col items-center gap-3 rounded-xl border border-violet-500/20 bg-violet-500/5 py-8"
+          >
+            <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
+            <p className="text-sm font-semibold text-foreground">Compilando currículum…</p>
+            <p className="text-xs text-muted-foreground">Esto puede tardar unos segundos</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {!compiling && (
+        loadingDocs ? (
+          <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+        ) : docs.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border bg-muted/20 py-6 text-center">
+            <p className="text-xs text-muted-foreground mb-2">No tienes currículums guardados.</p>
+            <Link to="/dashboard/cv-studio" className="text-xs text-violet-500 hover:underline font-semibold">
+              Ir al CV Studio
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {docs.map(doc => {
+              const isSelected = doc.id === selectedId;
+              return (
+                <button
+                  key={doc.id}
+                  onClick={() => handleSelect(doc)}
+                  disabled={compiling}
+                  className={cn(
+                    'w-full text-left rounded-xl border p-3.5 transition-all duration-200 relative group',
+                    isSelected
+                      ? 'border-violet-500/40 bg-violet-500/5 shadow-[0_0_0_1px_rgba(139,92,246,0.2)]'
+                      : 'border-border bg-background hover:border-violet-500/20 hover:bg-muted/30',
+                  )}
+                >
+                  <div className="flex items-center gap-3 pr-6">
+                    <div className={cn(
+                      'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border',
+                      isSelected
+                        ? 'bg-violet-500/10 border-violet-500/20'
+                        : 'bg-muted/50 border-border',
+                    )}>
+                      <FileText className={cn('h-4 w-4', isSelected ? 'text-violet-500' : 'text-muted-foreground')} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{doc.title}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className={cn('inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold', modeColor(doc.mode))}>
+                          {modeLabel(doc.mode)}
+                        </span>
+                        {isSelected && (
+                          <span className="text-[10px] text-violet-600 dark:text-violet-400 font-semibold flex items-center gap-1">
+                            <Check className="h-2.5 w-2.5" />Seleccionado
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {isSelected
+                      ? <Check className="h-4 w-4 text-violet-500 shrink-0" />
+                      : <RefreshCw className="h-3.5 w-3.5 text-muted-foreground/30 group-hover:text-muted-foreground shrink-0 transition-colors" />
+                    }
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )
+      )}
+
+      {selectedId && currentPdfUrl && !compiling && (
+        <div className="flex items-start gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2.5">
+          <Check className="h-3.5 w-3.5 text-emerald-500 mt-0.5 shrink-0" />
+          <p className="text-xs text-emerald-700 dark:text-emerald-400 leading-relaxed">
+            PDF compilado y visible en tu portafolio. Haz clic en otro para recompilar.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ConfigEditor({ }: { profileId: string }) {
-  const { settings, availableItems, loadingItems, saving, fetchAvailableItems, updateSettings, toggleItem } = usePortfolioStore();
+  const { settings, availableItems, loadingItems, saving, error: storeError, fetchAvailableItems, updateSettings, toggleItem } = usePortfolioStore();
   const [openSection, setOpenSection] = useState<ItemSection | null>(null);
   const [slugInput, setSlugInput] = useState('');
   const [slugEditing, setSlugEditing] = useState(false);
+  const [seoTitle, setSeoTitle] = useState('');
+  const [seoDescription, setSeoDescription] = useState('');
+  const [seoSaving, setSeoSaving] = useState(false);
   const baseUrl = window.location.origin;
 
   useEffect(() => {
@@ -132,8 +286,14 @@ function ConfigEditor({ }: { profileId: string }) {
   }, [settings?.slug]);
 
   useEffect(() => {
-    if (openSection && !availableItems) fetchAvailableItems();
-  }, [openSection]);
+    setSeoTitle(settings?.seoTitle ?? '');
+    setSeoDescription(settings?.seoDescription ?? '');
+  }, [settings?.seoTitle, settings?.seoDescription]);
+
+  // Fallback: si el usuario abre un accordion y los datos aún no llegaron, los pide.
+  useEffect(() => {
+    if (openSection && !availableItems && !loadingItems) fetchAvailableItems();
+  }, [openSection, availableItems, loadingItems, fetchAvailableItems]);
 
   const handlePublishToggle = useCallback(async () => {
     if (!settings) return;
@@ -142,21 +302,28 @@ function ConfigEditor({ }: { profileId: string }) {
   }, [settings, updateSettings]);
 
   const handleSlugSave = useCallback(async () => {
-    if (!slugInput.trim()) return;
+    const trimmed = slugInput.trim();
+    if (!trimmed) return;
+    // Si el slug no cambió no hace falta llamar al backend
+    if (trimmed === settings?.slug) {
+      setSlugEditing(false);
+      return;
+    }
     try {
-      await updateSettings({ slug: slugInput.trim() });
+      await updateSettings({ slug: trimmed });
       setSlugEditing(false);
       toast.success('Slug actualizado');
-    } catch {
-      toast.error('No se pudo actualizar el slug');
+    } catch (e: unknown) {
+      const msg = (e as any)?.response?.data?.message ?? '';
+      if (msg.toLowerCase().includes('uso') || msg.toLowerCase().includes('conflict')) {
+        toast.error('Ese slug ya está en uso, elige otro');
+      } else {
+        toast.error('No se pudo actualizar el slug');
+      }
+      // Mantener el editor abierto y restaurar el slug anterior
+      setSlugInput(settings?.slug ?? '');
     }
-  }, [slugInput, updateSettings]);
-
-  const handleCopyUrl = () => {
-    if (!settings?.slug) return;
-    navigator.clipboard.writeText(`${baseUrl}/p/${settings.slug}`);
-    toast.success('URL copiada');
-  };
+  }, [slugInput, settings?.slug, updateSettings]);
 
   const toggleSection = (s: ItemSection) => setOpenSection(prev => prev === s ? null : s);
 
@@ -165,9 +332,31 @@ function ConfigEditor({ }: { profileId: string }) {
     return settings.selectedItems.filter(i => i.itemType === type).length;
   };
 
+  const handleSeoSave = async () => {
+    setSeoSaving(true);
+    try {
+      await updateSettings({
+        seoTitle: seoTitle.trim() || null,
+        seoDescription: seoDescription.trim() || null,
+      });
+      toast.success('SEO actualizado');
+    } catch {
+      toast.error('No se pudo guardar el SEO');
+    } finally {
+      setSeoSaving(false);
+    }
+  };
+
   if (!settings) return null;
 
-  const publicUrl = settings.slug ? `${baseUrl}/p/${settings.slug}` : null;
+  const effectiveSlug = slugInput.trim() || settings.slug || null;
+  const publicUrl = effectiveSlug ? `${baseUrl}/p/${effectiveSlug}` : null;
+
+  const handleCopyUrl = () => {
+    if (!effectiveSlug) return;
+    navigator.clipboard.writeText(`${baseUrl}/p/${effectiveSlug}`);
+    toast.success('URL copiada');
+  };
 
   return (
     <div className="space-y-6">
@@ -245,7 +434,7 @@ function ConfigEditor({ }: { profileId: string }) {
               </button>
               {publicUrl && settings.isPublished && (
                 <Link
-                  to={`/p/${settings.slug}`} target="_blank"
+                  to={`/p/${effectiveSlug}`} target="_blank"
                   className="shrink-0 rounded-xl border border-border bg-background px-3 py-2 text-xs text-muted-foreground hover:border-violet-500/30 hover:text-violet-600 transition-all"
                 >
                   <Eye className="h-3.5 w-3.5" />
@@ -259,7 +448,12 @@ function ConfigEditor({ }: { profileId: string }) {
         <div>
           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mostrar en público</label>
           <div className="mt-2 flex flex-wrap gap-2">
-            {([['showEmail', 'Email', Mail], ['showLocation', 'Ubicación', MapPin], ['showWebsite', 'Sitio web', Globe]] as const).map(([key, label, Icon]) => {
+            {([
+              ['showEmail', 'Email', Mail],
+              ['showLocation', 'Ubicación', MapPin],
+              ['showWebsite', 'Sitio web', Globe],
+              ['showConnections', 'Conexiones', Users],
+            ] as const).map(([key, label, Icon]) => {
               const value = settings[key as keyof typeof settings] as boolean;
               return (
                 <button
@@ -281,6 +475,62 @@ function ConfigEditor({ }: { profileId: string }) {
         </div>
       </div>
 
+      {/* SEO */}
+      <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+          <Search className="h-4 w-4 text-violet-500" />SEO
+        </h3>
+        <p className="text-xs text-muted-foreground -mt-2">
+          Estos valores aparecen en buscadores y cuando compartes el enlace.
+        </p>
+        <div>
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+            Título <span className="font-normal normal-case">({seoTitle.length}/60)</span>
+          </label>
+          <input
+            value={seoTitle}
+            onChange={e => setSeoTitle(e.target.value.slice(0, 60))}
+            placeholder={`${effectiveSlug ?? 'tu-nombre'} — Desarrollador en EthosHub`}
+            className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-all"
+          />
+        </div>
+        <div>
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">
+            Descripción <span className="font-normal normal-case">({seoDescription.length}/155)</span>
+          </label>
+          <textarea
+            value={seoDescription}
+            onChange={e => setSeoDescription(e.target.value.slice(0, 155))}
+            rows={3}
+            placeholder="Breve descripción profesional visible en Google y redes sociales..."
+            className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-all resize-none"
+          />
+        </div>
+        {/* Preview chip */}
+        {(seoTitle || seoDescription) && (
+          <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-0.5">
+            <p className="text-[11px] text-muted-foreground/50 uppercase tracking-wider mb-1">Vista previa en buscador</p>
+            <p className="text-sm font-medium text-blue-600 dark:text-blue-400 line-clamp-1">
+              {seoTitle || `${effectiveSlug ?? 'tu-nombre'} — EthosHub`}
+            </p>
+            <p className="text-[11px] text-emerald-600 dark:text-emerald-500">
+              {window.location.origin}/p/{effectiveSlug ?? 'tu-usuario'}
+            </p>
+            {seoDescription && (
+              <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{seoDescription}</p>
+            )}
+          </div>
+        )}
+        <button
+          onClick={handleSeoSave}
+          disabled={seoSaving}
+          className="flex items-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 px-4 py-2 text-xs font-semibold text-white transition-colors"
+        >
+          {seoSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+          Guardar SEO
+        </button>
+      </div>
+
       {/* Content selection */}
       <div>
         <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
@@ -296,6 +546,11 @@ function ConfigEditor({ }: { profileId: string }) {
           >
             {loadingItems ? (
               <div className="flex items-center justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+            ) : storeError && !availableItems ? (
+              <div className="flex flex-col items-center gap-2 py-6">
+                <p className="text-xs text-destructive">{storeError}</p>
+                <button onClick={fetchAvailableItems} className="text-xs text-violet-500 hover:underline">Reintentar</button>
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {(availableItems?.projects ?? []).map((p) => (
@@ -329,6 +584,11 @@ function ConfigEditor({ }: { profileId: string }) {
           >
             {loadingItems ? (
               <div className="flex items-center justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+            ) : storeError && !availableItems ? (
+              <div className="flex flex-col items-center gap-2 py-6">
+                <p className="text-xs text-destructive">{storeError}</p>
+                <button onClick={fetchAvailableItems} className="text-xs text-violet-500 hover:underline">Reintentar</button>
+              </div>
             ) : (
               <div className="space-y-2">
                 {(availableItems?.experiences ?? []).map((e) => (
@@ -364,6 +624,11 @@ function ConfigEditor({ }: { profileId: string }) {
           >
             {loadingItems ? (
               <div className="flex items-center justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+            ) : storeError && !availableItems ? (
+              <div className="flex flex-col items-center gap-2 py-6">
+                <p className="text-xs text-destructive">{storeError}</p>
+                <button onClick={fetchAvailableItems} className="text-xs text-violet-500 hover:underline">Reintentar</button>
+              </div>
             ) : (
               <div className="space-y-2">
                 {(availableItems?.education ?? []).map((e) => (
@@ -394,6 +659,11 @@ function ConfigEditor({ }: { profileId: string }) {
           >
             {loadingItems ? (
               <div className="flex items-center justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+            ) : storeError && !availableItems ? (
+              <div className="flex flex-col items-center gap-2 py-6">
+                <p className="text-xs text-destructive">{storeError}</p>
+                <button onClick={fetchAvailableItems} className="text-xs text-violet-500 hover:underline">Reintentar</button>
+              </div>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {(availableItems?.hardSkills ?? []).map((s) => {
@@ -430,6 +700,11 @@ function ConfigEditor({ }: { profileId: string }) {
           >
             {loadingItems ? (
               <div className="flex items-center justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+            ) : storeError && !availableItems ? (
+              <div className="flex flex-col items-center gap-2 py-6">
+                <p className="text-xs text-destructive">{storeError}</p>
+                <button onClick={fetchAvailableItems} className="text-xs text-violet-500 hover:underline">Reintentar</button>
+              </div>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {(availableItems?.softSkills ?? []).map((s) => (
@@ -465,6 +740,9 @@ function ConfigEditor({ }: { profileId: string }) {
           Si no seleccionas ningún elemento en una sección, se mostrarán <strong>todos</strong> los de esa sección en tu portafolio público.
         </p>
       </div>
+
+      {/* Curriculum */}
+      <CurriculumSection profileImageUrl={undefined} />
     </div>
   );
 }
@@ -475,7 +753,7 @@ type Tab = 'preview' | 'config';
 
 export default function PortfolioPage() {
   const { profile } = useAuthStore();
-  const { fetchSettings, settings, loadingSettings } = usePortfolioStore();
+  const { fetchSettings, fetchAvailableItems, settings, loadingSettings } = usePortfolioStore();
   const [activeTab, setActiveTab] = useState<Tab>('preview');
   const [previewPortfolio, setPreviewPortfolio] = useState<PublicPortfolio | null>(null);
   const [previewLoading, setPreviewLoading] = useState(true);
@@ -486,7 +764,13 @@ export default function PortfolioPage() {
     fetchSettings();
   }, []);
 
-  // Reload preview whenever the tab is shown (picks up config changes)
+  // Pre-cargar los items disponibles en cuanto se cambia a la pestaña config.
+  // Así cuando el usuario abre un accordion, los datos ya están listos.
+  useEffect(() => {
+    if (activeTab === 'config') fetchAvailableItems();
+  }, [activeTab]);
+
+  // Reload preview whenever the tab is shown OR settings change while on preview
   useEffect(() => {
     if (activeTab !== 'preview') return;
     setPreviewLoading(true);
@@ -495,7 +779,7 @@ export default function PortfolioPage() {
       .then(setPreviewPortfolio)
       .catch(() => setPreviewError(true))
       .finally(() => setPreviewLoading(false));
-  }, [activeTab]);
+  }, [activeTab, settings?.showEmail, settings?.showLocation, settings?.showWebsite, settings?.showConnections, settings?.isPublished]);
 
   if (loadingSettings) return <PortfolioSkeleton />;
 
@@ -567,10 +851,30 @@ export default function PortfolioPage() {
                 <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-12 text-center">
                   <Eye className="h-9 w-9 text-muted-foreground/25 mx-auto mb-3" />
                   <p className="text-sm font-semibold text-foreground mb-1">No se pudo cargar la vista previa</p>
-                  <p className="text-xs text-muted-foreground">Verifica tu conexión o completa tu perfil.</p>
-                  <Link to="/dashboard/preferences" className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 px-4 py-2 text-xs font-semibold text-white transition-colors">
-                    <Pencil className="h-3.5 w-3.5" />Completar perfil
-                  </Link>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Puede ser un error de conexión con el servidor.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Si el problema persiste, asegúrate de tener nombre, apellido y estar activo en tu perfil.
+                  </p>
+                  <div className="flex items-center justify-center gap-2 mt-4">
+                    <button
+                      onClick={() => {
+                        setPreviewError(false);
+                        setPreviewLoading(true);
+                        portfolioService.getPreviewPortfolio()
+                          .then(setPreviewPortfolio)
+                          .catch(() => setPreviewError(true))
+                          .finally(() => setPreviewLoading(false));
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-background px-4 py-2 text-xs font-semibold text-muted-foreground hover:border-violet-500/30 hover:text-violet-600 transition-colors"
+                    >
+                      Reintentar
+                    </button>
+                    <Link to="/dashboard/preferences" className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 px-4 py-2 text-xs font-semibold text-white transition-colors">
+                      <Pencil className="h-3.5 w-3.5" />Editar perfil
+                    </Link>
+                  </div>
                 </div>
               ) : previewPortfolio ? (
                 <PortfolioPublicView portfolio={previewPortfolio} isPreview />

@@ -57,6 +57,19 @@ export const ROLE_REDIRECT_PATHS: Record<ProfileRole, string> = {
   guest:        '/',
 };
 
+// Extract the remaining TTL (seconds) from the JWT `exp` claim.
+// Falls back to 3600 (Supabase default) if the token can't be decoded.
+function jwtExpiresIn(token: string): number {
+  try {
+    const payload = token.split('.')[1];
+    const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+    if (typeof decoded.exp === 'number') {
+      return Math.max(decoded.exp - Math.floor(Date.now() / 1000), 0);
+    }
+  } catch { /* ignore */ }
+  return 3600;
+}
+
 async function login(email: string, password: string, role?: ProfileRole): Promise<LoginApiResult> {
   const normalizedEmail = email.toLowerCase().trim();
 
@@ -104,7 +117,7 @@ async function login(email: string, password: string, role?: ProfileRole): Promi
     profile,
     token: authResponse.token,
     tokenType: 'Bearer',
-    expiresIn: 86400,
+    expiresIn: jwtExpiresIn(authResponse.token),
   };
 }
 

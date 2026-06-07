@@ -62,8 +62,8 @@ function buildStyles(accent: string): string {
   return `
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{background:#07070f;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,sans-serif;line-height:1.6;min-height:100vh}
-a{color:${accent};text-decoration:none}
+body{background:#07070f;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,sans-serif;line-height:1.6;min-height:100vh;word-break:break-word;overflow-wrap:anywhere}
+a{color:${accent};text-decoration:none;word-break:break-all}
 a:hover{opacity:.8;text-decoration:underline}
 img{display:block;max-width:100%}
 
@@ -91,7 +91,7 @@ img{display:block;max-width:100%}
 .sb-dot{width:6px;height:6px;border-radius:50%;background:${accent};flex-shrink:0}
 
 /* ─── CONTENEDOR ────────────────────────────────────────────────── */
-.wrap{max-width:880px;margin:0 auto;padding:2.5rem 1.25rem 5rem}
+.wrap{max-width:880px;margin:0 auto;padding:2.5rem 1.25rem 5rem;overflow-x:hidden}
 
 /* ─── HERO ──────────────────────────────────────────────────────── */
 .hero{position:relative;overflow:hidden;background:linear-gradient(140deg,#0c0c1e 0%,#0e0e20 100%);border:1px solid rgba(255,255,255,.07);border-radius:1.25rem;padding:2rem;margin-bottom:1.75rem}
@@ -100,10 +100,10 @@ img{display:block;max-width:100%}
 .hero-inner{display:flex;gap:1.5rem;align-items:flex-start;position:relative;z-index:1}
 .hero-avatar{width:90px;height:90px;border-radius:50%;border:2.5px solid ${accent}50;object-fit:cover;flex-shrink:0;box-shadow:0 0 0 4px ${accent}15}
 .hero-ph{width:90px;height:90px;border-radius:50%;border:2.5px solid ${accent}50;background:linear-gradient(135deg,${accent}22,${accent}0a);display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:700;color:${accent};flex-shrink:0;box-shadow:0 0 0 4px ${accent}15}
-.hero-body{flex:1;min-width:0}
-.hero-name{font-size:1.65rem;font-weight:700;color:#f1f5f9;letter-spacing:-.025em;line-height:1.2}
-.hero-title{font-size:.95rem;color:${accent};font-weight:500;margin-top:.35rem;letter-spacing:-.01em}
-.hero-bio{font-size:.875rem;color:#94a3b8;margin-top:.75rem;line-height:1.75;max-width:580px}
+.hero-body{flex:1;min-width:0;overflow:hidden}
+.hero-name{font-size:1.65rem;font-weight:700;color:#f1f5f9;letter-spacing:-.025em;line-height:1.2;word-break:break-word}
+.hero-title{font-size:.95rem;color:${accent};font-weight:500;margin-top:.35rem;letter-spacing:-.01em;word-break:break-word}
+.hero-bio{font-size:.875rem;color:#94a3b8;margin-top:.75rem;line-height:1.75;max-width:580px;word-break:break-word}
 .hero-meta{display:flex;flex-wrap:wrap;gap:.65rem;margin-top:1rem}
 .meta-item{display:inline-flex;align-items:center;gap:.4rem;font-size:.8rem;color:#64748b}
 .meta-item svg{width:14px;height:14px;flex-shrink:0;opacity:.7}
@@ -127,13 +127,13 @@ img{display:block;max-width:100%}
 .proj-thumb-ph svg{width:36px;height:36px;color:${accent}50}
 .proj-body{padding:.875rem;flex:1;display:flex;flex-direction:column;gap:.45rem}
 .proj-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem}
-.proj-title{font-size:.875rem;font-weight:600;color:#f1f5f9;line-height:1.35}
+.proj-title{font-size:.875rem;font-weight:600;color:#f1f5f9;line-height:1.35;word-break:break-word}
 .feat-badge{flex-shrink:0;background:${accent}18;border:1px solid ${accent}32;border-radius:.375rem;padding:.15rem .5rem;font-size:.6rem;font-weight:700;color:${accent};text-transform:uppercase;letter-spacing:.07em;display:flex;align-items:center;gap:.25rem}
 .feat-badge svg{width:9px;height:9px}
 .proj-meta{display:flex;align-items:center;gap:.45rem;font-size:.72rem;color:#64748b}
 .status-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 .dot-z{background:#52525b}.dot-a{background:#f59e0b}.dot-g{background:#10b981}.dot-arc{background:#3f3f46}
-.proj-desc{font-size:.78rem;color:#94a3b8;line-height:1.7;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.proj-desc{font-size:.78rem;color:#94a3b8;line-height:1.7;word-break:break-word}
 .proj-tech{display:flex;flex-wrap:wrap;gap:.3rem}
 .t-pill{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:.375rem;padding:.2rem .5rem;font-size:.68rem;color:#94a3b8}
 .proj-footer{display:flex;gap:.45rem;padding-top:.5rem;border-top:1px solid rgba(255,255,255,.05);margin-top:auto}
@@ -147,11 +147,11 @@ img{display:block;max-width:100%}
 .exp-logo{width:42px;height:42px;border-radius:.625rem;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.04);object-fit:contain;flex-shrink:0;padding:4px}
 .exp-logo-ph{width:42px;height:42px;border-radius:.625rem;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .exp-logo-ph svg{width:18px;height:18px;color:#475569}
-.exp-body{flex:1;min-width:0}
-.exp-job{font-size:.9rem;font-weight:600;color:#f1f5f9}
-.exp-company{font-size:.8rem;color:${accent};font-weight:500}
+.exp-body{flex:1;min-width:0;overflow:hidden}
+.exp-job{font-size:.9rem;font-weight:600;color:#f1f5f9;word-break:break-word}
+.exp-company{font-size:.8rem;color:${accent};font-weight:500;word-break:break-word}
 .exp-period{font-size:.73rem;color:#64748b;margin-top:.15rem}
-.exp-desc{font-size:.78rem;color:#94a3b8;margin-top:.45rem;line-height:1.7}
+.exp-desc{font-size:.78rem;color:#94a3b8;margin-top:.45rem;line-height:1.7;word-break:break-word}
 .badge-current{display:inline-flex;align-items:center;gap:.3rem;font-size:.68rem;background:#10b98112;border:1px solid #10b98128;border-radius:.375rem;padding:.15rem .5rem;color:#10b981;margin-top:.4rem}
 .badge-current svg{width:10px;height:10px}
 
@@ -162,9 +162,9 @@ img{display:block;max-width:100%}
 .edu-logo{width:38px;height:38px;border-radius:.5rem;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.04);object-fit:contain;flex-shrink:0;padding:3px}
 .edu-logo-ph{width:38px;height:38px;border-radius:.5rem;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .edu-logo-ph svg{width:16px;height:16px;color:#475569}
-.edu-body{flex:1;min-width:0}
-.edu-degree{font-size:.875rem;font-weight:600;color:#f1f5f9}
-.edu-inst{font-size:.8rem;color:${accent};font-weight:500}
+.edu-body{flex:1;min-width:0;overflow:hidden}
+.edu-degree{font-size:.875rem;font-weight:600;color:#f1f5f9;word-break:break-word}
+.edu-inst{font-size:.8rem;color:${accent};font-weight:500;word-break:break-word}
 .edu-period{font-size:.73rem;color:#64748b;margin-top:.15rem}
 .badge-progress{display:inline-flex;align-items:center;gap:.3rem;font-size:.68rem;background:${accent}10;border:1px solid ${accent}28;border-radius:.375rem;padding:.15rem .5rem;color:${accent};margin-top:.4rem}
 .badge-progress svg{width:10px;height:10px}

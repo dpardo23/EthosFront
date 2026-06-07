@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { toast as sonnerToast } from 'sonner';
 import type { Toast, Theme } from '@/shared/types';
 import { generateId } from '@/shared/lib/utils';
 
@@ -74,6 +75,18 @@ export const useUiStore = create<UiStore>()(
 
       addToast: (toast: Omit<Toast, 'id'>) => {
         const id = generateId();
+        // Fire sonner toast (visible UI)
+        const description = toast.message;
+        if (toast.type === 'success') {
+          sonnerToast.success(toast.title, { id, description });
+        } else if (toast.type === 'error') {
+          sonnerToast.error(toast.title, { id, description });
+        } else if (toast.type === 'warning') {
+          sonnerToast.warning(toast.title, { id, description });
+        } else {
+          sonnerToast(toast.title, { id, description });
+        }
+        // Keep store in sync for any components that read toasts[]
         set((state) => ({
           toasts: [...state.toasts, { ...toast, id }],
         }));

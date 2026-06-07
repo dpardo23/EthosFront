@@ -2,11 +2,16 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Profile, ProfileRole } from '@/shared/types';
 import { authService, ROLE_DISPLAY_NAMES, ROLE_REDIRECT_PATHS, type ProfileUpdatePayload } from '@/shared/services/authService';
+import { setSupabaseAuth, supabase } from '@/lib/supabase';
 import { findMockProfile } from '@/features/auth';
 
 const ACCESS_TOKEN_KEY = 'ethoshub_access_token';
 const TOKEN_TYPE_KEY = 'ethoshub_token_type';
 const EXPIRES_AT_KEY = 'ethoshub_access_expires_at';
+
+// sessionStorage keeps tokens tab-isolated so two users in different tabs
+// don't overwrite each other's session (multi-session dev scenario).
+const storage = sessionStorage;
 
 interface LoginResult {
   profile: Profile;
@@ -53,8 +58,8 @@ export const useAuthStore = create<AuthStore>()(
         const mockProfile = findMockProfile(email);
         if (mockProfile) {
           const token = `mock-token-${mockProfile.role}-${Date.now()}`;
-          localStorage.setItem(ACCESS_TOKEN_KEY, token);
-          localStorage.setItem(TOKEN_TYPE_KEY, 'Bearer');
+          storage.setItem(ACCESS_TOKEN_KEY, token);
+          storage.setItem(TOKEN_TYPE_KEY, 'Bearer');
           set({ profile: mockProfile, isAuthenticated: true, isAuthResolved: true, loading: false, error: null });
           return {
             profile: mockProfile,
@@ -73,14 +78,22 @@ export const useAuthStore = create<AuthStore>()(
           
           const profile = { ...result.profile, role: normalizedRole };
 
-          localStorage.setItem(ACCESS_TOKEN_KEY, result.token);
-          localStorage.setItem(TOKEN_TYPE_KEY, result.tokenType || 'Bearer');
-          
-          if (typeof result.expiresIn === 'number' && Number.isFinite(result.expiresIn)) {
-            localStorage.setItem(EXPIRES_AT_KEY, String(Math.floor(Date.now() / 1000) + result.expiresIn));
-          } else {
-            localStorage.removeItem(EXPIRES_AT_KEY);
+          // Write to both storages: sessionStorage for tab isolation,
+          // localStorage as fallback for direct-URL reloads and new tabs.
+          const expiresAtVal = typeof result.expiresIn === 'number' && Number.isFinite(result.expiresIn)
+            ? String(Math.floor(Date.now() / 1000) + result.expiresIn)
+            : null;
+
+          for (const s of [sessionStorage, localStorage]) {
+            s.setItem(ACCESS_TOKEN_KEY, result.token);
+            s.setItem(TOKEN_TYPE_KEY, result.tokenType || 'Bearer');
+            if (expiresAtVal) s.setItem(EXPIRES_AT_KEY, expiresAtVal);
+            else s.removeItem(EXPIRES_AT_KEY);
           }
+
+          // Autenticar el cliente Supabase con el JWT de Supabase para que
+          // RPC y Realtime funcionen como `authenticated` con auth.uid() correcto.
+          setSupabaseAuth(result.token);
 
           set({ profile, isAuthenticated: true, isAuthResolved: true, loading: false });
 
@@ -200,20 +213,44 @@ export const useAuthStore = create<AuthStore>()(
         try {
           await authService.logout();
         } finally {
-          localStorage.removeItem(ACCESS_TOKEN_KEY);
-          localStorage.removeItem(TOKEN_TYPE_KEY);
-          localStorage.removeItem(EXPIRES_AT_KEY);
-          // Wipe persisted store so BFCache cannot restore a stale authenticated state
+          for (const s of [sessionStorage, localStorage]) {
+            s.removeItem(ACCESS_TOKEN_KEY);
+            s.removeItem(TOKEN_TYPE_KEY);
+            s.removeItem(EXPIRES_AT_KEY);
+          }
+          supabase?.auth.signOut({ scope: 'local' });
           set({ profile: null, isAuthenticated: false, loading: false, error: null });
         }
       },
 
       checkAuth: async () => {
-        const token     = localStorage.getItem(ACCESS_TOKEN_KEY);
-        const expiresAt = localStorage.getItem(EXPIRES_AT_KEY);
+        // Read token from sessionStorage first, fall back to localStorage.
+        // sessionStorage is tab-isolated but survives F5. localStorage persists
+        // across tabs and survives opening the URL directly in a new tab.
+        const token =
+          sessionStorage.getItem(ACCESS_TOKEN_KEY) ??
+          localStorage.getItem(ACCESS_TOKEN_KEY);
+        const expiresAt =
+          sessionStorage.getItem(EXPIRES_AT_KEY) ??
+          localStorage.getItem(EXPIRES_AT_KEY);
 
-        // Token absent or expired → treat as unauthenticated
-        if (!token || (expiresAt && Date.now() > Number(expiresAt) * 1000)) {
+        // Helper: read the JWT exp claim directly — more reliable than a stored
+        // timestamp that may have been written with the wrong clock or TTL.
+        function jwtExpired(t: string): boolean {
+          try {
+            const payload = t.split('.')[1];
+            const { exp } = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+            return typeof exp === 'number' && Math.floor(Date.now() / 1000) > exp;
+          } catch { return false; }
+        }
+
+        const expiredByStore = !!expiresAt && Date.now() > Number(expiresAt) * 1000;
+        const expiredByJwt   = token && !token.startsWith('mock-') ? jwtExpired(token) : false;
+
+        if (!token || expiredByStore || expiredByJwt) {
+          sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+          sessionStorage.removeItem(TOKEN_TYPE_KEY);
+          sessionStorage.removeItem(EXPIRES_AT_KEY);
           localStorage.removeItem(ACCESS_TOKEN_KEY);
           localStorage.removeItem(TOKEN_TYPE_KEY);
           localStorage.removeItem(EXPIRES_AT_KEY);
@@ -221,23 +258,39 @@ export const useAuthStore = create<AuthStore>()(
           return;
         }
 
+        // Mirror token to sessionStorage if it only existed in localStorage
+        // (e.g. new tab opened after login in another tab).
+        if (!sessionStorage.getItem(ACCESS_TOKEN_KEY) && token) {
+          sessionStorage.setItem(ACCESS_TOKEN_KEY, token);
+          const tt = localStorage.getItem(TOKEN_TYPE_KEY);
+          if (tt) sessionStorage.setItem(TOKEN_TYPE_KEY, tt);
+          if (expiresAt) sessionStorage.setItem(EXPIRES_AT_KEY, expiresAt);
+        }
+
+        // Restore Supabase Realtime auth after page reload.
+        if (!token.startsWith('mock-')) setSupabaseAuth(token);
+
         const { profile } = get();
         set({ isAuthenticated: !!profile, isAuthResolved: true });
       },
 
       completeOAuthLogin: ({ profile, token, tokenType = 'Bearer', expiresIn }) => {
-        localStorage.setItem(ACCESS_TOKEN_KEY, token);
-        localStorage.setItem(TOKEN_TYPE_KEY, tokenType);
-        // Supabase access tokens expire in 3600s; always persist the expiry so
-        // isTokenExpired() can guard stale sessions after browser refresh.
         const ttl = typeof expiresIn === 'number' && expiresIn > 0 ? expiresIn : 3600;
-        localStorage.setItem(EXPIRES_AT_KEY, String(Math.floor(Date.now() / 1000) + ttl));
+        const expiresAtVal = String(Math.floor(Date.now() / 1000) + ttl);
+        for (const s of [sessionStorage, localStorage]) {
+          s.setItem(ACCESS_TOKEN_KEY, token);
+          s.setItem(TOKEN_TYPE_KEY, tokenType);
+          s.setItem(EXPIRES_AT_KEY, expiresAtVal);
+        }
 
         const rawRole = (profile.role || '').toLowerCase();
         const normalizedRole: ProfileRole =
           rawRole.includes('admin')                              ? 'admin'
           : rawRole.includes('rec') || rawRole === 'recruiter'  ? 'recruiter'
           : 'professional';
+
+        // Autenticar el cliente Supabase con el JWT OAuth para RPC y Realtime.
+        setSupabaseAuth(token);
 
         set({ profile: { ...profile, role: normalizedRole }, isAuthenticated: true, isAuthResolved: true, error: null, loading: false });
       },

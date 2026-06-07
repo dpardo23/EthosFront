@@ -11,8 +11,9 @@ export interface WorkExperience {
   companyUrl?: string;
   startDate?: string;
   endDate?: string;
-  // Campos extra que mantienes en tu UI original:
   location?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   technologies?: string[];
   createdAt?: string;
   updatedAt?: string;

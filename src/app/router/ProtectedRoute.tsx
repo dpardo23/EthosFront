@@ -8,10 +8,10 @@ const EXPIRES_AT_KEY = 'ethoshub_access_expires_at';
 const ACCESS_TOKEN_KEY = 'ethoshub_access_token';
 
 function isTokenExpired(): boolean {
-  const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+  const token = sessionStorage.getItem(ACCESS_TOKEN_KEY);
   if (!token) return true;
 
-  const expiresAt = localStorage.getItem(EXPIRES_AT_KEY);
+  const expiresAt = sessionStorage.getItem(EXPIRES_AT_KEY);
   if (!expiresAt) return false;
 
   return Date.now() > Number(expiresAt) * 1000;

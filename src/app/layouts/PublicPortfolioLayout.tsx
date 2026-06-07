@@ -8,12 +8,12 @@ import i18n from '@/i18n';
 
 // ─── Language Switcher ───────────────────────────────────────────────
 function LangSwitcher() {
-  const [lang, setLang] = useState<'es' | 'en'>(
-    (localStorage.getItem('ethoshub_language') as 'es' | 'en') ?? 'es'
+  const [lang, setLang] = useState<'es' | 'en' | 'pt'>(
+    (localStorage.getItem('ethoshub_language') as 'es' | 'en' | 'pt') ?? 'es'
   );
   const [open, setOpen] = useState(false);
 
-  const toggle = (next: 'es' | 'en') => {
+  const toggle = (next: 'es' | 'en' | 'pt') => {
     setLang(next);
     i18n.changeLanguage(next);
     localStorage.setItem('ethoshub_language', next);
@@ -45,7 +45,7 @@ function LangSwitcher() {
               transition={{ duration: 0.15 }}
               className="absolute right-0 top-full z-50 mt-2 w-28 overflow-hidden rounded-xl border border-white/10 bg-[#0A0A14]/95 shadow-2xl backdrop-blur-xl"
             >
-              {(['es', 'en'] as const).map((l) => (
+              {(['es', 'en', 'pt'] as const).map((l) => (
                 <button
                   key={l}
                   onClick={() => toggle(l)}
@@ -55,8 +55,10 @@ function LangSwitcher() {
                       : 'text-white/60 hover:bg-white/5 hover:text-white'
                   }`}
                 >
-                  <span className="text-base">{l === 'es' ? '🇪🇸' : '🇺🇸'}</span>
-                  {l === 'es' ? 'Español' : 'English'}
+                  <span className="text-base">
+                    {l === 'es' ? '🇪🇸' : l === 'en' ? '🇺🇸' : '🇧🇷'}
+                  </span>
+                  {l === 'es' ? 'Español' : l === 'en' ? 'English' : 'Português'}
                 </button>
               ))}
             </motion.div>

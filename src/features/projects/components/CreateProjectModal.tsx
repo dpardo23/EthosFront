@@ -171,9 +171,8 @@ async function uploadProjectFile(file: File): Promise<{ url: string; name: strin
   formData.append('file', file);
 
   try {
-    // Al usar api.post, el token y la URL base ya se inyectan automáticamente.
-    // No se fija Content-Type manualmente: el navegador lo hace con el boundary correcto.
     const response = await api.post('/uploads', formData, {
+      timeout: 120_000,
       headers: { 'Content-Type': undefined },
     });
 
@@ -1077,7 +1076,6 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.18 }}
-        onClick={handleClose}
       />
       {/* Scrollable container — pointer-events pass through to backdrop */}
       <div className="absolute inset-0 z-[81] flex items-center justify-center p-4 overflow-y-auto pointer-events-none">

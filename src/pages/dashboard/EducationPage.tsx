@@ -4,7 +4,8 @@ import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import {
   GraduationCap, CalendarRange, Plus, Pencil, X, Trash2, Building2, Calendar,
   Sparkles, Loader2, Upload, Link as LinkIcon, FileText,
-  GripVertical, MapPin, ArrowUpDown, Eye, Check, Award, BookOpen, Percent
+  GripVertical, MapPin, ArrowUpDown, Eye, Check, Award, BookOpen, Percent,
+  Download, ChevronDown, ChevronUp, ZoomIn
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/shared/ui';
@@ -30,6 +31,7 @@ interface FormData {
   isCurrent: boolean;
   credentialUrl: string;
   educationType: string;
+  educationTypeCustom: string;
   gpa: string;
   verificationUrl: string;
   institutionLogoUrl: string;
@@ -38,8 +40,8 @@ interface FormData {
 
 const EMPTY_FORM: FormData = {
   institutionName: '', degree: '', fieldOfStudy: '', startDate: '', endDate: '',
-  isCurrent: false, credentialUrl: '', educationType: 'university', gpa: '',
-  verificationUrl: '', institutionLogoUrl: '', isVisible: true,
+  isCurrent: false, credentialUrl: '', educationType: 'university', educationTypeCustom: '',
+  gpa: '', verificationUrl: '', institutionLogoUrl: '', isVisible: true,
 };
 
 
@@ -51,7 +53,10 @@ const EDU_TYPES: Record<string, string> = {
   course: 'Curso',
   bootcamp: 'Bootcamp',
   high_school: 'Secundaria',
+  other: 'Otro',
 };
+
+const KNOWN_EDU_TYPE_KEYS = Object.keys(EDU_TYPES);
 
 const fmtDate = (d?: string) => {
   if (!d) return '';
@@ -80,38 +85,74 @@ interface UploadZoneProps {
   onClick: () => void;
   onRemove: () => void;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onUrlChange: (url: string) => void;
 }
 
-function UploadZone({ value, uploading, isDragging, hint, accept, inputRef, onDragOver, onDragLeave, onDrop, onClick, onRemove, onChange }: UploadZoneProps) {
-  return (
-    <div className="h-36">
-      {uploading ? (
-        <div className="h-full flex items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/30">
-          <Loader2 className="h-5 w-5 animate-spin text-primary" />
-        </div>
-      ) : value ? (
-        <div className="relative h-full group rounded-xl border border-border bg-muted/30 overflow-hidden">
-          {isImg(value) ? (
-            <img src={value} alt="Preview" className="h-full w-full object-contain p-2" />
-          ) : (
-            <div className="h-full flex flex-col items-center justify-center gap-2 text-muted-foreground">
-              <FileText className="h-7 w-7 text-primary" />
-              <span className="text-xs font-medium text-foreground">
-                {isPdf(value) ? 'PDF adjunto' : 'Archivo adjunto'}
-              </span>
-            </div>
-          )}
-          <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button type="button" onClick={onRemove}
-              className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white hover:bg-destructive/90 transition-colors">
-              Eliminar
-            </button>
+function UploadZone({ value, uploading, isDragging, hint, accept, inputRef, onDragOver, onDragLeave, onDrop, onClick, onRemove, onChange, onUrlChange }: UploadZoneProps) {
+  const [mode, setMode] = useState<'upload' | 'url'>('upload');
+  const [urlDraft, setUrlDraft] = useState('');
+  const [imgError, setImgError] = useState(false);
+
+  const applyUrl = () => {
+    const trimmed = urlDraft.trim();
+    if (trimmed) onUrlChange(trimmed);
+  };
+
+  useEffect(() => { if (!value) { setUrlDraft(''); setImgError(false); } }, [value]);
+
+  if (uploading) {
+    return (
+      <div className="h-36 flex items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/30">
+        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (value) {
+    return (
+      <div className="relative h-36 group rounded-xl border border-border bg-muted/30 overflow-hidden">
+        {isImg(value) ? (
+          <img src={value} alt="Preview" className="h-full w-full object-contain p-2" />
+        ) : (
+          <div className="h-full flex flex-col items-center justify-center gap-2 text-muted-foreground">
+            <FileText className="h-7 w-7 text-primary" />
+            <span className="text-xs font-medium text-foreground">
+              {isPdf(value) ? 'PDF adjunto' : 'Archivo adjunto'}
+            </span>
           </div>
+        )}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button type="button" onClick={() => { onRemove(); setUrlDraft(''); setImgError(false); }}
+            className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white hover:bg-destructive/90 transition-colors">
+            Eliminar
+          </button>
         </div>
-      ) : (
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {/* Mode tabs */}
+      <div className="flex rounded-lg border border-border bg-muted/30 p-0.5 gap-0.5">
+        <button type="button" onClick={() => setMode('upload')}
+          className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1 text-xs font-medium transition-colors ${
+            mode === 'upload' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+          }`}>
+          <Upload className="h-3 w-3" /> Archivo
+        </button>
+        <button type="button" onClick={() => setMode('url')}
+          className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1 text-xs font-medium transition-colors ${
+            mode === 'url' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+          }`}>
+          <LinkIcon className="h-3 w-3" /> URL
+        </button>
+      </div>
+
+      {mode === 'upload' ? (
         <div
           onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop} onClick={onClick}
-          className={`h-full flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed transition-colors ${
+          className={`h-28 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed transition-colors ${
             isDragging ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40 bg-muted/30 hover:bg-muted/50'
           }`}
         >
@@ -121,6 +162,38 @@ function UploadZone({ value, uploading, isDragging, hint, accept, inputRef, onDr
             <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>
           </div>
           <input ref={inputRef} type="file" accept={accept} onChange={onChange} className="hidden" />
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <input
+              type="url"
+              value={urlDraft}
+              onChange={e => { setUrlDraft(e.target.value); setImgError(false); }}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); applyUrl(); } }}
+              placeholder="https://..."
+              className="flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary"
+            />
+            <button type="button" onClick={applyUrl} disabled={!urlDraft.trim()}
+              className="shrink-0 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-40 transition-colors">
+              Aplicar
+            </button>
+          </div>
+          {urlDraft && urlDraft.startsWith('http') && (
+            <div className="h-20 rounded-xl border border-border bg-muted/30 overflow-hidden flex items-center justify-center">
+              {isPdf(urlDraft) ? (
+                <div className="flex flex-col items-center gap-1.5">
+                  <FileText className="h-6 w-6 text-primary" />
+                  <span className="text-xs font-medium text-foreground">PDF</span>
+                </div>
+              ) : imgError ? (
+                <p className="text-xs text-muted-foreground">No se pudo cargar la imagen</p>
+              ) : (
+                <img src={urlDraft} alt="Preview" className="h-full w-full object-contain p-2"
+                  onError={() => setImgError(true)} />
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -214,36 +287,39 @@ function EducationCard({ rec, reorderMode, deleteConfirmId, isDeleting, onView, 
 
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-sm font-semibold text-foreground truncate">{rec.degree}</h3>
+              <div className="min-w-0 flex-1">
+                {/* Degree + badges — siempre 1 línea */}
+                <div className="flex items-center gap-1.5 overflow-hidden">
+                  <h3 className="text-sm font-semibold text-foreground truncate shrink min-w-0">{rec.degree}</h3>
                   {rec.isCurrent && (
-                    <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    <span className="shrink-0 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
                       Cursando
                     </span>
                   )}
                   {rec.educationType && (
-                    <span className="rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                    <span className="shrink-0 rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                       {EDU_TYPES[rec.educationType] || rec.educationType}
                     </span>
                   )}
                 </div>
+                {/* Institución — siempre 1 línea */}
                 <p className="text-sm font-medium text-primary truncate mt-0.5">{rec.institutionName}</p>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                {/* Meta row — siempre 1 línea, sin wrap */}
+                <div className="flex items-center gap-x-3 mt-1 overflow-hidden">
+                  <span className="shrink-0 flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
                     <CalendarRange className="h-3 w-3" />
                     {fmtDate(rec.startDate)} – {rec.isCurrent ? 'Presente' : fmtDate(rec.endDate)}
                   </span>
                   {rec.fieldOfStudy && (
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <BookOpen className="h-3 w-3" />
-                      {rec.fieldOfStudy}
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground min-w-0 overflow-hidden">
+                      <BookOpen className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{rec.fieldOfStudy}</span>
                     </span>
                   )}
                   {rec.gpa && (
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <span className="shrink-0 flex items-center gap-1 text-xs text-muted-foreground">
                       <Percent className="h-3 w-3" />
-                      GPA {rec.gpa}
+                      {rec.gpa}
                     </span>
                   )}
                 </div>
@@ -274,13 +350,15 @@ function EducationCard({ rec, reorderMode, deleteConfirmId, isDeleting, onView, 
               )}
             </div>
 
-            {/* Credential indicator */}
-            {rec.credentialUrl && (
-              <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg bg-muted/60 px-2.5 py-1 text-xs text-muted-foreground">
-                <FileText className="h-3 w-3 text-primary/70" />
-                {isPdf(rec.credentialUrl) ? 'PDF adjunto' : 'Certificado adjunto'}
-              </div>
-            )}
+            {/* Credential indicator — espacio fijo siempre reservado */}
+            <div className="mt-2.5 h-6 flex items-center">
+              {rec.credentialUrl && (
+                <div className="inline-flex items-center gap-1.5 rounded-lg bg-muted/60 px-2.5 py-1 text-xs text-muted-foreground">
+                  <FileText className="h-3 w-3 text-primary/70" />
+                  {isPdf(rec.credentialUrl) ? 'PDF adjunto' : 'Certificado adjunto'}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -327,6 +405,8 @@ export default function EducationPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingRec, setEditingRec] = useState<AcademicRecord | null>(null);
   const [detailRec, setDetailRec] = useState<AcademicRecord | null>(null);
+  const [detailPdfOpen, setDetailPdfOpen] = useState(false);
+  const [detailLightbox, setDetailLightbox] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);
@@ -383,6 +463,8 @@ export default function EducationPage() {
 
   const openEdit = (rec: AcademicRecord) => {
     setEditingRec(rec);
+    const rawType = rec.educationType || 'university';
+    const isCustom = !!rawType && !KNOWN_EDU_TYPE_KEYS.includes(rawType);
     setForm({
       institutionName: rec.institutionName || '',
       degree: rec.degree || '',
@@ -391,7 +473,8 @@ export default function EducationPage() {
       endDate: rec.endDate?.toString().split('T')[0] || '',
       isCurrent: rec.isCurrent || false,
       credentialUrl: rec.credentialUrl || '',
-      educationType: rec.educationType || 'university',
+      educationType: isCustom ? 'other' : rawType,
+      educationTypeCustom: isCustom ? rawType : '',
       gpa: rec.gpa ? String(rec.gpa) : '',
       verificationUrl: rec.verificationUrl || '',
       institutionLogoUrl: rec.institutionLogoUrl || '',
@@ -432,6 +515,8 @@ export default function EducationPage() {
     if (!form.degree.trim()) e.degree = 'Obligatorio';
     else if (form.degree.trim().length < 3) e.degree = 'Mínimo 3 caracteres';
     if (!form.fieldOfStudy.trim()) e.fieldOfStudy = 'Obligatorio';
+    if (form.educationType === 'other' && !form.educationTypeCustom.trim())
+      e.educationTypeCustom = 'Especifica el tipo de educación';
     if (!form.startDate) e.startDate = 'Obligatorio';
     else if (form.startDate > MAX_DATE) e.startDate = 'No puede ser una fecha futura';
     if (!form.isCurrent) {
@@ -440,8 +525,15 @@ export default function EducationPage() {
       else if (form.startDate && new Date(form.endDate) < new Date(form.startDate))
         e.endDate = 'Anterior al inicio';
     }
-    if (form.gpa && (parseFloat(form.gpa) < 0 || parseFloat(form.gpa) > 100))
-      e.gpa = 'Entre 0 y 100';
+    if (form.gpa) {
+      const gpaStr = form.gpa.trim();
+      const val = parseFloat(gpaStr);
+      if (isNaN(val) || val < 0 || val > 100) {
+        e.gpa = 'Entre 0 y 100';
+      } else if (!/^\d+(\.\d{1,2})?$/.test(gpaStr)) {
+        e.gpa = 'Máximo 2 decimales';
+      }
+    }
     setErrors(e);
     return !Object.keys(e).length;
   };
@@ -457,6 +549,9 @@ export default function EducationPage() {
         profileId: profile.id,
         gpa: form.gpa ? parseFloat(form.gpa) : null,
         endDate: form.endDate || null,
+        educationType: form.educationType === 'other'
+          ? (form.educationTypeCustom.trim() || 'other')
+          : form.educationType,
       };
       if (editingRec?.academicRecordId) {
         await educationService.updateRecord(profile.id, editingRec.academicRecordId, payload);
@@ -541,7 +636,6 @@ export default function EducationPage() {
           <motion.div
             className="absolute inset-0 bg-background/75 backdrop-blur-md"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={closeForm}
           />
           <motion.div
             className="relative flex flex-col w-full sm:max-w-4xl max-h-[95dvh] sm:max-h-[88dvh] overflow-hidden rounded-t-2xl sm:rounded-2xl bg-card border border-border shadow-2xl"
@@ -575,23 +669,41 @@ export default function EducationPage() {
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                       <Building2 className="h-3 w-3" /> Institución *
                     </label>
-                    <input type="text" value={form.institutionName}
+                    <input type="text" value={form.institutionName} maxLength={80}
                       onChange={e => setForm(p => ({ ...p, institutionName: e.target.value }))}
                       className={inputCls(errors.institutionName)}
                     />
-                    {errors.institutionName && <p className="text-xs text-destructive">{errors.institutionName}</p>}
+                    <div className="flex items-center justify-between">
+                      {errors.institutionName
+                        ? <p className="text-xs text-destructive">{errors.institutionName}</p>
+                        : <span />}
+                      <span className={`text-[10px] tabular-nums ${form.institutionName.length >= 80 ? 'text-destructive' : 'text-muted-foreground/50'}`}>
+                        {form.institutionName.length}/80
+                      </span>
+                    </div>
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                       <Award className="h-3 w-3" /> Tipo de educación *
                     </label>
                     <select value={form.educationType}
-                      onChange={e => setForm(p => ({ ...p, educationType: e.target.value }))}
+                      onChange={e => setForm(p => ({ ...p, educationType: e.target.value, educationTypeCustom: e.target.value !== 'other' ? '' : p.educationTypeCustom }))}
                       className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-primary">
                       {Object.entries(EDU_TYPES).map(([v, l]) => (
                         <option key={v} value={v}>{l}</option>
                       ))}
                     </select>
+                    {form.educationType === 'other' && (
+                      <input
+                        type="text"
+                        value={form.educationTypeCustom}
+                        maxLength={50}
+                        placeholder="Especifica el tipo de educación..."
+                        onChange={e => setForm(p => ({ ...p, educationTypeCustom: e.target.value }))}
+                        className={inputCls(errors.educationTypeCustom)}
+                      />
+                    )}
+                    {errors.educationTypeCustom && <p className="text-xs text-destructive">{errors.educationTypeCustom}</p>}
                   </div>
                 </div>
 
@@ -601,21 +713,35 @@ export default function EducationPage() {
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                       <GraduationCap className="h-3 w-3" /> Título / Grado *
                     </label>
-                    <input type="text" value={form.degree}
+                    <input type="text" value={form.degree} maxLength={80}
                       onChange={e => setForm(p => ({ ...p, degree: e.target.value }))}
                       className={inputCls(errors.degree)}
                     />
-                    {errors.degree && <p className="text-xs text-destructive">{errors.degree}</p>}
+                    <div className="flex items-center justify-between">
+                      {errors.degree
+                        ? <p className="text-xs text-destructive">{errors.degree}</p>
+                        : <span />}
+                      <span className={`text-[10px] tabular-nums ${form.degree.length >= 80 ? 'text-destructive' : 'text-muted-foreground/50'}`}>
+                        {form.degree.length}/80
+                      </span>
+                    </div>
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                       <BookOpen className="h-3 w-3" /> Área de estudio *
                     </label>
-                    <input type="text" value={form.fieldOfStudy}
+                    <input type="text" value={form.fieldOfStudy} maxLength={80}
                       onChange={e => setForm(p => ({ ...p, fieldOfStudy: e.target.value }))}
                       className={inputCls(errors.fieldOfStudy)}
                     />
-                    {errors.fieldOfStudy && <p className="text-xs text-destructive">{errors.fieldOfStudy}</p>}
+                    <div className="flex items-center justify-between">
+                      {errors.fieldOfStudy
+                        ? <p className="text-xs text-destructive">{errors.fieldOfStudy}</p>
+                        : <span />}
+                      <span className={`text-[10px] tabular-nums ${form.fieldOfStudy.length >= 80 ? 'text-destructive' : 'text-muted-foreground/50'}`}>
+                        {form.fieldOfStudy.length}/80
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -694,6 +820,7 @@ export default function EducationPage() {
                         onClick={() => logoRef.current?.click()}
                         onRemove={() => { setForm(p => ({ ...p, institutionLogoUrl: '' })); if (logoRef.current) logoRef.current.value = ''; }}
                         onChange={e => { if (e.target.files?.[0]) mkLogoHandler(e.target.files[0]); }}
+                        onUrlChange={url => setForm(p => ({ ...p, institutionLogoUrl: url }))}
                       />
                       {errors.logo && <p className="text-xs text-destructive">{errors.logo}</p>}
                     </div>
@@ -708,6 +835,7 @@ export default function EducationPage() {
                         onClick={() => credRef.current?.click()}
                         onRemove={() => { setForm(p => ({ ...p, credentialUrl: '' })); if (credRef.current) credRef.current.value = ''; }}
                         onChange={e => { if (e.target.files?.[0]) mkCredHandler(e.target.files[0]); }}
+                        onUrlChange={url => setForm(p => ({ ...p, credentialUrl: url }))}
                       />
                       {errors.cred && <p className="text-xs text-destructive">{errors.cred}</p>}
                     </div>
@@ -773,8 +901,8 @@ export default function EducationPage() {
                   </div>
                 )}
                 <div className="min-w-0">
-                  <p className="font-semibold text-sm text-foreground truncate leading-snug">{detailRec.degree}</p>
-                  <p className="text-xs text-primary/80 font-medium truncate mt-0.5">{detailRec.institutionName}</p>
+                  <p className="font-semibold text-sm text-foreground break-words leading-snug">{detailRec.degree}</p>
+                  <p className="text-xs text-primary/80 font-medium break-words mt-0.5">{detailRec.institutionName}</p>
                 </div>
               </div>
               <div className="flex shrink-0 gap-1 ml-2">
@@ -828,22 +956,22 @@ export default function EducationPage() {
                 <div className="rounded-2xl border border-border bg-muted/30 overflow-hidden">
                   <div className="px-4 py-3 border-b border-border/60">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Título / Certificación</p>
-                    <p className="text-sm font-semibold text-foreground leading-snug">{detailRec.degree}</p>
+                    <p className="text-sm font-semibold text-foreground leading-snug break-words">{detailRec.degree}</p>
                     {detailRec.fieldOfStudy && (
-                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
-                        <BookOpen className="h-3 w-3 shrink-0 text-primary/50" />
-                        {detailRec.fieldOfStudy}
+                      <p className="text-xs text-muted-foreground mt-1 flex items-start gap-1.5">
+                        <BookOpen className="h-3 w-3 shrink-0 text-primary/50 mt-0.5" />
+                        <span className="break-words min-w-0">{detailRec.fieldOfStudy}</span>
                       </p>
                     )}
                   </div>
                   <div className="px-4 py-3">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Institución</p>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-start gap-2">
                       {isImg(detailRec.institutionLogoUrl ?? '') && (
                         <img src={detailRec.institutionLogoUrl!} alt={detailRec.institutionName}
-                          className="h-6 w-6 shrink-0 rounded-md object-contain bg-white p-0.5 border border-border" />
+                          className="h-6 w-6 shrink-0 rounded-md object-contain bg-white p-0.5 border border-border mt-0.5" />
                       )}
-                      <p className="text-sm font-medium text-foreground">{detailRec.institutionName}</p>
+                      <p className="text-sm font-medium text-foreground break-words min-w-0">{detailRec.institutionName}</p>
                     </div>
                   </div>
                 </div>
@@ -907,23 +1035,86 @@ export default function EducationPage() {
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                       Certificado adjunto
                     </p>
+
                     {isImg(detailRec.credentialUrl) ? (
-                      <div className="rounded-xl border border-border overflow-hidden shadow-sm">
-                        <img src={getFullUrl(detailRec.credentialUrl)} alt="Certificado" className="w-full object-cover max-h-56" />
+                      /* ── Imagen: thumbnail + botones descarga y lightbox ── */
+                      <div className="overflow-hidden rounded-xl border border-border bg-muted/10">
+                        <div className="flex items-center gap-3 p-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/50">
+                            <FileText className="h-3.5 w-3.5 text-primary" />
+                          </div>
+                          <p className="flex-1 truncate text-[12px] font-medium text-foreground">Certificado (imagen)</p>
+                          <div className="flex shrink-0 items-center gap-1">
+                            <a
+                              href={getFullUrl(detailRec.credentialUrl)}
+                              download
+                              onClick={e => e.stopPropagation()}
+                              title="Descargar"
+                              className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                            </a>
+                            <button
+                              onClick={() => setDetailLightbox(true)}
+                              title="Ver imagen completa"
+                              className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                            >
+                              <ZoomIn className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                        <div
+                          className="border-t border-border cursor-zoom-in"
+                          onClick={() => setDetailLightbox(true)}
+                        >
+                          <img
+                            src={getFullUrl(detailRec.credentialUrl)}
+                            alt="Certificado"
+                            className="w-full max-h-48 object-contain bg-muted/30"
+                          />
+                        </div>
                       </div>
                     ) : isPdf(detailRec.credentialUrl) ? (
-                      <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-muted/30 p-6">
-                        <FileText className="h-10 w-10 text-primary" />
-                        <p className="text-sm font-medium text-foreground">Documento PDF</p>
-                        <a
-                          href={getFullUrl(detailRec.credentialUrl)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={e => e.stopPropagation()}
-                          className="rounded-xl bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-                        >
-                          Ver / Descargar PDF
-                        </a>
+                      /* ── PDF: fila con descarga + toggle expand ── */
+                      <div className="overflow-hidden rounded-xl border border-border bg-muted/10">
+                        <div className="flex items-center gap-3 p-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/50">
+                            <FileText className="h-3.5 w-3.5 text-primary" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-[12px] font-medium text-foreground">Documento PDF</p>
+                            <p className="text-[11px] text-muted-foreground">PDF</p>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-1">
+                            <a
+                              href={getFullUrl(detailRec.credentialUrl)}
+                              download
+                              onClick={e => e.stopPropagation()}
+                              title="Descargar"
+                              className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                            >
+                              <Download className="h-3.5 w-3.5" />
+                            </a>
+                            <button
+                              onClick={() => setDetailPdfOpen(v => !v)}
+                              title={detailPdfOpen ? 'Cerrar vista previa' : 'Vista previa'}
+                              className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                            >
+                              {detailPdfOpen
+                                ? <ChevronUp className="h-3.5 w-3.5" />
+                                : <ChevronDown className="h-3.5 w-3.5" />}
+                            </button>
+                          </div>
+                        </div>
+                        {detailPdfOpen && (
+                          <div className="border-t border-border bg-background">
+                            <iframe
+                              src={`${getFullUrl(detailRec.credentialUrl)}#toolbar=0&navpanes=0`}
+                              title="Vista previa PDF"
+                              className="h-[480px] w-full rounded-b-xl"
+                            />
+                          </div>
+                        )}
                       </div>
                     ) : null}
                   </div>
@@ -1087,7 +1278,7 @@ export default function EducationPage() {
                       <EducationCard
                         rec={rec} reorderMode={false}
                         deleteConfirmId={deleteConfirmId} isDeleting={isDeleting}
-                        onView={() => setDetailRec(rec)}
+                        onView={() => { setDetailRec(rec); setDetailPdfOpen(false); setDetailLightbox(false); }}
                         onEdit={() => openEdit(rec)}
                         onRequestDelete={() => setDeleteConfirmId(rec.academicRecordId || null)}
                         onConfirmDelete={() => handleDelete(rec.academicRecordId!)}
@@ -1104,6 +1295,52 @@ export default function EducationPage() {
 
       {formModal}
       {detailPanel}
+
+      {/* Lightbox para imagen de certificado */}
+      {detailLightbox && detailRec?.credentialUrl && isImg(detailRec.credentialUrl) && createPortal(
+        <AnimatePresence>
+          <motion.div
+            key="edu-lightbox"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="fixed inset-0 z-[300] flex flex-col items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+            onClick={() => setDetailLightbox(false)}
+          >
+            <div
+              className="mb-3 flex items-center gap-2"
+              onClick={e => e.stopPropagation()}
+            >
+              <a
+                href={getFullUrl(detailRec.credentialUrl)}
+                download
+                className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white transition-colors hover:bg-white/20"
+              >
+                <Download className="h-4 w-4" />
+                Descargar
+              </a>
+              <button
+                onClick={() => setDetailLightbox(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white transition-colors hover:bg-white/20"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <motion.img
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.18 }}
+              src={getFullUrl(detailRec.credentialUrl)}
+              alt="Certificado"
+              className="max-h-[80vh] max-w-full rounded-xl object-contain shadow-2xl"
+              onClick={e => e.stopPropagation()}
+            />
+          </motion.div>
+        </AnimatePresence>,
+        document.body,
+      )}
     </>
   );
 }

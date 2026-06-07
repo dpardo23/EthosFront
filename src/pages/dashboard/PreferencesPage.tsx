@@ -1,4 +1,5 @@
 import api from '@/shared/api/api';
+import i18n from '@/i18n';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,12 +8,8 @@ import {
   Eye,
   EyeOff,
   Palette,
-  Bell,
-  Shield,
   Lock,
-  Copy,
   Globe,
-  Search,
   Check,
   AlertTriangle,
   Camera,
@@ -20,7 +17,6 @@ import {
   Trash2,
   Download,
   Key,
-  ExternalLink,
   Zap,
   Settings2,
   BookOpen,
@@ -31,21 +27,27 @@ import {
   X,
   Mail,
   CheckCircle2,
+  MapPin,
+  Github,
+  Loader2,
+  Map as MapIcon,
 } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { EthosOwlMascot } from '@/components/brand/EthosCoreLogo';
 import { Button, LoadingSpinner } from '@/shared/ui';
 import { useAuthStore } from '@/store/authStore';
 import { usePreferencesStore } from '@/store/preferencesStore';
 import { useVisibilityStore } from '@/store/visibilityStore';
+import { useConnectionsStore } from '@/store/connectionsStore';
 import { useUiStore } from '@/store/uiStore';
 import { cn } from '@/shared/lib/utils';
-import type { PortfolioSection, SectionVisibility } from '@/shared/types';
+import type { PortfolioSection } from '@/shared/types';
 
 type SectionId =
   | 'identidad'
-  | 'visibilidad'
   | 'personalizacion'
-  | 'privacidad'
   | 'seguridad';
 
 const SECTION_VARIANTS = {
@@ -54,19 +56,6 @@ const SECTION_VARIANTS = {
   exit: { opacity: 0, y: -8, transition: { duration: 0.14 } },
 };
 
-const SECTION_LABELS: Record<PortfolioSection, string> = {
-  bio: 'Biografía',
-  skills: 'Skills',
-  projects: 'Proyectos',
-  experience: 'Experiencia',
-  contact: 'Contacto',
-};
-
-const VISIBILITY_OPTIONS: { value: SectionVisibility; label: string }[] = [
-  { value: 'PUBLIC', label: 'Público' },
-  { value: 'LINK_ONLY', label: 'Solo con enlace' },
-  { value: 'PRIVATE', label: 'Privado' },
-];
 
 // ─── Primitives ────────────────────────────────────────────────────────────
 
@@ -182,20 +171,268 @@ function ToggleRow({
   );
 }
 
+// ─── Nominatim / Map helpers ───────────────────────────────────────────────
+
+interface NominatimResult {
+  place_id: number;
+  display_name: string;
+  lat: string;
+  lon: string;
+}
+
+const DARK_TILE  = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+const LIGHT_TILE = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+const TILE_ATTR  = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+
+function MapClickHandler({ onClick }: { onClick: (lat: number, lng: number) => void }) {
+  useMapEvents({ click: (e) => onClick(e.latlng.lat, e.latlng.lng) });
+  return null;
+}
+
+function FlyToLocation({ position }: { position: [number, number] }) {
+  const map = useMap();
+  useEffect(() => {
+    map.flyTo(position, Math.max(map.getZoom(), 13), { duration: 0.5 });
+  }, [position[0], position[1]]);
+  return null;
+}
+
+async function nominatimReverse(lat: number, lng: number): Promise<string> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+      { headers: { 'Accept-Language': 'es' } }
+    );
+    const data = await res.json();
+    return data.display_name ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  } catch {
+    return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  }
+}
+
+// ─── Map Picker Modal ──────────────────────────────────────────────────────
+
+interface MapPickerModalProps {
+  initialLat?: number | null;
+  initialLng?: number | null;
+  initialLocation?: string;
+  onConfirm: (address: string, lat: number, lng: number) => void;
+  onClose: () => void;
+}
+
+function MapPickerModal({ initialLat, initialLng, initialLocation, onConfirm, onClose }: MapPickerModalProps) {
+  const isDark = useUiStore(s => s.resolvedTheme) === 'dark';
+  const tileUrl = isDark ? DARK_TILE : LIGHT_TILE;
+  const hasInitial = initialLat != null && initialLng != null;
+
+  const [markerPos, setMarkerPos]     = useState<[number, number] | null>(hasInitial ? [initialLat!, initialLng!] : null);
+  const [flyTarget, setFlyTarget]     = useState<[number, number] | null>(null);
+  const [selAddr, setSelAddr]         = useState(initialLocation || '');
+  const [searchVal, setSearchVal]     = useState('');
+  const [results, setResults]         = useState<NominatimResult[]>([]);
+  const [searching, setSearching]     = useState(false);
+  const [showDrop, setShowDrop]       = useState(false);
+  const abortRef                      = useRef<AbortController | null>(null);
+  const dropRef                       = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', fn);
+    return () => window.removeEventListener('keydown', fn);
+  }, [onClose]);
+
+  useEffect(() => {
+    const fn = (e: MouseEvent) => {
+      if (dropRef.current && !dropRef.current.contains(e.target as Node)) setShowDrop(false);
+    };
+    document.addEventListener('mousedown', fn);
+    return () => document.removeEventListener('mousedown', fn);
+  }, []);
+
+  useEffect(() => {
+    if (searchVal.length < 3) { setResults([]); setShowDrop(false); return; }
+    const t = setTimeout(async () => {
+      abortRef.current?.abort();
+      abortRef.current = new AbortController();
+      setSearching(true);
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchVal)}&format=json&limit=6&addressdetails=0`,
+          { signal: abortRef.current.signal, headers: { 'Accept-Language': 'es' } }
+        );
+        const data: NominatimResult[] = await res.json();
+        setResults(data);
+        setShowDrop(data.length > 0);
+      } catch (e: any) {
+        if (e.name !== 'AbortError') setResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [searchVal]);
+
+  const handleSelect = useCallback((r: NominatimResult) => {
+    const pos: [number, number] = [parseFloat(r.lat), parseFloat(r.lon)];
+    setMarkerPos(pos);
+    setFlyTarget(pos);
+    setSelAddr(r.display_name);
+    setSearchVal('');
+    setShowDrop(false);
+  }, []);
+
+  const handleMapClick = useCallback(async (lat: number, lng: number) => {
+    setMarkerPos([lat, lng]);
+    const addr = await nominatimReverse(lat, lng);
+    setSelAddr(addr);
+  }, []);
+
+  const handleMarkerDrag = useCallback(async (lat: number, lng: number) => {
+    setMarkerPos([lat, lng]);
+    const addr = await nominatimReverse(lat, lng);
+    setSelAddr(addr);
+  }, []);
+
+  const mapCenter: [number, number] = hasInitial ? [initialLat!, initialLng!] : [-17.3935, -66.157];
+  const mapZoom = hasInitial ? 14 : 6;
+
+  const content = (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-5">
+      <motion.div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        onClick={onClose}
+      />
+      <motion.div
+        className="relative z-10 flex w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
+        initial={{ opacity: 0, scale: 0.96, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: 16 }}
+        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+      >
+        {/* Header */}
+        <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-3.5">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/10">
+              <MapIcon className="h-4 w-4 text-violet-500" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Seleccionar ubicación</p>
+              <p className="text-[11px] text-muted-foreground">Busca, haz clic en el mapa o arrastra el marcador</p>
+            </div>
+          </div>
+          <button type="button" onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Search */}
+        <div ref={dropRef} className="relative z-[1001] shrink-0 px-4 pt-3 pb-2">
+          <div className="relative">
+            <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={searchVal}
+              onChange={e => { setSearchVal(e.target.value); if (e.target.value.length < 3) setShowDrop(false); }}
+              onFocus={() => results.length > 0 && setShowDrop(true)}
+              placeholder="Busca una dirección o lugar…"
+              className="w-full rounded-xl border border-border bg-background py-2.5 pl-9 pr-9 text-sm text-foreground outline-none transition-colors focus:border-violet-500"
+              autoComplete="off"
+            />
+            {searching && (
+              <Loader2 className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+            )}
+          </div>
+          {showDrop && results.length > 0 && (
+            <ul className="absolute left-4 right-4 top-full z-50 mt-1 max-h-48 overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
+              {results.map(r => (
+                <li key={r.place_id}>
+                  <button
+                    type="button"
+                    onMouseDown={e => { e.preventDefault(); handleSelect(r); }}
+                    className="flex w-full items-start gap-2 px-3 py-2.5 text-left text-xs text-foreground transition-colors hover:bg-muted"
+                  >
+                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <span className="line-clamp-2">{r.display_name}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Map */}
+        <div style={{ height: 420 }} className="relative w-full">
+          <MapContainer
+            center={mapCenter} zoom={mapZoom}
+            style={{ height: '100%', width: '100%' }}
+            zoomControl scrollWheelZoom doubleClickZoom={false}
+          >
+            <TileLayer url={tileUrl} attribution={TILE_ATTR} />
+            <MapClickHandler onClick={handleMapClick} />
+            {flyTarget && <FlyToLocation position={flyTarget} />}
+            {markerPos && (
+              <Marker
+                position={markerPos}
+                draggable
+                eventHandlers={{
+                  dragend: (e) => {
+                    const ll = (e.target as L.Marker).getLatLng();
+                    handleMarkerDrag(ll.lat, ll.lng);
+                  },
+                }}
+              />
+            )}
+          </MapContainer>
+        </div>
+
+        {/* Footer */}
+        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border bg-card px-5 py-3.5">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            {markerPos ? (
+              <>
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
+                  <Check className="h-3.5 w-3.5 text-emerald-500" />
+                </div>
+                <span className="truncate text-xs font-medium text-foreground">{selAddr || 'Ubicación seleccionada'}</span>
+              </>
+            ) : (
+              <>
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted">
+                  <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                </div>
+                <span className="text-xs text-muted-foreground">Haz clic en el mapa para seleccionar</span>
+              </>
+            )}
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <Button variant="outline" onClick={onClose} size="sm">Cancelar</Button>
+            <Button
+              disabled={!markerPos}
+              onClick={() => markerPos && onConfirm(selAddr, markerPos[0], markerPos[1])}
+              size="sm"
+            >
+              <Check className="h-3.5 w-3.5" /> Confirmar
+            </Button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+
+  return typeof document !== 'undefined'
+    ? createPortal(content, document.body)
+    : null;
+}
+
 // ─── Main Component ────────────────────────────────────────────────────────
 
 export default function PreferencesPage() {
   const { profile: authProfile } = useAuthStore();
   const { preferences, updatePreferences } = usePreferencesStore();
-  const {
-    settings: visibility,
-    loading: visLoading,
-    fetchSettings,
-    updateSlug,
-    updateSectionVisibility,
-    updateSeoSettings,
-    updatePasswordProtection,
-  } = useVisibilityStore();
+  const { settings: visibility, fetchSettings } = useVisibilityStore();
+  const { connections, fetchConnections } = useConnectionsStore();
   const { addToast, resolvedTheme, setTheme, theme: activeTheme } = useUiStore();
   const isDark = resolvedTheme === 'dark';
 
@@ -209,22 +446,20 @@ export default function PreferencesPage() {
     seniority: '',
     availabilityStatus: '',
     location: '',
+    latitude: null as number | null,
+    longitude: null as number | null,
     bio: '',
     website: '',
   });
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingBio, setSavingBio] = useState(false);
+  const [savingPhoto, setSavingPhoto] = useState(false);
+  const [photoUrlError, setPhotoUrlError] = useState(false);
+  const [profileSubmitted, setProfileSubmitted] = useState(false);
 
-  // Visibility form
-  const [slugDraft, setSlugDraft] = useState('');
-  const [seoTitle, setSeoTitle] = useState('');
-  const [seoDesc, setSeoDesc] = useState('');
-  const [visPass, setVisPass] = useState('');
-  const [showVisPass, setShowVisPass] = useState(false);
-  const [savingSlug, setSavingSlug] = useState(false);
-  const [savingSeo, setSavingSeo] = useState(false);
-  const [urlCopied, setUrlCopied] = useState(false);
+  // Map picker modal
+  const [showMapPicker, setShowMapPicker] = useState(false);
 
   // Email form - 3-step OTP flow
   const [emailStep, setEmailStep] = useState<1 | 2 | 3>(1);
@@ -262,6 +497,7 @@ export default function PreferencesPage() {
   useEffect(() => {
     if (authProfile?.id) {
       fetchSettings(authProfile.id);
+      fetchConnections(authProfile.id);
       api
         .get('/v1/profile/basic')
         .then((r) => {
@@ -273,38 +509,28 @@ export default function PreferencesPage() {
             seniority: d.seniority || '',
             availabilityStatus: d.availabilityStatus || '',
             location: d.location || '',
+            latitude: d.latitude ?? null,
+            longitude: d.longitude ?? null,
             bio: d.bio || authProfile.bio || '',
             website: d.website || authProfile.website || '',
           });
+          // lat/lng stored in profile state, used as initialLat/Lng for MapPickerModal
         })
         .catch((error: any) => {
           if (error?.response?.status !== 401) {
-            // Non-auth errors: use whatever we already have in the store
             setProfile((p) => ({ ...p, bio: authProfile.bio || '', website: authProfile.website || '' }));
           }
-          // 401 here means the endpoint may not be available yet or the token
-          // is being validated; the global interceptor in api.ts handles genuine
-          // session expiry. Do NOT logout — just leave the form with empty defaults.
         })
         .finally(() => setLoadingProfile(false));
     }
   }, [authProfile?.id]);
-
-  useEffect(() => {
-    if (visibility) {
-      setSlugDraft(visibility.slug);
-      setSeoTitle(visibility.seo.title);
-      setSeoDesc(visibility.seo.description);
-      setVisPass(visibility.password ?? '');
-    }
-  }, [visibility]);
 
   const safePrefs = preferences ?? {
     profileId: authProfile?.id ?? '',
     language: 'es' as const,
     theme: 'dark' as const,
     showGithubHeatmap: true,
-    showLinkedinRecommendations: true,
+    showLinkedinRecommendations: false,
     sectionOrder: ['bio', 'skills', 'projects', 'experience', 'contact'] as PortfolioSection[],
     notifications: {
       connections: true,
@@ -327,117 +553,137 @@ export default function PreferencesPage() {
   // ─── Handlers ──────────────────────────────────────────────────────────
 
   async function handleSaveProfile() {
+    setProfileSubmitted(true);
+    if (!profile.firstName.trim()) {
+      addToast({ type: 'error', title: 'El nombre es obligatorio' });
+      return;
+    }
+    if (!profile.lastName.trim()) {
+      addToast({ type: 'error', title: 'El apellido es obligatorio' });
+      return;
+    }
+    if (profile.firstName.trim().length < 2) {
+      addToast({ type: 'error', title: 'El nombre debe tener al menos 2 caracteres' });
+      return;
+    }
+    if (profile.lastName.trim().length < 2) {
+      addToast({ type: 'error', title: 'El apellido debe tener al menos 2 caracteres' });
+      return;
+    }
+    if (profile.website && !/^https?:\/\/.+/.test(profile.website.trim())) {
+      addToast({ type: 'error', title: 'El sitio web debe comenzar con http:// o https://' });
+      return;
+    }
     setSavingProfile(true);
     try {
       await api.patch('/v1/profile/basic', {
         photoUrl: profile.photoUrl,
-        firstName: profile.firstName,
-        lastName: profile.lastName,
+        firstName: profile.firstName.trim(),
+        lastName: profile.lastName.trim(),
         seniority: profile.seniority,
         availabilityStatus: profile.availabilityStatus,
-        location: profile.location,
-        website: profile.website,
+        location: profile.location.trim(),
+        latitude: profile.latitude,
+        longitude: profile.longitude,
+        website: profile.website.trim(),
       });
       useAuthStore.setState((s) => ({
         profile: s.profile
           ? {
               ...s.profile,
-              name: `${profile.firstName} ${profile.lastName}`.trim(),
+              name: `${profile.firstName.trim()} ${profile.lastName.trim()}`.trim(),
               avatar: profile.photoUrl || s.profile.avatar,
               location: profile.location,
               website: profile.website,
             }
           : null,
       }));
-      addToast({ type: 'success', title: 'Perfil actualizado' });
-    } catch {
-      addToast({ type: 'error', title: 'Error al guardar perfil' });
+      addToast({ type: 'success', title: 'Datos profesionales actualizados', message: `${profile.firstName} ${profile.lastName}` });
+    } catch (err: any) {
+      const msg = err?.response?.data?.message;
+      addToast({ type: 'error', title: msg || 'Error al guardar perfil' });
     } finally {
       setSavingProfile(false);
     }
   }
 
   async function handleSaveBio() {
+    if (!profile.bio.trim()) {
+      addToast({ type: 'error', title: 'La biografía no puede estar vacía' });
+      return;
+    }
+    if (profile.bio.trim().length < 10) {
+      addToast({ type: 'error', title: 'La biografía debe tener al menos 10 caracteres' });
+      return;
+    }
     setSavingBio(true);
     try {
-      await api.patch('/v1/profile/bio', { bio: profile.bio });
+      await api.patch('/v1/profile/bio', { bio: profile.bio.trim() });
       useAuthStore.setState((s) => ({
         profile: s.profile ? { ...s.profile, bio: profile.bio } : null,
       }));
-      addToast({ type: 'success', title: 'Biografía guardada' });
-    } catch {
-      addToast({ type: 'error', title: 'Error al guardar biografía' });
+      addToast({ type: 'success', title: 'Biografía actualizada correctamente' });
+    } catch (err: any) {
+      const msg = err?.response?.data?.message;
+      addToast({ type: 'error', title: msg || 'Error al guardar biografía' });
     } finally {
       setSavingBio(false);
     }
   }
 
-  async function handleSaveSlug() {
-    if (!authProfile?.id || !slugDraft.trim()) return;
-    setSavingSlug(true);
+  async function handleSavePhotoUrl() {
+    const url = profile.photoUrl.trim();
+    if (!url || url.startsWith('data:')) {
+      addToast({ type: 'error', title: 'Ingresa una URL válida de imagen' });
+      return;
+    }
+    if (!/^https?:\/\/.+/.test(url)) {
+      addToast({ type: 'error', title: 'La URL debe comenzar con http:// o https://' });
+      return;
+    }
+    setSavingPhoto(true);
     try {
-      await updateSlug(authProfile.id, slugDraft.trim());
-      addToast({ type: 'success', title: 'Slug actualizado' });
-    } catch {
-      addToast({ type: 'error', title: 'Error al actualizar slug' });
+      await api.patch('/v1/profile/basic', { photoUrl: url });
+      useAuthStore.setState((s) => ({
+        profile: s.profile ? { ...s.profile, avatar: url } : null,
+      }));
+      addToast({ type: 'success', title: 'Foto de perfil actualizada' });
+    } catch (err: any) {
+      const msg = err?.response?.data?.message;
+      addToast({ type: 'error', title: msg || 'Error al guardar la foto' });
     } finally {
-      setSavingSlug(false);
+      setSavingPhoto(false);
     }
   }
 
-  async function handleSaveSeo() {
-    if (!authProfile?.id) return;
-    setSavingSeo(true);
-    try {
-      await updateSeoSettings(authProfile.id, {
-        title: seoTitle.trim(),
-        description: seoDesc.trim(),
-      });
-      addToast({ type: 'success', title: 'SEO actualizado' });
-    } catch {
-      addToast({ type: 'error', title: 'Error al actualizar SEO' });
-    } finally {
-      setSavingSeo(false);
-    }
+  function handleMapConfirm(address: string, lat: number, lng: number) {
+    const shortAddr = address.split(',').slice(0, 3).join(',').trim();
+    setProfile((p) => ({
+      ...p,
+      location: shortAddr || `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+      latitude: lat,
+      longitude: lng,
+    }));
+    setShowMapPicker(false);
+    addToast({ type: 'success', title: 'Ubicación seleccionada en el mapa' });
   }
 
-  async function handleCopyUrl() {
-    const url = visibility ? `https://ethoshub.com/p/${visibility.slug}` : '';
-    if (!url) return;
-    await navigator.clipboard.writeText(url).catch(() => {});
-    setUrlCopied(true);
-    setTimeout(() => setUrlCopied(false), 2000);
-  }
-
-  async function handlePasswordProtection(enabled: boolean) {
-    if (!authProfile?.id) return;
-    try {
-      await updatePasswordProtection(authProfile.id, enabled, enabled ? visPass : undefined);
+  async function handleGithubHeatmapToggle(value: boolean) {
+    if (value && !isGithubConnected) {
       addToast({
-        type: 'success',
-        title: enabled ? 'Protección activada' : 'Protección desactivada',
+        type: 'error',
+        title: 'Conecta tu cuenta de GitHub primero',
+        message: 'Ve a Conexiones para vincular tu cuenta de GitHub.',
       });
-    } catch {
-      addToast({ type: 'error', title: 'Error al actualizar protección' });
+      return;
     }
-  }
-
-  async function handleSaveVisPass() {
-    if (!authProfile?.id || !visPass.trim()) return;
+    updatePreferences({ showGithubHeatmap: value });
     try {
-      await updatePasswordProtection(authProfile.id, true, visPass);
-      addToast({ type: 'success', title: 'Contraseña del portafolio guardada' });
+      await api.put('/v1/portfolio/settings', { showGithubHeatmap: value });
+      addToast({ type: 'success', title: value ? 'Heatmap de GitHub activado' : 'Heatmap desactivado' });
     } catch {
-      addToast({ type: 'error', title: 'Error al guardar contraseña' });
-    }
-  }
-
-  async function handleSectionVisibility(section: PortfolioSection, value: SectionVisibility) {
-    if (!authProfile?.id) return;
-    try {
-      await updateSectionVisibility(authProfile.id, section, value);
-    } catch {
-      addToast({ type: 'error', title: 'Error al actualizar visibilidad' });
+      updatePreferences({ showGithubHeatmap: !value });
+      addToast({ type: 'error', title: 'Error al actualizar heatmap' });
     }
   }
 
@@ -603,6 +849,12 @@ export default function PreferencesPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowed.includes(file.type)) {
+      addToast({ type: 'error', title: 'Formato no soportado', message: 'Usa JPG, PNG, WebP o GIF.' });
+      return;
+    }
+    setPhotoUrlError(false);
     const reader = new FileReader();
     reader.onload = (ev) => {
       setCropSrc(ev.target?.result as string);
@@ -628,8 +880,10 @@ export default function PreferencesPage() {
   const handleCropSave = () => {
     if (!cropSrc) return;
     setProfile((p) => ({ ...p, photoUrl: cropSrc }));
+    setPhotoUrlError(false);
     setCropSrc(null);
-    addToast({ type: 'success', title: 'Foto de perfil actualizada' });
+    setCropOffset({ x: 0, y: 0 });
+    addToast({ type: 'success', title: 'Foto seleccionada', message: 'Guarda el perfil para aplicar el cambio.' });
   };
 
   async function handleDeleteAccount() {
@@ -655,13 +909,11 @@ export default function PreferencesPage() {
     icon: React.ElementType;
   }[] = [
     { id: 'identidad', label: 'Identidad', icon: UserCircle2 },
-    { id: 'visibilidad', label: 'Visibilidad', icon: Eye },
     { id: 'personalizacion', label: 'Personalización', icon: Palette },
-    { id: 'privacidad', label: 'Privacidad', icon: Shield },
     { id: 'seguridad', label: 'Seguridad', icon: Lock },
   ];
 
-  const publicUrl = visibility ? `https://ethoshub.com/p/${visibility.slug}` : '';
+  const isGithubConnected = connections.some((c) => c.provider === 'github' && c.status === 'connected');
 
   const inputCls =
     'flex h-10 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:border-violet-500/60 transition-all';
@@ -732,7 +984,7 @@ export default function PreferencesPage() {
                   </p>
                   {visibility?.slug && (
                     <p className="mt-0.5 truncate text-xs text-gray-400 dark:text-gray-500">
-                      ethoshub.com/p/{visibility.slug}
+                      bytebusters.tis.cs.umss.edu.bo/p/{visibility.slug}
                     </p>
                   )}
                 </div>
@@ -842,40 +1094,90 @@ export default function PreferencesPage() {
                         className="hidden"
                         onChange={handleFileChange}
                       />
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                        <button
-                          onClick={handleAvatarClick}
-                          className="group relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border-2 border-dashed border-border transition-all hover:border-violet-500/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
-                          title="Cambiar foto de perfil"
-                        >
-                          {profile.photoUrl || authProfile?.avatar ? (
-                            <img
-                              src={profile.photoUrl || authProfile?.avatar}
-                              alt="Avatar"
-                              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-violet-500/10 text-2xl font-bold text-violet-500 dark:text-violet-400">
-                              {(profile.firstName || authProfile?.name || '?')[0]}
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                        {/* Avatar preview */}
+                        <div className="shrink-0">
+                          <button
+                            onClick={handleAvatarClick}
+                            className="group relative h-24 w-24 overflow-hidden rounded-2xl border-2 border-dashed border-border transition-all hover:border-violet-500/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
+                            title="Cambiar foto de perfil"
+                          >
+                            {(profile.photoUrl || authProfile?.avatar) && !photoUrlError ? (
+                              <img
+                                src={profile.photoUrl || authProfile?.avatar}
+                                alt="Avatar"
+                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                onLoad={() => setPhotoUrlError(false)}
+                                onError={() => setPhotoUrlError(true)}
+                              />
+                            ) : (
+                              <div className={cn(
+                                'flex h-full w-full flex-col items-center justify-center gap-1',
+                                photoUrlError ? 'bg-red-500/10' : 'bg-violet-500/10',
+                              )}>
+                                {photoUrlError ? (
+                                  <>
+                                    <AlertTriangle className="h-5 w-5 text-red-400" />
+                                    <span className="text-[9px] text-red-400 text-center px-1">URL inválida</span>
+                                  </>
+                                ) : (
+                                  <span className="text-2xl font-bold text-violet-500 dark:text-violet-400">
+                                    {(profile.firstName || authProfile?.name || '?')[0]}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                              <Camera className="h-5 w-5 text-white" />
+                              <span className="text-[10px] font-medium text-white">Cambiar</span>
                             </div>
-                          )}
-                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                            <Camera className="h-5 w-5 text-white" />
-                            <span className="text-[10px] font-medium text-white">Cambiar</span>
-                          </div>
-                        </button>
-                        <div className="flex-1 space-y-1.5">
+                          </button>
+                        </div>
+                        <div className="flex-1 min-w-0 space-y-2">
                           <p className="text-sm font-medium text-foreground">Foto de perfil</p>
                           <p className="text-xs text-muted-foreground">
                             JPG, PNG o WebP · Recomendado: cuadrada, mínimo 200×200 px
                           </p>
                           <button
                             onClick={handleAvatarClick}
-                            className="mt-1 inline-flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2 text-xs font-medium text-foreground transition-all hover:border-violet-500/40 hover:bg-violet-500/5"
+                            className="inline-flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2 text-xs font-medium text-foreground transition-all hover:border-violet-500/40 hover:bg-violet-500/5"
                           >
                             <Camera className="h-3.5 w-3.5" />
                             Seleccionar imagen
                           </button>
+                          <div>
+                            <label className="mb-1 block text-xs text-muted-foreground">
+                              O pega una URL de imagen
+                            </label>
+                            <div className="flex gap-2">
+                              <input
+                                type="url"
+                                value={profile.photoUrl.startsWith('data:') ? '' : profile.photoUrl}
+                                onChange={(e) => {
+                                  setPhotoUrlError(false);
+                                  setProfile({ ...profile, photoUrl: e.target.value });
+                                }}
+                                placeholder="https://ejemplo.com/foto.jpg"
+                                maxLength={300}
+                                className={cn(
+                                  inputCls, 'text-xs flex-1',
+                                  photoUrlError && 'border-red-500/50 focus-visible:ring-red-500/40',
+                                )}
+                              />
+                              <Button
+                                size="sm"
+                                onClick={handleSavePhotoUrl}
+                                disabled={savingPhoto || !profile.photoUrl || profile.photoUrl.startsWith('data:')}
+                                className="shrink-0"
+                              >
+                                {savingPhoto ? <LoadingSpinner size="sm" /> : <Save className="h-3.5 w-3.5" />}
+                                Guardar
+                              </Button>
+                            </div>
+                            {photoUrlError && (
+                              <p className="mt-1 text-xs text-red-400">No se pudo cargar la imagen. Verifica la URL.</p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </SectionCard>
@@ -889,30 +1191,36 @@ export default function PreferencesPage() {
                     >
                       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
-                          <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                            Nombre
+                          <label className="mb-1.5 flex items-center justify-between text-xs font-medium text-muted-foreground">
+                            <span>Nombre <span className="text-red-400">*</span></span>
+                            <span className={profile.firstName.length >= 78 ? 'text-amber-500' : ''}>{profile.firstName.length}/80</span>
                           </label>
                           <input
                             value={profile.firstName}
-                            onChange={(e) =>
-                              setProfile({ ...profile, firstName: e.target.value })
-                            }
+                            onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
                             placeholder="Tu nombre"
-                            className={inputCls}
+                            maxLength={80}
+                            className={cn(inputCls, profileSubmitted && !profile.firstName.trim() && 'border-red-500/60 focus-visible:ring-red-500/40')}
                           />
+                          {profileSubmitted && !profile.firstName.trim() && (
+                            <p className="mt-1 text-xs text-red-400">Campo obligatorio</p>
+                          )}
                         </div>
                         <div>
-                          <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                            Apellido
+                          <label className="mb-1.5 flex items-center justify-between text-xs font-medium text-muted-foreground">
+                            <span>Apellido <span className="text-red-400">*</span></span>
+                            <span className={profile.lastName.length >= 78 ? 'text-amber-500' : ''}>{profile.lastName.length}/80</span>
                           </label>
                           <input
                             value={profile.lastName}
-                            onChange={(e) =>
-                              setProfile({ ...profile, lastName: e.target.value })
-                            }
+                            onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
                             placeholder="Tu apellido"
-                            className={inputCls}
+                            maxLength={80}
+                            className={cn(inputCls, profileSubmitted && !profile.lastName.trim() && 'border-red-500/60 focus-visible:ring-red-500/40')}
                           />
+                          {profileSubmitted && !profile.lastName.trim() && (
+                            <p className="mt-1 text-xs text-red-400">Campo obligatorio</p>
+                          )}
                         </div>
                         <div>
                           <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
@@ -954,21 +1262,39 @@ export default function PreferencesPage() {
                           </select>
                         </div>
                         <div>
-                          <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                          <label className="mb-1.5 flex items-center justify-between text-xs font-medium text-muted-foreground">
                             Ubicación
+                            <span className={profile.location.length >= 78 ? 'text-amber-500' : ''}>{profile.location.length}/80</span>
                           </label>
-                          <input
-                            value={profile.location}
-                            onChange={(e) =>
-                              setProfile({ ...profile, location: e.target.value })
-                            }
-                            placeholder="Ej: Bogotá, Colombia"
-                            className={inputCls}
-                          />
+                          <div className="flex gap-2">
+                            <input
+                              value={profile.location}
+                              onChange={(e) =>
+                                setProfile({ ...profile, location: e.target.value, latitude: null, longitude: null })
+                              }
+                              placeholder="Ej: Cochabamba, Bolivia"
+                              maxLength={80}
+                              className={cn(inputCls, 'flex-1')}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowMapPicker(true)}
+                              title="Seleccionar en mapa"
+                              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-background transition-colors hover:border-violet-500/40 hover:bg-violet-500/5"
+                            >
+                              <MapPin className="h-4 w-4 text-muted-foreground" />
+                            </button>
+                          </div>
+                          {profile.latitude != null && (
+                            <p className="mt-1 text-[11px] text-muted-foreground">
+                              📍 {profile.latitude.toFixed(4)}, {profile.longitude?.toFixed(4)}
+                            </p>
+                          )}
                         </div>
                         <div>
-                          <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                          <label className="mb-1.5 flex items-center justify-between text-xs font-medium text-muted-foreground">
                             Sitio web personal
+                            <span className={profile.website.length >= 78 ? 'text-amber-500' : ''}>{profile.website.length}/80</span>
                           </label>
                           <input
                             value={profile.website}
@@ -976,6 +1302,7 @@ export default function PreferencesPage() {
                               setProfile({ ...profile, website: e.target.value })
                             }
                             placeholder="https://..."
+                            maxLength={80}
                             className={inputCls}
                           />
                         </div>
@@ -1034,276 +1361,6 @@ export default function PreferencesPage() {
               </motion.div>
             )}
 
-            {/* ══ VISIBILIDAD ══════════════════════════════════════════ */}
-            {activeSection === 'visibilidad' && (
-              <motion.div
-                key="visibilidad"
-                variants={SECTION_VARIANTS}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                className="space-y-4"
-              >
-                {visLoading && !visibility ? (
-                  <div className="flex items-center justify-center py-24">
-                    <LoadingSpinner size="lg" />
-                  </div>
-                ) : (
-                  <>
-                    {/* Public URL */}
-                    <SectionCard
-                      title="URL pública del portafolio"
-                      description="La dirección que compartes con recruiters y contactos."
-                      icon={Globe}
-                      iconColor="blue"
-                    >
-                      <div className="mb-4 rounded-xl border border-border bg-muted/30 p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs text-muted-foreground">Tu portafolio en</p>
-                            <p className="truncate font-mono text-sm text-foreground">
-                              {publicUrl || 'ethoshub.com/p/tu-usuario'}
-                            </p>
-                          </div>
-                          <button
-                            onClick={handleCopyUrl}
-                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border bg-background transition-colors hover:border-violet-500/30 hover:bg-violet-500/5"
-                            title="Copiar URL"
-                          >
-                            {urlCopied ? (
-                              <Check className="h-4 w-4 text-emerald-500" />
-                            ) : (
-                              <Copy className="h-4 w-4 text-muted-foreground" />
-                            )}
-                          </button>
-                          {publicUrl && (
-                            <a
-                              href={publicUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border bg-background transition-colors hover:border-violet-500/30 hover:bg-violet-500/5"
-                              title="Abrir portafolio"
-                            >
-                              <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                            </a>
-                          )}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                          Slug personalizado
-                        </label>
-                        <div className="flex gap-2">
-                          <div className="flex flex-1 overflow-hidden rounded-xl border border-border bg-background transition-all focus-within:border-violet-500/60 focus-within:ring-2 focus-within:ring-violet-500/40">
-                            <span className="flex shrink-0 items-center border-r border-border px-3 text-xs text-muted-foreground">
-                              ethoshub.com/p/
-                            </span>
-                            <input
-                              value={slugDraft}
-                              onChange={(e) =>
-                                setSlugDraft(
-                                  e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''),
-                                )
-                              }
-                              placeholder="tu-usuario"
-                              className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground focus:outline-none"
-                            />
-                          </div>
-                          <Button
-                            onClick={handleSaveSlug}
-                            disabled={savingSlug}
-                            size="sm"
-                          >
-                            {savingSlug ? <LoadingSpinner size="sm" /> : 'Guardar'}
-                          </Button>
-                        </div>
-                      </div>
-                    </SectionCard>
-
-                    {/* Access control */}
-                    <SectionCard
-                      title="Control de acceso"
-                      description="Protege tu portafolio con contraseña."
-                      icon={Shield}
-                      iconColor="blue"
-                    >
-                      {visibility && (
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between rounded-xl border border-border p-4">
-                            <div>
-                              <p className="text-sm font-medium text-foreground">
-                                Protección por contraseña
-                              </p>
-                              <p className="mt-0.5 text-xs text-muted-foreground">
-                                Visitantes necesitarán una clave para ver tu portafolio.
-                              </p>
-                            </div>
-                            <Toggle
-                              checked={visibility.isPasswordProtected}
-                              onChange={handlePasswordProtection}
-                            />
-                          </div>
-
-                          <AnimatePresence>
-                            {visibility.isPasswordProtected && (
-                              <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                                className="overflow-hidden"
-                              >
-                                <div className="flex gap-2 pt-1">
-                                  <div className="relative flex-1">
-                                    <input
-                                      type={showVisPass ? 'text' : 'password'}
-                                      value={visPass}
-                                      onChange={(e) => setVisPass(e.target.value)}
-                                      placeholder="Contraseña del portafolio"
-                                      className={inputCls}
-                                    />
-                                    <button
-                                      onClick={() => setShowVisPass(!showVisPass)}
-                                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                                    >
-                                      {showVisPass ? (
-                                        <EyeOff className="h-4 w-4" />
-                                      ) : (
-                                        <Eye className="h-4 w-4" />
-                                      )}
-                                    </button>
-                                  </div>
-                                  <Button size="sm" onClick={handleSaveVisPass}>
-                                    <Key className="h-4 w-4" />
-                                    Guardar
-                                  </Button>
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </div>
-                      )}
-                    </SectionCard>
-
-                    {/* SEO */}
-                    <SectionCard
-                      title="SEO del portafolio"
-                      description="Optimiza cómo apareces en Google y otros buscadores."
-                      icon={Search}
-                      iconColor="blue"
-                    >
-                      <div className="space-y-4">
-                        <div>
-                          <div className="mb-1.5 flex items-center justify-between">
-                            <label className="text-xs font-medium text-muted-foreground">
-                              Título SEO
-                            </label>
-                            <span className="text-xs text-muted-foreground">
-                              {seoTitle.length}/60
-                            </span>
-                          </div>
-                          <input
-                            value={seoTitle}
-                            onChange={(e) => setSeoTitle(e.target.value)}
-                            maxLength={60}
-                            placeholder="Ej: Juan García — Senior React Developer"
-                            className={inputCls}
-                          />
-                        </div>
-                        <div>
-                          <div className="mb-1.5 flex items-center justify-between">
-                            <label className="text-xs font-medium text-muted-foreground">
-                              Descripción SEO
-                            </label>
-                            <span className="text-xs text-muted-foreground">
-                              {seoDesc.length}/160
-                            </span>
-                          </div>
-                          <textarea
-                            value={seoDesc}
-                            onChange={(e) => setSeoDesc(e.target.value)}
-                            maxLength={160}
-                            rows={3}
-                            placeholder="Describe tu perfil en una o dos frases..."
-                            className={textareaCls}
-                          />
-                        </div>
-
-                        {(seoTitle || seoDesc) && (
-                          <div className="rounded-xl border border-dashed border-border bg-muted/20 p-4">
-                            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                              Vista previa en Google
-                            </p>
-                            <p className="text-base font-medium leading-tight text-blue-600 dark:text-blue-400">
-                              {seoTitle || 'Título del portafolio'}
-                            </p>
-                            <p className="mt-0.5 text-xs text-emerald-600 dark:text-emerald-500">
-                              ethoshub.com/p/{visibility?.slug || 'tu-usuario'}
-                            </p>
-                            <p className="mt-1 text-sm leading-snug text-gray-600 dark:text-gray-400">
-                              {seoDesc || 'Descripción del portafolio...'}
-                            </p>
-                          </div>
-                        )}
-
-                        <div className="flex justify-end">
-                          <Button onClick={handleSaveSeo} disabled={savingSeo} size="sm">
-                            {savingSeo ? (
-                              <LoadingSpinner size="sm" />
-                            ) : (
-                              <Save className="h-4 w-4" />
-                            )}
-                            Guardar SEO
-                          </Button>
-                        </div>
-                      </div>
-                    </SectionCard>
-
-                    {/* Per-section visibility */}
-                    {visibility && (
-                      <SectionCard
-                        title="Visibilidad por sección"
-                        description="Controla qué partes de tu portafolio son visibles para visitantes."
-                        icon={Eye}
-                        iconColor="blue"
-                      >
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                          {(Object.keys(visibility.sections) as PortfolioSection[]).map(
-                            (section) => (
-                              <div
-                                key={section}
-                                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/20 p-3"
-                              >
-                                <p className="text-sm font-medium text-foreground">
-                                  {SECTION_LABELS[section]}
-                                </p>
-                                <select
-                                  value={visibility.sections[section]}
-                                  onChange={(e) =>
-                                    handleSectionVisibility(
-                                      section,
-                                      e.target.value as SectionVisibility,
-                                    )
-                                  }
-                                  className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-violet-500/40"
-                                >
-                                  {VISIBILITY_OPTIONS.map((o) => (
-                                    <option key={o.value} value={o.value}>
-                                      {o.label}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                            ),
-                          )}
-                        </div>
-                      </SectionCard>
-                    )}
-                  </>
-                )}
-              </motion.div>
-            )}
-
             {/* ══ PERSONALIZACIÓN ══════════════════════════════════════ */}
             {activeSection === 'personalizacion' && (
               <motion.div
@@ -1320,18 +1377,39 @@ export default function PreferencesPage() {
                   icon={Zap}
                   iconColor="emerald"
                 >
-                  <ToggleRow
-                    label="Heatmap de GitHub"
-                    description="Muestra tu actividad de commits en el portafolio público."
-                    checked={safePrefs.showGithubHeatmap}
-                    onChange={(v) => updatePreferences({ showGithubHeatmap: v })}
-                  />
-                  <ToggleRow
-                    label="Recomendaciones de LinkedIn"
-                    description="Muestra las recomendaciones importadas desde LinkedIn."
-                    checked={safePrefs.showLinkedinRecommendations}
-                    onChange={(v) => updatePreferences({ showLinkedinRecommendations: v })}
-                  />
+                  <div className="flex items-center justify-between gap-4 border-b border-border py-3 last:border-0">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-foreground">Heatmap de GitHub</p>
+                        {!isGithubConnected && (
+                          <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                            Requiere conexión
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {isGithubConnected
+                          ? 'Muestra tu actividad de commits en el portafolio público.'
+                          : 'Conecta tu cuenta de GitHub para activar esta función.'}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {!isGithubConnected && (
+                        <a
+                          href="/connections"
+                          className="flex items-center gap-1 rounded-lg border border-border bg-muted/40 px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-violet-500/40 hover:text-foreground"
+                        >
+                          <Github className="h-3 w-3" />
+                          Conectar
+                        </a>
+                      )}
+                      <Toggle
+                        checked={safePrefs.showGithubHeatmap && isGithubConnected}
+                        onChange={handleGithubHeatmapToggle}
+                        disabled={!isGithubConnected}
+                      />
+                    </div>
+                  </div>
                 </SectionCard>
 
                 <SectionCard
@@ -1382,100 +1460,46 @@ export default function PreferencesPage() {
 
                 <SectionCard
                   title="Idioma de la interfaz"
-                  description="Idioma del dashboard (no afecta el portafolio público)."
+                  description="El cambio se aplica al instante en todo el dashboard."
                   icon={Globe}
                   iconColor="emerald"
                 >
-                  <div className="flex items-center gap-4">
-                    <select
-                      value={safePrefs.language}
-                      onChange={(e) =>
-                        updatePreferences({ language: e.target.value as 'es' | 'en' })
-                      }
-                      className={cn(selectCls, 'max-w-[180px]')}
-                    >
-                      <option value="es">Español</option>
-                      <option value="en">English</option>
-                    </select>
-                    <p className="text-sm text-muted-foreground">
-                      Actual: {safePrefs.language === 'es' ? 'Español' : 'English'}
-                    </p>
+                  <div className="flex gap-3">
+                    {([
+                      { value: 'es', flag: '🇪🇸', label: 'Español' },
+                      { value: 'en', flag: '🇬🇧', label: 'English' },
+                      { value: 'pt', flag: '🇧🇷', label: 'Português' },
+                    ] as const).map(({ value, flag, label }) => {
+                      const isActive = i18n.language === value;
+                      return (
+                        <button
+                          key={value}
+                          onClick={() => {
+                            i18n.changeLanguage(value);
+                            localStorage.setItem('ethoshub_language', value);
+                            updatePreferences({ language: value });
+                          }}
+                          className={cn(
+                            'flex flex-1 flex-col items-center gap-1.5 rounded-xl border-2 px-3 py-3 text-center transition-all duration-150',
+                            isActive
+                              ? 'border-violet-500 bg-violet-500/5 shadow-sm shadow-violet-500/10'
+                              : 'border-border hover:border-violet-500/40 hover:bg-muted/30',
+                          )}
+                        >
+                          <span className="text-2xl">{flag}</span>
+                          <span className={cn('text-xs font-medium', isActive ? 'text-foreground' : 'text-muted-foreground')}>
+                            {label}
+                          </span>
+                          {isActive && (
+                            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-violet-500">
+                              <Check className="h-2.5 w-2.5 text-white" />
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </SectionCard>
-              </motion.div>
-            )}
-
-            {/* ══ PRIVACIDAD ═══════════════════════════════════════════ */}
-            {activeSection === 'privacidad' && (
-              <motion.div
-                key="privacidad"
-                variants={SECTION_VARIANTS}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                className="space-y-4"
-              >
-                <SectionCard
-                  title="Información visible"
-                  description="Controla qué datos personales son visibles en tu portafolio."
-                  icon={Shield}
-                  iconColor="rose"
-                >
-                  <ToggleRow
-                    label="Mostrar email"
-                    description="Tu dirección de email será visible en el portafolio."
-                    checked={safePrefs.privacy.showEmail}
-                    onChange={(v) =>
-                      updatePreferences({ privacy: { ...safePrefs.privacy, showEmail: v } })
-                    }
-                  />
-                  <ToggleRow
-                    label="Mostrar ubicación"
-                    description="Tu ciudad/país será visible en el portafolio."
-                    checked={safePrefs.privacy.showLocation}
-                    onChange={(v) =>
-                      updatePreferences({
-                        privacy: { ...safePrefs.privacy, showLocation: v },
-                      })
-                    }
-                  />
-                  <ToggleRow
-                    label="Mostrar conexiones"
-                    description="Otros usuarios pueden ver tu lista de conexiones."
-                    checked={safePrefs.privacy.showConnections}
-                    onChange={(v) =>
-                      updatePreferences({
-                        privacy: { ...safePrefs.privacy, showConnections: v },
-                      })
-                    }
-                  />
-                  <ToggleRow
-                    label="Permitir mensajes directos"
-                    description="Otros profesionales pueden enviarte mensajes."
-                    checked={safePrefs.privacy.allowMessages}
-                    onChange={(v) =>
-                      updatePreferences({
-                        privacy: { ...safePrefs.privacy, allowMessages: v },
-                      })
-                    }
-                  />
-                </SectionCard>
-
-                <div className="flex items-start gap-3 rounded-2xl border border-border bg-card p-5">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500 dark:text-blue-400">
-                    <Shield className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">
-                      Tus datos están protegidos
-                    </p>
-                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                      EthosHub cumple con el Reglamento General de Protección de Datos
-                      (RGPD). Nunca vendemos ni compartimos tus datos con terceros sin tu
-                      consentimiento explícito.
-                    </p>
-                  </div>
-                </div>
               </motion.div>
             )}
 
@@ -1946,6 +1970,19 @@ export default function PreferencesPage() {
           </AnimatePresence>
         </main>
       </div>
+
+      {/* ── Map picker modal ─────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showMapPicker && (
+          <MapPickerModal
+            initialLat={profile.latitude}
+            initialLng={profile.longitude}
+            initialLocation={profile.location}
+            onConfirm={handleMapConfirm}
+            onClose={() => setShowMapPicker(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ── Crop image modal — portaled into #portal-root (scoped to content area) ── */}
       {typeof document !== 'undefined' && document.getElementById('portal-root') &&

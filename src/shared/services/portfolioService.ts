@@ -12,6 +12,10 @@ export interface PortfolioSettings {
   showEmail: boolean;
   showLocation: boolean;
   showWebsite: boolean;
+  showConnections: boolean;
+  showGithubHeatmap: boolean;
+  seoTitle: string | null;
+  seoDescription: string | null;
   viewsCount: number;
   selectedItems: SelectedItem[];
 }
@@ -25,12 +29,16 @@ export interface SelectedItem {
 export interface UpdateSettingsRequest {
   isPublished?: boolean;
   slug?: string;
-  customHeadline?: string;
-  customBio?: string;
+  customHeadline?: string | null;
+  customBio?: string | null;
   accentColor?: string;
   showEmail?: boolean;
   showLocation?: boolean;
   showWebsite?: boolean;
+  showConnections?: boolean;
+  showGithubHeatmap?: boolean;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
 }
 
 export interface UpdateItemsRequest {
@@ -104,11 +112,26 @@ export interface PublicPortfolio {
   photoUrl: string | null;
   accentColor: string;
   viewsCount: number;
+  showConnections: boolean;
+  showGithubHeatmap: boolean;
+  seniority: string | null;
+  availabilityStatus: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  cvPdfUrl: string | null;
   projects: PublicProject[];
   experiences: PublicExperience[];
   education: PublicEducation[];
   hardSkills: PublicHardSkill[];
   softSkills: PublicSoftSkill[];
+}
+
+export interface ProjectMedia {
+  url: string | null;
+  type: string | null;
+  title: string | null;
 }
 
 export interface PublicProject {
@@ -123,6 +146,7 @@ export interface PublicProject {
   role: string | null;
   results: string | null;
   repositoryUrl: string | null;
+  media: ProjectMedia[] | null;
   displayOrder: number;
 }
 
@@ -135,6 +159,12 @@ export interface PublicExperience {
   startDate: string;
   endDate: string | null;
   logoUrl: string | null;
+  companyImageUrl: string | null;
+  companyUrl: string | null;
+  location: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  technologies: string[];
   displayOrder: number;
 }
 
@@ -148,6 +178,10 @@ export interface PublicEducation {
   inProgress: boolean;
   logoUrl: string | null;
   credentialUrl: string | null;
+  verificationUrl: string | null;
+  educationType: string | null;
+  gpa: number | null;
+  description: string | null;
   displayOrder: number;
 }
 
@@ -164,6 +198,11 @@ export interface PublicSoftSkill {
   name: string;
   description: string | null;
   displayOrder: number;
+}
+
+export interface CurriculumResponse {
+  cvDocumentId: string | null;
+  cvPdfUrl: string | null;
 }
 
 // ── Service ───────────────────────────────────────────────────────────────────
@@ -199,6 +238,19 @@ export const portfolioService = {
 
   exportPortfolio: async (): Promise<PublicPortfolio> => {
     const res = await apiClient.get<{ data: PublicPortfolio }>('/v1/portfolio/export');
+    return res.data.data;
+  },
+
+  getCurriculum: async (): Promise<CurriculumResponse> => {
+    const res = await apiClient.get<{ data: CurriculumResponse }>('/v1/portfolio/curriculum');
+    return res.data.data;
+  },
+
+  compileCurriculum: async (cvDocumentId: string, profileImageUrl?: string): Promise<CurriculumResponse> => {
+    const res = await apiClient.post<{ data: CurriculumResponse }>('/v1/portfolio/curriculum/compile', {
+      cvDocumentId,
+      profileImageUrl: profileImageUrl ?? null,
+    });
     return res.data.data;
   },
 };

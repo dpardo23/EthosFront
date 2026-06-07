@@ -3,6 +3,16 @@ import { useAuthStore } from '@/store/authStore';
 
 const baseURL = (import.meta.env.VITE_API_URL as string) || '/api';
 
+function isJwtExpired(token: string): boolean {
+  try {
+    const payload = token.split('.')[1];
+    const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+    return typeof decoded.exp === 'number' && Math.floor(Date.now() / 1000) > decoded.exp;
+  } catch {
+    return false;
+  }
+}
+
 export const apiClient = axios.create({
   baseURL,
   timeout: 8000,
@@ -39,10 +49,11 @@ apiClient.interceptors.response.use(
     }
 
     if (status === 401 || status === 403) {
+      const token     = localStorage.getItem('ethoshub_access_token');
       const expiresAt = localStorage.getItem('ethoshub_access_expires_at');
-      const tokenPresent = !!localStorage.getItem('ethoshub_access_token');
-      const isExpired = !tokenPresent || (!!expiresAt && Date.now() > Number(expiresAt) * 1000);
-      if (isExpired) {
+      const isExpiredByStore = !token || (!!expiresAt && Date.now() > Number(expiresAt) * 1000);
+      const isExpiredByJwt   = token ? isJwtExpired(token) : true;
+      if (isExpiredByStore || isExpiredByJwt) {
         window.dispatchEvent(new CustomEvent('auth:unauthorized'));
       }
     }

@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Editor from '@monaco-editor/react';
 import type { BeforeMount, OnMount } from '@monaco-editor/react';
@@ -24,9 +25,10 @@ import {
 } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { useUiStore } from '@/store';
+import { useAuthStore } from '@/store/authStore';
 import { EthosOwlMascot } from '@/components/brand/EthosCoreLogo';
 import { useCvStudioStore } from '@/store/cvStudioStore';
-import { streamAiAssist, compileLatexToPdf, type CvDocument } from '@/shared/services/cvStudioService';
+import { callAiAssist, compileLatexToPdf, type CvDocument, type ChatMessage } from '@/shared/services/cvStudioService';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -44,103 +46,187 @@ type Template = {
 const markdownTemplates: Template[] = [
   {
     id: 'md-classic',
-    title: 'Clásico',
-    description: 'Estructura limpia y directa',
-    code: `# Tu Nombre
-**Email:** tu@email.com · **LinkedIn:** linkedin.com/in/tu-perfil · **GitHub:** github.com/tu-usuario
+    title: 'Ingeniero Senior',
+    description: 'Perfil completo orientado a impacto',
+    code: `{{FOTO_PERFIL}}
+
+# Tu Nombre
+**Ingeniero de Software Senior** | tu@email.com | [LinkedIn](https://linkedin.com/in/tu-perfil) | [GitHub](https://github.com/tu-usuario) | Madrid, España
 
 ---
 
-## Resumen
-Profesional apasionado por el desarrollo de software con X años de experiencia construyendo productos escalables.
+## Perfil Profesional
 
-## Experiencia
+Ingeniero de software con 6+ años diseñando y construyendo sistemas backend de alta disponibilidad y frontends modernos con React/TypeScript. Especializado en arquitecturas distribuidas, DevOps y entrega continua. Experiencia liderando equipos técnicos y entregando productos a escala en producción.
 
-### Senior Software Engineer — Empresa Inc.
-*Enero 2022 – Presente*
-- Lideré la migración de arquitectura monolítica a microservicios reduciendo latencia un 40%
-- Diseñé e implementé pipelines de CI/CD que redujeron el tiempo de deploy en un 60%
+---
 
-### Software Engineer — Startup SL
-*Marzo 2020 – Diciembre 2021*
-- Desarrollé APIs REST con Node.js y TypeScript para un sistema con 50K usuarios activos
+## Experiencia Profesional
 
-## Habilidades
-**Lenguajes:** TypeScript, Python, Go
-**Frameworks:** React, Node.js, FastAPI
-**Infra:** Docker, Kubernetes, AWS
+### Senior Software Engineer — Tech Corp S.L.
+*Enero 2022 – Presente · Madrid, España*
+
+- Arquitecté sistema de microservicios que procesa 2M de transacciones/día, reduciendo latencia P99 de 850ms a 95ms
+- Lideré migración de base de datos monolítica a PostgreSQL multi-tenant para 300+ empresas cliente
+- Implementé pipelines CI/CD con GitHub Actions + ArgoCD, reduciendo deploys fallidos un 90%
+- Mentoring de equipo de 5 ingenieros; establecí estándares de code review y cobertura de tests ≥85%
+
+### Software Engineer — Startup Digital S.L.
+*Marzo 2020 – Diciembre 2021 · Barcelona, España*
+
+- Desarrollé API REST con Node.js/TypeScript para plataforma B2B SaaS con 80K usuarios activos
+- Integré pasarela de pagos Stripe, aumentando conversión un 28% y reduciendo incidencias un 40%
+- Diseñé sistema de notificaciones en tiempo real con WebSockets gestionando 5K conexiones concurrentes
+
+### Desarrollador Full Stack — Freelance
+*Enero 2018 – Febrero 2020*
+
+- Entregué 12+ proyectos para clientes en sectores fintech, edtech y e-commerce
+
+---
+
+## Habilidades Técnicas
+
+**Backend:** Java · Spring Boot · Node.js · Python · FastAPI · Go
+**Frontend:** React · TypeScript · Next.js · Tailwind CSS
+**Bases de datos:** PostgreSQL · Redis · MongoDB · Elasticsearch
+**DevOps & Cloud:** Docker · Kubernetes · AWS (ECS/RDS/S3) · Terraform · GitHub Actions
+**Testing:** JUnit 5 · Jest · Cypress · k6
+
+---
+
+## Proyectos Destacados
+
+**Sistema de Auditoría Distribuida** · [github.com/tu/audit-system](https://github.com/tu-usuario)
+Event-driven con Kafka y Spring Boot para trazabilidad en tiempo real. 50K eventos/segundo.
+
+**DevTools CLI** · [github.com/tu/devtools](https://github.com/tu-usuario)
+Herramienta CLI en Go con 1.2K ⭐ para automatizar flujos de desarrollo local.
+
+---
 
 ## Educación
-**Grado en Ingeniería Informática** — Universidad Politécnica, 2019
+
+**Grado en Ingeniería Informática** · Universidad Politécnica de Madrid · *2014 – 2018*
+Nota media: 8.6/10 · Mención en Ingeniería de Software
+
+---
+
+## Certificaciones & Idiomas
+
+**AWS Certified Developer Associate** (2023) · **Kubernetes CKAD** (2022)
+**Español:** Nativo · **Inglés:** Profesional (C1)
 `,
   },
   {
     id: 'md-tech',
-    title: 'Tech Focus',
-    description: 'Orientado a stacks y proyectos',
-    code: `# Tu Nombre
-\`tu@email.com\` · \`github.com/tu-usuario\` · \`linkedin.com/in/tu-perfil\`
+    title: 'Stack & Proyectos',
+    description: 'Foco en tecnologías y portfolio',
+    code: `{{FOTO_PERFIL}}
+
+# Tu Nombre — Software Engineer
+\`tu@email.com\` · \`github.com/tu-usuario\` · \`linkedin.com/in/tu-perfil\` · Madrid, España
 
 ---
 
 ## Stack Principal
-\`\`\`
-Frontend  → React · Next.js · TypeScript · Tailwind CSS
-Backend   → Node.js · FastAPI · PostgreSQL · Redis
-DevOps    → Docker · GitHub Actions · Vercel · AWS EC2
-\`\`\`
 
-## Proyectos Destacados
+| Capa | Tecnologías |
+|------|-------------|
+| **Backend** | Java (Spring Boot) · Node.js · Python · Go |
+| **Frontend** | React · TypeScript · Next.js · Tailwind CSS |
+| **Base de datos** | PostgreSQL · Redis · MongoDB · Supabase |
+| **Infraestructura** | Docker · Kubernetes · AWS · GitHub Actions |
+| **Observabilidad** | Prometheus · Grafana · OpenTelemetry |
 
-### 🚀 Proyecto Alpha
-**Tech:** React + FastAPI + PostgreSQL
-Plataforma SaaS con 1.2K usuarios activos. Integré pagos con Stripe y autenticación OAuth2.
+---
 
-### 🛠 Proyecto Beta
-**Tech:** Next.js + Prisma + Supabase
-Dashboard analítico en tiempo real con WebSockets y visualizaciones D3.js.
+## Proyectos Principales
+
+### Platform Core — Autenticación OAuth2 Multi-tenant
+**Stack:** Spring Boot · React · Supabase · JWT
+Plataforma de autenticación para 50K usuarios. Tiempo de auth < 200ms. Implementé refresh token rotation y detección de sesiones anómalas.
+
+### DataPipeline — ETL en Tiempo Real
+**Stack:** Python · Apache Kafka · PostgreSQL · dbt
+Pipeline de ingesta procesando 100GB/día con latencia extremo a extremo < 500ms.
+
+### DevMonitor — Dashboard de Observabilidad
+**Stack:** React · TypeScript · Prometheus · Grafana
+Dashboard unificado para métricas de infraestructura. Redujo MTTR del equipo un 60%.
+
+---
 
 ## Experiencia
-**Senior Dev @ Empresa** · 2022–Presente
-**Full Stack Dev @ Startup** · 2020–2022
 
-## Educación
-**Ingeniería Informática** · Universidad · 2019
+**Senior Software Engineer · TechCorp** *(2022 – Presente)*
+Arquitectura de microservicios, liderazgo técnico, optimización de rendimiento
+
+**Full Stack Engineer · Startup** *(2020 – 2022)*
+APIs REST/GraphQL, integración de pagos, testing automatizado
+
+---
+
+## Educación & Certificaciones
+
+**Ing. Informática** · Universidad Politécnica · 2018
+**AWS Solutions Architect** · 2023 · **Docker Certified Associate** · 2022
+
+---
+
+**Español** (nativo) · **Inglés** C1 · **Portugués** (básico)
 `,
   },
   {
     id: 'md-minimal',
-    title: 'Minimalista',
+    title: 'Minimalista Senior',
     description: 'Máximo impacto, mínimo ruido',
-    code: `# Tu Nombre
+    code: `{{FOTO_PERFIL}}
 
-tu@email.com · github.com/tu-usuario
+# Tu Nombre
 
----
-
-Engineer con foco en productos que escalan. 5 años construyendo sistemas distribuidos.
-
-**Ahora mismo:** Senior SWE en Empresa Inc., liderando el equipo de plataforma.
+\`tu@email.com\` · \`github.com/tu-usuario\` · \`linkedin.com/in/tu-perfil\`
 
 ---
 
-**Experiencia**
-
-Empresa Inc. — Senior SWE (2022–)
-Startup SL — Full Stack (2020–2022)
-Freelance — Dev (2018–2020)
+**Senior Software Engineer con 7 años construyendo sistemas que escalan.**
+Especializado en backend distribuido. Actualmente en Tech Corp liderando el equipo de plataforma (5 personas).
 
 ---
 
-**Tech que domino**
+### Donde he trabajado
 
-React · TypeScript · Node.js · PostgreSQL · Docker · AWS
+**Tech Corp** — Senior SWE *(2022–Presente)*
+Microservicios, -40% latencia P99, CI/CD zero-downtime, mentoring de equipo.
+
+**Startup Digital** — SWE *(2020–2022)*
+API REST 80K usuarios, integración Stripe, WebSockets tiempo real.
+
+**Freelance** — Dev *(2018–2020)*
+12 proyectos en fintech, edtech y e-commerce.
 
 ---
 
-**Educación**
+### Tech que uso a diario
 
-Ingeniería Informática, Universidad Politécnica (2019)
+Java · Spring Boot · TypeScript · React · PostgreSQL · Docker · AWS · GitHub Actions
+
+---
+
+### Lo que he construido
+
+**audit-system** — Event sourcing con Kafka, 50K eventos/s
+**devtools-cli** — Herramienta Go con 1.2K ⭐ en GitHub
+
+---
+
+### Formación
+
+Ing. Informática, Universidad Politécnica (2018) · AWS CDA (2023) · CKAD (2022)
+
+---
+
+Español (nativo) · Inglés (C1)
 `,
   },
 ];
@@ -148,175 +234,311 @@ Ingeniería Informática, Universidad Politécnica (2019)
 const latexTemplates: Template[] = [
   {
     id: 'tex-modern',
-    title: 'Moderno',
-    description: 'tcolorbox + columnas',
+    title: 'Moderno Pro',
+    description: 'Header con foto + bloques de color',
     code: `\\documentclass[11pt,a4paper]{article}
-\\usepackage[margin=1.5cm]{geometry}
+\\usepackage[utf8]{inputenc}
+\\usepackage[T1]{fontenc}
+\\usepackage[top=1.4cm,bottom=1.4cm,left=1.5cm,right=1.5cm]{geometry}
 \\usepackage{xcolor}
 \\usepackage{tcolorbox}
 \\usepackage{fontawesome5}
 \\usepackage{hyperref}
 \\usepackage{titlesec}
-\\usepackage{multicol}
+\\usepackage{enumitem}
+\\usepackage{graphicx}
 
 \\definecolor{primary}{HTML}{6D28D9}
 \\definecolor{light}{HTML}{F5F3FF}
+\\definecolor{muted}{HTML}{6B7280}
 
 \\tcbuselibrary{skins}
 \\newtcolorbox{cvblock}[1]{
-  enhanced, arc=6pt,
+  enhanced, arc=5pt,
   colback=light, colframe=primary,
-  boxrule=1pt, leftrule=4pt,
-  title=#1, fonttitle=\\bfseries\\color{primary},
-  attach boxed title to top left={yshift=-2mm,xshift=4mm},
-  boxed title style={colback=white,colframe=primary}
+  boxrule=0pt, leftrule=3pt,
+  title=#1, fonttitle=\\small\\bfseries\\color{primary},
+  top=4pt, bottom=4pt
 }
+
+\\hypersetup{colorlinks=true, urlcolor=primary, linkcolor=primary}
+\\setlist[itemize]{leftmargin=*, nosep, topsep=2pt, itemsep=1pt}
+\\titleformat{\\section}{\\normalsize\\bfseries\\color{primary}}{}{0em}{}[{\\color{primary}\\hrule height 0.8pt}]
+\\titlespacing{\\section}{0pt}{10pt}{5pt}
 
 \\begin{document}
 \\pagestyle{empty}
 
-% Header
-{\\huge\\bfseries Tu Nombre}\\hfill
-{\\color{primary}\\faEnvelope}~tu@email.com ·
-{\\color{primary}\\faLinkedin}~linkedin.com/in/tu-perfil
+%% ── Header ──────────────────────────────────────────────────────────────────
+\\begin{minipage}[t]{0.18\\linewidth}
+  \\vspace{0pt}
+  \\ethoshubFotoPerfil
+\\end{minipage}%
+\\hfill
+\\begin{minipage}[t]{0.79\\linewidth}
+  \\vspace{0pt}
+  {\\huge\\bfseries Tu Nombre}\\\\[3pt]
+  {\\large\\color{primary} Senior Software Engineer}\\\\[5pt]
+  {\\small
+    {\\color{muted}\\faEnvelope}~\\href{mailto:tu@email.com}{tu@email.com}\\quad
+    {\\color{muted}\\faLinkedin}~\\href{https://linkedin.com/in/tu-perfil}{linkedin.com/in/tu-perfil}\\quad
+    {\\color{muted}\\faGithub}~\\href{https://github.com/tu-usuario}{github.com/tu-usuario}\\\\[2pt]
+    {\\color{muted}\\faMapMarker*}~Madrid, España\\quad
+    {\\color{muted}\\faPhone}~+34 600 000 000
+  }
+\\end{minipage}
 
-\\vspace{4pt}
-\\hrule height 2pt
-\\vspace{10pt}
+\\vspace{6pt}
+{\\color{primary}\\hrule height 1.5pt}
+\\vspace{8pt}
 
-\\begin{cvblock}{Experiencia Profesional}
-\\textbf{Senior Software Engineer} — Empresa Inc. \\hfill \\textit{2022–Presente}\\\\
-Lideré migración a microservicios. Reduje latencia 40\\%.\\\\[4pt]
-\\textbf{Software Engineer} — Startup SL \\hfill \\textit{2020–2022}\\\\
-Desarrollé APIs REST para sistema con 50K usuarios activos.
+%% ── Perfil ───────────────────────────────────────────────────────────────────
+\\begin{cvblock}{Perfil Profesional}
+Ingeniero de software con 6+ años construyendo sistemas backend de alta disponibilidad. Especializado en arquitecturas distribuidas con Java/Spring Boot, frontends modernos con React/TypeScript y pipelines CI/CD. Experiencia liderando equipos técnicos de hasta 6 personas.
 \\end{cvblock}
 
 \\vspace{6pt}
 
-\\begin{multicols}{2}
-\\begin{cvblock}{Habilidades}
-TypeScript · Python · Go\\\\
-React · Node.js · FastAPI\\\\
-Docker · Kubernetes · AWS
+%% ── Experiencia ──────────────────────────────────────────────────────────────
+\\begin{cvblock}{Experiencia Profesional}
+\\textbf{Senior Software Engineer} --- Tech Corp S.L. \\hfill {\\small\\color{muted}2022 -- Presente}
+\\begin{itemize}
+  \\item Arquitecté sistema de microservicios procesando 2M transacciones/día; latencia P99 de 850ms $\\rightarrow$ 95ms
+  \\item Lideré migración a PostgreSQL multi-tenant para 300+ empresas; zero downtime
+  \\item Implementé CI/CD con GitHub Actions + ArgoCD; deploys fallidos --90\\%
+  \\item Mentoring de equipo de 5 ingenieros; cobertura de tests $\\geq$85\\%
+\\end{itemize}
+\\vspace{4pt}
+\\textbf{Software Engineer} --- Startup Digital S.L. \\hfill {\\small\\color{muted}2020 -- 2022}
+\\begin{itemize}
+  \\item API REST Node.js/TypeScript para plataforma B2B con 80K usuarios activos
+  \\item Integración Stripe: conversión +28\\%, incidencias --40\\%
+  \\item Sistema de notificaciones WebSockets gestionando 5K conexiones concurrentes
+\\end{itemize}
 \\end{cvblock}
 
-\\columnbreak
+\\vspace{6pt}
 
+%% ── Skills + Educación ───────────────────────────────────────────────────────
+\\begin{minipage}[t]{0.63\\linewidth}
+\\begin{cvblock}{Habilidades Técnicas}
+{\\small
+\\textbf{Backend:} Java · Spring Boot · Node.js · Python · Go\\\\
+\\textbf{Frontend:} React · TypeScript · Next.js · Tailwind CSS\\\\
+\\textbf{BD:} PostgreSQL · Redis · MongoDB · Elasticsearch\\\\
+\\textbf{DevOps:} Docker · Kubernetes · AWS · Terraform\\\\
+\\textbf{Testing:} JUnit 5 · Jest · Cypress · k6
+}
+\\end{cvblock}
+\\end{minipage}%
+\\hfill
+\\begin{minipage}[t]{0.34\\linewidth}
 \\begin{cvblock}{Educación}
-\\textbf{Ingeniería Informática}\\\\
+{\\small
+\\textbf{Ing. Informática}\\\\
 Universidad Politécnica\\\\
-\\textit{2015–2019}
+{\\color{muted}2014 -- 2018 · 8.6/10}\\\\[4pt]
+\\textbf{Certificaciones}\\\\
+AWS Developer (2023)\\\\
+Kubernetes CKAD (2022)
+}
 \\end{cvblock}
-\\end{multicols}
+\\end{minipage}
 
 \\end{document}
 `,
   },
   {
-    id: 'tex-academic',
-    title: 'Académico',
-    description: 'Estilo APA / investigación',
-    code: `\\documentclass[12pt,a4paper]{article}
-\\usepackage[margin=2cm]{geometry}
-\\usepackage{xcolor,titlesec,enumitem,hyperref,parskip}
+    id: 'tex-executive',
+    title: 'Ejecutivo Clásico',
+    description: 'Elegante, líneas y tipografía limpia',
+    code: `\\documentclass[11pt,a4paper]{article}
+\\usepackage[utf8]{inputenc}
+\\usepackage[T1]{fontenc}
+\\usepackage[top=2cm,bottom=2cm,left=2cm,right=2cm]{geometry}
+\\usepackage{xcolor,titlesec,enumitem,hyperref,graphicx}
 
-\\definecolor{accent}{HTML}{1D4ED8}
+\\definecolor{accent}{HTML}{1E3A5F}
+\\definecolor{muted}{HTML}{6B7280}
+\\definecolor{rule}{HTML}{CBD5E1}
 
-\\titleformat{\\section}{\\large\\bfseries\\color{accent}}{}{0em}{}[\\titlerule]
-\\titlespacing{\\section}{0pt}{12pt}{6pt}
-
+\\titleformat{\\section}{\\large\\bfseries\\color{accent}}{}{0em}{}[{\\color{rule}\\hrule}]
+\\titlespacing{\\section}{0pt}{14pt}{6pt}
 \\hypersetup{colorlinks=true, urlcolor=accent, linkcolor=accent}
+\\setlist[itemize]{leftmargin=1.2em, nosep, topsep=2pt, itemsep=1.5pt}
 
 \\begin{document}
 \\thispagestyle{empty}
 
-\\begin{center}
-  {\\LARGE\\bfseries Tu Nombre}\\\\[4pt]
-  {\\small tu@email.com $\\cdot$ +34 600 000 000 $\\cdot$ Madrid, España}\\\\
-  {\\small \\href{https://github.com/tu-usuario}{github.com/tu-usuario} $\\cdot$
-   \\href{https://linkedin.com/in/tu-perfil}{LinkedIn}}
-\\end{center}
+%% ── Header ───────────────────────────────────────────────────────────────────
+\\begin{minipage}[c]{0.20\\linewidth}
+  \\ethoshubFotoPerfil
+\\end{minipage}%
+\\hfill
+\\begin{minipage}[c]{0.76\\linewidth}
+  {\\Huge\\bfseries\\color{accent} Tu Nombre}\\\\[6pt]
+  {\\large\\color{muted} Senior Software Engineer · 6 años de experiencia}\\\\[8pt]
+  {\\small
+    \\textbf{Email:} tu@email.com\\quad
+    \\textbf{Web:} \\href{https://github.com/tu-usuario}{github.com/tu-usuario}\\\\[2pt]
+    \\textbf{LinkedIn:} \\href{https://linkedin.com/in/tu-perfil}{linkedin.com/in/tu-perfil}\\quad
+    \\textbf{Ubicación:} Madrid, España
+  }
+\\end{minipage}
 
-\\section{Resumen}
-Investigador y desarrollador con experiencia en aprendizaje automático y sistemas distribuidos.
-Publicaciones en conferencias internacionales (NeurIPS, ICML).
+\\vspace{8pt}
+{\\color{accent}\\hrule height 2pt}
 
-\\section{Experiencia}
-\\textbf{Investigador Asociado} --- Universidad Politécnica \\hfill 2022--Presente
-\\begin{itemize}[leftmargin=*,nosep]
-  \\item Diseño de modelos de deep learning para NLP con PyTorch
-  \\item Co-autor de 3 papers publicados en Q1
+%% ── Perfil ───────────────────────────────────────────────────────────────────
+\\section{Perfil Profesional}
+Ingeniero de software especializado en arquitecturas backend distribuidas con Java/Spring Boot y sistemas frontend con React. 6+ años diseñando soluciones escalables y liderando equipos en entornos ágiles. Orientado a resultados medibles: reducción de latencia, mejora de conversión y automatización de operaciones.
+
+%% ── Experiencia ──────────────────────────────────────────────────────────────
+\\section{Experiencia Profesional}
+
+\\textbf{Senior Software Engineer} \\hfill {\\color{muted} Enero 2022 -- Presente}\\\\
+Tech Corp S.L. · Madrid, España
+\\begin{itemize}
+  \\item Rediseñé arquitectura a microservicios: 2M transacciones/día, latencia P99 de 850ms a 95ms
+  \\item Migré 300+ empresas cliente a PostgreSQL multi-tenant sin downtime planificado
+  \\item Establecí cultura de CI/CD (GitHub Actions + ArgoCD): --90\\% en deploys fallidos
+  \\item Lideré y mentoreé equipo de 5 ingenieros; code reviews, testing y arquitectura
 \\end{itemize}
 
-\\section{Publicaciones}
-\\begin{enumerate}[leftmargin=*]
-  \\item Apellido, N. et al. (2024). \\textit{Título del Paper}. NeurIPS 2024.
-\\end{enumerate}
+\\vspace{6pt}
+\\textbf{Software Engineer} \\hfill {\\color{muted} Marzo 2020 -- Diciembre 2021}\\\\
+Startup Digital S.L. · Barcelona, España
+\\begin{itemize}
+  \\item Construí API REST con Node.js/TypeScript para 80K usuarios activos
+  \\item Implementé integración Stripe: +28\\% conversión, --40\\% incidencias
+  \\item Diseñé sistema de notificaciones real-time con WebSockets (5K conexiones concurrentes)
+\\end{itemize}
 
+%% ── Habilidades ──────────────────────────────────────────────────────────────
+\\section{Habilidades Técnicas}
+\\begin{tabular}{@{}ll}
+  \\textbf{Backend} & Java · Spring Boot · Node.js · Python · FastAPI · Go \\\\
+  \\textbf{Frontend} & React · TypeScript · Next.js · Tailwind CSS \\\\
+  \\textbf{Bases de datos} & PostgreSQL · Redis · MongoDB · Elasticsearch \\\\
+  \\textbf{DevOps / Cloud} & Docker · Kubernetes · AWS · Terraform · GitHub Actions \\\\
+  \\textbf{Testing} & JUnit 5 · Jest · Cypress · k6 (load testing) \\\\
+\\end{tabular}
+
+%% ── Educación ────────────────────────────────────────────────────────────────
 \\section{Educación}
-\\textbf{Doctorado en Ciencias de la Computación} --- Universidad, 2019--2023\\\\
-\\textbf{Máster en IA} --- Universidad, 2017--2019
+\\textbf{Grado en Ingeniería Informática} \\hfill {\\color{muted} 2014 -- 2018}\\\\
+Universidad Politécnica de Madrid · Nota media: 8.6/10 · Mención en Ingeniería de Software
 
-\\section{Habilidades}
-Python · PyTorch · TensorFlow · SQL · R · \\LaTeX
+%% ── Certificaciones ──────────────────────────────────────────────────────────
+\\section{Certificaciones e Idiomas}
+\\textbf{AWS Certified Developer Associate} (2023) ·
+\\textbf{Kubernetes CKAD} (2022) ·
+\\textbf{Docker Certified Associate} (2022)\\\\[4pt]
+\\textbf{Español:} Nativo ·
+\\textbf{Inglés:} Profesional avanzado (C1) ·
+\\textbf{Portugués:} Básico
 
 \\end{document}
 `,
   },
   {
     id: 'tex-compact',
-    title: 'Compacto',
-    description: 'Una página, alta densidad',
-    code: `\\documentclass[9pt,a4paper]{extarticle}
-\\usepackage[margin=1cm]{geometry}
-\\usepackage{xcolor,multicol,titlesec,enumitem}
+    title: 'Compacto Una Página',
+    description: 'Dos columnas, alta densidad de información',
+    code: `\\documentclass[10pt,a4paper]{article}
+\\usepackage[utf8]{inputenc}
+\\usepackage[T1]{fontenc}
+\\usepackage[top=1.2cm,bottom=1.2cm,left=1.2cm,right=1.2cm]{geometry}
+\\usepackage{xcolor,multicol,titlesec,enumitem,hyperref,graphicx}
 
-\\definecolor{accent}{HTML}{0F172A}
+\\definecolor{accent}{HTML}{1D4ED8}
 \\definecolor{muted}{HTML}{64748B}
+\\definecolor{light}{HTML}{EFF6FF}
 
-\\titleformat{\\section}{\\normalsize\\bfseries\\color{accent}}{}{0em}{}[{\\color{muted}\\hrule}]
-\\titlespacing{\\section}{0pt}{8pt}{3pt}
-\\setlist[itemize]{leftmargin=*,nosep,topsep=2pt}
+\\titleformat{\\section}{\\small\\bfseries\\color{accent}\\MakeUppercase}{}{0em}{}[{\\color{accent}\\hrule height 0.5pt}]
+\\titlespacing{\\section}{0pt}{6pt}{3pt}
+\\setlist[itemize]{leftmargin=1em, nosep, topsep=1pt, itemsep=0.5pt}
+\\hypersetup{colorlinks=true, urlcolor=accent}
 
 \\begin{document}
 \\pagestyle{empty}
 
-{\\Large\\bfseries Tu Nombre} \\hfill
-{\\small\\color{muted} tu@email.com · github.com/tu · linkedin.com/in/tu}
+%% ── Header ───────────────────────────────────────────────────────────────────
+\\begin{minipage}[c]{0.14\\linewidth}
+  \\ethoshubFotoPerfil
+\\end{minipage}%
+\\hfill
+\\begin{minipage}[c]{0.83\\linewidth}
+  {\\Large\\bfseries Tu Nombre}\\quad{\\color{muted}|\\quad Senior Software Engineer}\\\\[3pt]
+  {\\small
+    tu@email.com $\\cdot$
+    \\href{https://github.com/tu-usuario}{github.com/tu-usuario} $\\cdot$
+    \\href{https://linkedin.com/in/tu-perfil}{linkedin.com/in/tu-perfil} $\\cdot$
+    Madrid, España
+  }
+\\end{minipage}
 
 \\vspace{4pt}
+{\\color{accent}\\hrule height 1pt}
+\\vspace{6pt}
 
 \\begin{multicols}{2}
 
+%% ── Columna izquierda ────────────────────────────────────────────────────────
+\\section{Perfil}
+{\\small Ing. de software, 6+ años. Backend distribuido con Java/Spring Boot, frontend con React/TS. Liderazgo técnico y DevOps.}
+
 \\section{Experiencia}
-\\textbf{Senior Dev} — Empresa Inc. \\hfill {\\tiny 2022–}
+{\\small
+\\textbf{Senior SWE · Tech Corp} \\hfill {\\color{muted}\\tiny 2022–hoy}
 \\begin{itemize}
-  \\item Microservicios, -40\\% latencia
-  \\item CI/CD, -60\\% deploy time
+  \\item Microservicios 2M tx/día, P99 850ms $\\rightarrow$ 95ms
+  \\item Migración multi-tenant 300+ clientes
+  \\item CI/CD ArgoCD, --90\\% deploys fallidos
+  \\item Mentoring equipo 5 ingenieros
 \\end{itemize}
 
-\\textbf{Full Stack} — Startup SL \\hfill {\\tiny 2020–22}
+\\textbf{SWE · Startup Digital} \\hfill {\\color{muted}\\tiny 2020–22}
 \\begin{itemize}
-  \\item APIs Node.js, 50K usuarios
+  \\item API REST Node.js, 80K usuarios
+  \\item Stripe +28\\% conversión
+  \\item WebSockets 5K conexiones concurrentes
 \\end{itemize}
 
-\\section{Educación}
-\\textbf{Ing. Informática}\\\\
-Universidad Politécnica, 2019
+\\textbf{Dev Freelance} \\hfill {\\color{muted}\\tiny 2018–20}
+\\begin{itemize}
+  \\item 12 proyectos en fintech, edtech, e-commerce
+\\end{itemize}
+}
 
 \\columnbreak
 
+%% ── Columna derecha ──────────────────────────────────────────────────────────
 \\section{Habilidades}
-TypeScript · Python · Go\\\\
-React · Node.js · FastAPI\\\\
-Docker · K8s · AWS · GCP
+{\\small
+\\textbf{Backend:} Java · Spring Boot · Node.js · Python · Go\\\\
+\\textbf{Frontend:} React · TypeScript · Next.js\\\\
+\\textbf{BD:} PostgreSQL · Redis · MongoDB\\\\
+\\textbf{DevOps:} Docker · K8s · AWS · Terraform\\\\
+\\textbf{Testing:} JUnit 5 · Jest · Cypress · k6
+}
 
-\\section{Proyectos}
-\\textbf{Proyecto Alpha} — SaaS, 1.2K usuarios\\\\
-\\textbf{Proyecto Beta} — Dashboard tiempo real
+\\section{Proyectos Destacados}
+{\\small
+\\textbf{Audit System} --- Event sourcing Kafka, 50K eventos/s\\\\
+\\textbf{DevTools CLI} --- Go, 1.2K $\\star$ en GitHub
+}
+
+\\section{Educación}
+{\\small
+\\textbf{Ing. Informática} · UPM · 2018 · 8.6/10
+}
+
+\\section{Certificaciones}
+{\\small AWS CDA (2023) · CKAD (2022)}
 
 \\section{Idiomas}
-Español (nativo) · Inglés (C1)
+{\\small Español (nativo) · Inglés (C1)}
 
 \\end{multicols}
 
@@ -365,6 +587,7 @@ const handleBeforeMount: BeforeMount = (monaco) => {
 export default function CVStudioPage() {
   const { resolvedTheme } = useUiStore();
   const isDark = resolvedTheme === 'dark';
+  const { profile } = useAuthStore();
 
   // ── Store ──────────────────────────────────────────────────────────────────
   const {
@@ -395,9 +618,11 @@ export default function CVStudioPage() {
 
   // ── AI state ───────────────────────────────────────────────────────────────
   const [aiPrompt, setAiPrompt] = useState('');
-  const [aiLoading, setAiLoading] = useState(false);
-  const [isAiStreaming, setIsAiStreaming] = useState(false);
-  const [aiResponse, setAiResponse] = useState('');
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const [copiedMsgIndex, setCopiedMsgIndex] = useState<number | null>(null);
+  const chatMessagesRef = useRef<HTMLDivElement>(null);
+  const aiTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   // ── Save modal state ───────────────────────────────────────────────────────
   const [showSaveModal, setShowSaveModal] = useState(false);
@@ -409,7 +634,6 @@ export default function CVStudioPage() {
   // ── Refs ───────────────────────────────────────────────────────────────────
   const exportRef = useRef<HTMLDivElement>(null);
   const modeRef = useRef<HTMLDivElement>(null);
-  const aiAbortRef = useRef<AbortController | null>(null);
   const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
 
   const templates = mode === 'markdown' ? markdownTemplates : latexTemplates;
@@ -484,7 +708,6 @@ export default function CVStudioPage() {
   }, []);
 
   const handleNewDocument = useCallback(() => {
-    // Clear Monaco directly first (bypasses React controlled-value cycle)
     if (editorRef.current) {
       editorRef.current.setValue('');
       editorRef.current.setPosition({ lineNumber: 1, column: 1 });
@@ -493,6 +716,7 @@ export default function CVStudioPage() {
     setEditorContent('');
     setActiveTemplateId(null);
     setEditingDocId(null);
+    setChatHistory([]);
   }, [setEditorContent, setActiveTemplateId, setEditingDocId]);
 
   const handleSaveToProfile = useCallback(() => {
@@ -552,10 +776,6 @@ export default function CVStudioPage() {
     }
   }, [editingDocId, removeDocument, templates]);
 
-  const handleDeleteCardConfirmed = useCallback(async (id: string) => {
-    await handleDeleteConfirmed(id);
-  }, [handleDeleteConfirmed]);
-
   const triggerDownload = useCallback((type: string, content: string) => {
     const ext = type === 'markdown' ? 'md' : type === 'latex' ? 'tex' : type;
     const blob = new Blob([content], { type: 'text/plain' });
@@ -606,7 +826,7 @@ export default function CVStudioPage() {
               html2canvas: { scale: 2, backgroundColor: '#ffffff', logging: false, useCORS: true },
               jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
             })
-            .from(buildMarkdownPdfHtml(contentSnapshot), 'string')
+            .from(buildMarkdownPdfHtml(contentSnapshot, profile?.avatar ?? undefined), 'string')
             .save();
           setShowExportLoading(false);
           toast.success('PDF exportado correctamente');
@@ -615,9 +835,9 @@ export default function CVStudioPage() {
           toast.error('Error generando PDF: ' + (err as Error).message);
         }
       } else {
-        // LaTeX → PDF via backend Tectonic
+        // LaTeX → PDF via backend pdflatex
         try {
-          const blob = await compileLatexToPdf(contentSnapshot);
+          const blob = await compileLatexToPdf(contentSnapshot, profile?.avatar ?? undefined);
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
@@ -627,7 +847,7 @@ export default function CVStudioPage() {
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
           setShowExportLoading(false);
-          toast.success('PDF compilado con Tectonic');
+          toast.success('PDF compilado correctamente');
         } catch (err) {
           setShowExportLoading(false);
           toast.error('Error compilando LaTeX: ' + (err as Error).message);
@@ -645,79 +865,64 @@ export default function CVStudioPage() {
     }
   }, [mode, editorContent, triggerDownload]);
 
+  const copyAiResponse = useCallback(async (text: string, idx: number) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    setCopiedMsgIndex(idx);
+    toast.success('Código copiado al portapapeles');
+    setTimeout(() => setCopiedMsgIndex(null), 2000);
+  }, []);
+
+  const applyAiResponse = useCallback((text: string) => {
+    if (editorRef.current) editorRef.current.setValue(text);
+    setEditorContent(text);
+    toast.success('Código aplicado al editor');
+  }, [setEditorContent]);
+
   const handleAiSubmit = useCallback(async () => {
-    if (!aiPrompt.trim() || isAiStreaming) return;
+    if (!aiPrompt.trim() || isAiLoading) return;
 
-    aiAbortRef.current?.abort();
-    const controller = new AbortController();
-    aiAbortRef.current = controller;
-
-    setAiLoading(true);
-    setIsAiStreaming(true);
-    setShowAiModal(false);
+    const userMessage = aiPrompt.trim();
+    setIsAiLoading(true);
     setAiPrompt('');
-    setAiResponse('');
 
-    const separator = mode === 'markdown'
-      ? '\n\n<!-- ✨ Optimizado por Asistente IA -->\n\n'
-      : '\n\n% ✨ Optimizado por Asistente IA\n\n';
+    setChatHistory(prev => [...prev, { role: 'user', text: userMessage }]);
+    setTimeout(() => {
+      chatMessagesRef.current?.scrollTo({ top: chatMessagesRef.current.scrollHeight, behavior: 'smooth' });
+    }, 50);
 
-    // Append separator + stream tokens directly into Monaco model (no setState per token
-    // avoids cursor-reset that happens when React re-passes `value` prop on every re-render)
-    const appendToMonaco = (text: string) => {
-      const editor = editorRef.current;
-      if (!editor) return;
-      const model = editor.getModel();
-      if (!model) return;
-      const lc = model.getLineCount();
-      const ll = model.getLineLength(lc);
-      editor.executeEdits('ai-stream', [{
-        range: { startLineNumber: lc, startColumn: ll + 1, endLineNumber: lc, endColumn: ll + 1 },
-        text,
-        forceMoveMarkers: true,
-      }]);
-    };
-
-    // Capture CV content BEFORE appending the separator so the AI doesn't
-    // receive the separator header as part of the document to rewrite.
     const contentForApi = editorRef.current?.getValue() ?? editorContent;
 
-    appendToMonaco(separator);
-
     try {
-      await streamAiAssist({
-        prompt: aiPrompt,
+      const text = await callAiAssist({
+        prompt: userMessage,
         content: contentForApi,
         mode,
-        signal: controller.signal,
-        onToken: (token) => {
-          appendToMonaco(token);
-        },
-        onDone: () => {
-          const finalContent = editorRef.current?.getValue() ?? '';
-          setEditorContent(finalContent);
-          setAiLoading(false);
-          setIsAiStreaming(false);
-          setAiResponse('✓ El asistente IA ha actualizado tu CV directamente en el editor.');
-          aiAbortRef.current = null;
-        },
-        onError: (msg) => {
-          setAiLoading(false);
-          setIsAiStreaming(false);
-          setAiResponse('');
-          toast.error(msg);
-          aiAbortRef.current = null;
-        },
+        history: chatHistory,
       });
+      setChatHistory(prev => [...prev, { role: 'model', text }]);
+      setTimeout(() => {
+        chatMessagesRef.current?.scrollTo({ top: chatMessagesRef.current.scrollHeight, behavior: 'smooth' });
+      }, 50);
     } catch (err: unknown) {
-      if ((err as Error)?.name !== 'AbortError') {
-        setAiLoading(false);
-        setIsAiStreaming(false);
-        toast.error('No se pudo conectar con el asistente IA');
-      }
-      aiAbortRef.current = null;
+      const msg = (err as { response?: { data?: { message?: string } }; message?: string })
+        ?.response?.data?.message ?? (err as { message?: string })?.message ?? 'Error del asistente IA';
+      toast.error(msg);
+    } finally {
+      setIsAiLoading(false);
     }
-  }, [aiPrompt, isAiStreaming, mode, editorContent]);
+  }, [aiPrompt, isAiLoading, mode, editorContent, chatHistory]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -805,11 +1010,11 @@ export default function CVStudioPage() {
             {/* Nuevo CV */}
             <button
               onClick={handleNewDocument}
-              disabled={isAiStreaming}
+              disabled={isAiLoading}
               className={cn(
                 'flex items-center gap-1.5 h-9 rounded-xl border border-border px-3 text-xs font-medium transition-all',
                 'text-muted-foreground hover:text-foreground hover:border-violet-500/30 hover:bg-accent',
-                isAiStreaming && 'opacity-40 cursor-not-allowed',
+                isAiLoading && 'opacity-40 cursor-not-allowed',
               )}
               title="Crear nuevo CV en blanco"
             >
@@ -838,19 +1043,18 @@ export default function CVStudioPage() {
 
             {/* AI Assistant */}
             <button
-              onClick={() => !isAiStreaming && setShowAiModal(true)}
-              disabled={isAiStreaming}
+              onClick={() => setShowAiModal(true)}
               className={cn(
                 'flex items-center gap-1.5 h-9 rounded-xl px-3.5 text-xs font-medium transition-all',
-                isAiStreaming
-                  ? 'bg-violet-500/15 text-violet-400 border border-violet-500/30 cursor-not-allowed'
+                isAiLoading
+                  ? 'bg-violet-500/15 text-violet-400 border border-violet-500/30'
                   : 'bg-gradient-to-r from-violet-600 to-violet-500 text-white hover:from-violet-500 hover:to-violet-400 shadow-sm hover:shadow-violet-500/25',
               )}
             >
-              {isAiStreaming
+              {isAiLoading
                 ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 : <Sparkles className="h-3.5 w-3.5" />}
-              {isAiStreaming ? 'IA escribiendo...' : 'Asistente IA'}
+              {isAiLoading ? 'IA procesando...' : 'Asistente IA'}
             </button>
 
             {/* Export */}
@@ -921,11 +1125,11 @@ export default function CVStudioPage() {
             {/* Guardar / Actualizar */}
             <button
               onClick={handleSaveToProfile}
-              disabled={isSaving || isAiStreaming}
+              disabled={isSaving}
               className={cn(
                 'flex items-center gap-1.5 h-9 rounded-xl px-3.5 text-xs font-semibold transition-all duration-200',
                 'bg-violet-600 text-white hover:bg-violet-500 shadow-sm hover:shadow-violet-500/20',
-                (isSaving || isAiStreaming) && 'opacity-60 cursor-not-allowed',
+                isSaving && 'opacity-60 cursor-not-allowed',
               )}
             >
               {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
@@ -1024,41 +1228,20 @@ export default function CVStudioPage() {
                   'flex items-center gap-0.5 mt-auto pt-1.5 border-t',
                   isDark ? 'border-white/8' : 'border-black/6',
                 )}>
-                  {deleteConfirmId === doc.id ? (
-                    <>
-                      <span className="text-[9px] text-destructive font-medium flex-1 truncate">¿Eliminar?</span>
-                      <button
-                        onClick={() => handleDeleteCardConfirmed(doc.id)}
-                        disabled={isDeleting}
-                        className="text-[9px] font-bold text-destructive hover:opacity-70 px-1.5 py-0.5 rounded"
-                      >
-                        {isDeleting ? '...' : 'Sí'}
-                      </button>
-                      <button
-                        onClick={() => setDeleteConfirmId(null)}
-                        className="text-[9px] text-muted-foreground hover:opacity-70 px-1 py-0.5 rounded"
-                      >
-                        No
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => handleEditDocCard(doc)}
-                        className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                        title="Renombrar"
-                      >
-                        <Pencil className="h-2.5 w-2.5" />
-                      </button>
-                      <button
-                        onClick={() => setDeleteConfirmId(doc.id)}
-                        className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"
-                        title="Eliminar"
-                      >
-                        <Trash2 className="h-2.5 w-2.5" />
-                      </button>
-                    </>
-                  )}
+                  <button
+                    onClick={() => handleEditDocCard(doc)}
+                    className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                    title="Renombrar"
+                  >
+                    <Pencil className="h-2.5 w-2.5" />
+                  </button>
+                  <button
+                    onClick={() => setDeleteConfirmId(doc.id)}
+                    className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-colors"
+                    title="Eliminar"
+                  >
+                    <Trash2 className="h-2.5 w-2.5" />
+                  </button>
                 </div>
               </motion.div>
             ))}
@@ -1112,28 +1295,12 @@ export default function CVStudioPage() {
         {/* Monaco Editor + floating minimap */}
         <div className="relative flex-1 min-h-0">
 
-          {/* AI streaming overlay — floats centered above the editor while IA writes */}
-          <AnimatePresence>
-            {isAiStreaming && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ type: 'spring', stiffness: 420, damping: 28 }}
-                className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 rounded-full border border-violet-500/40 bg-violet-500/10 backdrop-blur-sm px-4 py-1.5 shadow-lg pointer-events-none"
-              >
-                <Loader2 className="h-3 w-3 animate-spin text-violet-400 shrink-0" />
-                <span className="text-[11px] font-medium text-violet-300 whitespace-nowrap">Asistente IA escribiendo en el editor…</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
           {/* Monaco fills space minus minimap width on sm+ */}
           <div className="absolute inset-0 sm:right-[200px]">
             <Editor
               height="100%"
               language={mode === 'markdown' ? 'markdown' : 'latex'}
-              value={isAiStreaming ? undefined : editorContent}
+              value={editorContent}
               onChange={(val) => setEditorContent(val ?? '')}
               theme={isDark ? 'vs-dark' : 'light'}
               beforeMount={handleBeforeMount}
@@ -1398,17 +1565,18 @@ export default function CVStudioPage() {
             <motion.div
               className="fixed inset-0 z-[80] bg-black/40 backdrop-blur-sm"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => { if (!isAiStreaming) setShowAiModal(false); }}
+              onClick={() => setShowAiModal(false)}
             />
             <motion.div
-              className="fixed bottom-6 right-6 z-[90] w-full max-w-sm"
+              className="fixed bottom-6 right-6 z-[90] w-full max-w-sm flex flex-col"
+              style={{ maxHeight: 'calc(100vh - 5rem)' }}
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.95 }}
               transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             >
               <div className={cn(
-                'rounded-2xl border border-border shadow-2xl overflow-hidden',
+                'rounded-2xl border border-border shadow-2xl overflow-hidden flex flex-col',
                 isDark ? 'bg-zinc-900/95 backdrop-blur-xl shadow-black/60 border-white/8' : 'bg-white/95 backdrop-blur-xl shadow-black/15',
               )}>
                 {/* AI Modal header */}
@@ -1420,19 +1588,12 @@ export default function CVStudioPage() {
                     <div>
                       <p className="text-sm font-semibold text-foreground leading-none">Asistente IA</p>
                       <p className="text-[10px] text-muted-foreground mt-0.5">
-                        CV Studio · Modo {mode} {isAiStreaming && '· Escribiendo...'}
+                        CV Studio · Modo {mode}{isAiLoading && ' · Procesando...'}
                       </p>
                     </div>
                   </div>
                   <button
-                    onClick={() => {
-                      if (isAiStreaming) {
-                        aiAbortRef.current?.abort();
-                        setIsAiStreaming(false);
-                        setAiLoading(false);
-                      }
-                      setShowAiModal(false);
-                    }}
+                    onClick={() => setShowAiModal(false)}
                     className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                   >
                     <X className="h-4 w-4" />
@@ -1446,7 +1607,7 @@ export default function CVStudioPage() {
                       <button
                         key={action}
                         onClick={() => setAiPrompt(action)}
-                        disabled={isAiStreaming}
+                        disabled={isAiLoading}
                         className="rounded-lg border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:border-violet-500/40 hover:bg-violet-500/5 transition-all disabled:opacity-40"
                       >
                         {action}
@@ -1454,64 +1615,138 @@ export default function CVStudioPage() {
                     ))}
                   </div>
 
-                  {/* Response area */}
-                  <AnimatePresence>
-                    {(aiLoading || aiResponse) && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className={cn('rounded-xl border border-border p-3', isDark ? 'bg-zinc-800/50' : 'bg-muted/40')}
-                      >
-                        {aiLoading ? (
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            {isAiStreaming ? 'Escribiendo en el editor...' : 'Analizando tu CV...'}
-                          </div>
-                        ) : (
-                          <div className="text-xs text-foreground leading-relaxed">
-                            <div className="flex items-center gap-1.5 mb-1">
-                              <Wand2 className="h-3 w-3 text-violet-500 shrink-0" />
-                              <span className="font-semibold text-violet-600 dark:text-violet-300">Completado</span>
+                  {/* Chat history — grows from 0 to max-h, then scrolls */}
+                  {(chatHistory.length > 0 || isAiLoading) && (
+                    <div
+                      ref={chatMessagesRef}
+                      className={cn(
+                        'flex flex-col gap-2 overflow-y-auto rounded-xl border border-border p-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent',
+                        isDark ? 'bg-zinc-800/40' : 'bg-muted/30',
+                      )}
+                      style={{ maxHeight: 'min(420px, calc(100vh - 320px))' }}
+                    >
+                      {chatHistory.map((msg, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                          className={cn('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}
+                        >
+                          {msg.role === 'user' ? (
+                            <div className="rounded-lg px-2.5 py-1.5 text-[11px] leading-relaxed bg-violet-500 text-white max-w-[88%]">
+                              {msg.text}
                             </div>
-                            {aiResponse}
-                          </div>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                          ) : (
+                            <div className={cn(
+                              'w-full rounded-lg border border-border overflow-hidden',
+                              isDark ? 'bg-zinc-800/60' : 'bg-white',
+                            )}>
+                              {/* Code block header */}
+                              <div className={cn(
+                                'flex items-center justify-between px-2.5 py-1 border-b border-border',
+                                isDark ? 'bg-zinc-900/60' : 'bg-muted/50',
+                              )}>
+                                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                  <Wand2 className="h-2.5 w-2.5 text-violet-400" />
+                                  IA · {msg.text.length} chars
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() => applyAiResponse(msg.text)}
+                                    className="text-[9px] font-semibold text-violet-500 hover:text-violet-400 px-1.5 py-0.5 rounded hover:bg-violet-500/10 transition-colors"
+                                  >
+                                    Aplicar al editor
+                                  </button>
+                                  <button
+                                    onClick={() => copyAiResponse(msg.text, i)}
+                                    className="flex items-center gap-0.5 text-[9px] text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded hover:bg-accent transition-colors"
+                                  >
+                                    {copiedMsgIndex === i
+                                      ? <><Check className="h-2.5 w-2.5 text-green-500" /> Copiado</>
+                                      : <><Copy className="h-2.5 w-2.5" /> Copiar</>}
+                                  </button>
+                                </div>
+                              </div>
+                              {/* Code preview */}
+                              <pre className={cn(
+                                'text-[9px] font-mono px-2.5 py-1.5 max-h-32 overflow-auto whitespace-pre-wrap leading-relaxed',
+                                isDark ? 'text-zinc-300' : 'text-zinc-700',
+                              )}>
+                                {msg.text.slice(0, 500)}{msg.text.length > 500 ? '\n…' : ''}
+                              </pre>
+                            </div>
+                          )}
+                        </motion.div>
+                      ))}
 
-                  {/* Prompt input */}
+                      {/* Loading bubble while waiting for AI response */}
+                      {isAiLoading && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="flex items-center gap-1.5 self-start rounded-lg border border-violet-500/20 px-2.5 py-1.5"
+                        >
+                          <Loader2 className="h-2.5 w-2.5 animate-spin text-violet-400 shrink-0" />
+                          <span className="text-[10px] text-muted-foreground">Generando tu CV…</span>
+                        </motion.div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Prompt input — textarea that expands vertically */}
                   <div className={cn(
-                    'flex items-center gap-2 rounded-xl border px-3 py-2 transition-colors',
+                    'flex items-end gap-2 rounded-xl border px-3 py-2 transition-colors',
                     'border-border focus-within:border-violet-500/50',
                     isDark ? 'bg-zinc-800/60' : 'bg-muted/30',
                   )}>
-                    <input
-                      type="text"
+                    <textarea
+                      ref={aiTextareaRef}
                       value={aiPrompt}
-                      onChange={(e) => setAiPrompt(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleAiSubmit()}
-                      placeholder="Ej: Mejora mi experiencia para roles de liderazgo..."
-                      disabled={isAiStreaming}
-                      className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none disabled:opacity-50"
+                      rows={1}
+                      onChange={(e) => {
+                        setAiPrompt(e.target.value);
+                        e.target.style.height = 'auto';
+                        e.target.style.height = Math.min(e.target.scrollHeight, 160) + 'px';
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleAiSubmit();
+                        }
+                      }}
+                      placeholder="Ej: Mejora mi experiencia para roles de liderazgo… (Shift+Enter para nueva línea)"
+                      disabled={isAiLoading}
+                      style={{ resize: 'none', overflowY: 'auto', minHeight: '20px', maxHeight: '160px' }}
+                      className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none disabled:opacity-50 leading-relaxed scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
                     />
                     <button
                       onClick={handleAiSubmit}
-                      disabled={!aiPrompt.trim() || isAiStreaming}
+                      disabled={!aiPrompt.trim() || isAiLoading}
                       className={cn(
-                        'flex h-6 w-6 items-center justify-center rounded-lg transition-all shrink-0',
-                        aiPrompt.trim() && !isAiStreaming
+                        'flex h-6 w-6 shrink-0 items-center justify-center rounded-lg transition-all mb-0.5',
+                        aiPrompt.trim() && !isAiLoading
                           ? 'bg-violet-500 text-white hover:bg-violet-400'
                           : 'bg-muted text-muted-foreground cursor-not-allowed',
                       )}
                     >
-                      {isAiStreaming ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                      {isAiLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
                     </button>
                   </div>
-                  <p className="text-[10px] text-muted-foreground text-center">
-                    El asistente editará el código directamente en el editor
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] text-muted-foreground">
+                      Usa <strong>Aplicar al editor</strong> o <strong>Copiar</strong> para usar el CV generado
+                    </p>
+                    {chatHistory.length > 0 && (
+                      <button
+                        onClick={() => setChatHistory([])}
+                        disabled={isAiLoading}
+                        className="text-[10px] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+                      >
+                        Limpiar chat
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -1570,7 +1805,7 @@ export default function CVStudioPage() {
 
                 <div className="text-center space-y-1.5">
                   <p className="text-sm font-bold text-foreground tracking-tight">
-                    {exportLoadingType === 'pdf' && mode === 'latex' ? 'Compilando con Tectonic...' : 'Generando archivo...'}
+                    {exportLoadingType === 'pdf' && mode === 'latex' ? 'Compilando con pdflatex...' : 'Generando archivo...'}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {exportFormatLabel[exportLoadingType] ?? 'Archivo'} · por favor espera
@@ -1599,7 +1834,93 @@ export default function CVStudioPage() {
           onClick={() => { setShowExportMenu(false); setShowModeDropdown(false); }}
         />
       )}
+
+      {/* ── Delete CV confirmation popup ───────────────────────────────────────── */}
+      <AnimatePresence>
+        {deleteConfirmId && (
+          <DeleteCvConfirmModal
+            onClose={() => setDeleteConfirmId(null)}
+            onConfirm={() => handleDeleteConfirmed(deleteConfirmId)}
+            loading={isDeleting}
+          />
+        )}
+      </AnimatePresence>
     </div>
+  );
+}
+
+// ── DeleteCvConfirmModal ──────────────────────────────────────────────────────
+
+function DeleteCvConfirmModal({
+  onClose,
+  onConfirm,
+  loading,
+}: {
+  onClose: () => void;
+  onConfirm: () => void;
+  loading?: boolean;
+}) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  const portalRoot = document.getElementById('portal-root') ?? document.body;
+  return createPortal(
+    <>
+      <motion.div
+        key="del-cv-backdrop"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        transition={{ duration: 0.18 }}
+        className="absolute inset-0 z-[90] bg-background/75 backdrop-blur-md"
+        onClick={onClose}
+      />
+      <div className="absolute inset-0 z-[91] flex items-center justify-center p-4 pointer-events-none">
+        <motion.div
+          key="del-cv-panel"
+          initial={{ opacity: 0, scale: 0.96, y: 8 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.96, y: 8 }}
+          transition={{ type: 'spring', stiffness: 340, damping: 28 }}
+          className="pointer-events-auto w-full max-w-sm rounded-2xl border border-border bg-card/95 backdrop-blur-sm p-6 shadow-2xl shadow-black/20"
+        >
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-red-500/10">
+              <Trash2 className="h-5 w-5 text-red-500" />
+            </div>
+            <div className="flex-1 pt-0.5">
+              <h2 className="text-[15px] font-semibold text-foreground">Eliminar documento</h2>
+              <p className="mt-1 text-[13px] text-muted-foreground leading-relaxed">
+                ¿Estás seguro de eliminar este CV? Desaparecerá de tu lista pero podrá recuperarse si lo necesitas.
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 rounded-xl border border-border py-2 text-[13px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={loading}
+              className="flex-1 rounded-xl bg-red-500 py-2 text-[13px] font-semibold text-white hover:bg-red-600 transition-colors disabled:opacity-60"
+            >
+              {loading ? 'Eliminando…' : 'Sí, eliminar'}
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    </>,
+    portalRoot,
   );
 }
 
@@ -1644,31 +1965,91 @@ function renderInline(text: string): React.ReactNode {
 // ── Markdown → PDF HTML builder ───────────────────────────────────────────────
 // Generates inline-styled HTML (no Tailwind/CSS-var dependencies) for html2pdf.js.
 
-function buildMarkdownPdfHtml(content: string): string {
+function buildMarkdownPdfHtml(content: string, profileImageUrl?: string): string {
+  const WB = 'word-break:break-word;overflow-wrap:break-word;';
   const lines = content.split('\n');
   let html =
-    '<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.55;color:#111;max-width:100%">';
+    `<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.55;color:#111;max-width:100%;${WB}">`;
+
+  let inCodeBlock = false;
+  let inTable = false;
+  let tableHtml = '';
+
+  const flushTable = () => {
+    if (!inTable) return;
+    html += tableHtml + '</tbody></table>';
+    tableHtml = '';
+    inTable = false;
+  };
 
   for (const line of lines) {
-    if (line.startsWith('# ')) {
-      html += `<h1 style="font-size:20pt;font-weight:700;margin:0 0 6px;padding:0;color:#111;border:0">${esc(line.slice(2))}</h1>`;
+    // Code block toggle
+    if (line.startsWith('```')) {
+      flushTable();
+      inCodeBlock = !inCodeBlock;
+      if (inCodeBlock) {
+        html += `<pre style="font-family:monospace;font-size:9pt;background:#f4f4f4;border:1px solid #ddd;padding:8px 10px;border-radius:4px;margin:6px 0;white-space:pre-wrap;${WB}">`;
+      } else {
+        html += '</pre>';
+      }
+      continue;
+    }
+    if (inCodeBlock) {
+      html += esc(line) + '\n';
+      continue;
+    }
+
+    // Markdown table rows (start with |)
+    if (line.trim().startsWith('|')) {
+      const cells = line.split('|').slice(1, -1).map(c => c.trim());
+      // Separator row (---|---) → skip, already handled by thead/tbody split
+      if (cells.every(c => /^[-:]+$/.test(c))) {
+        // Convert first row already in tableHtml from tbody to thead
+        if (inTable) {
+          tableHtml = tableHtml.replace('<tbody>', '<thead>').replace(/<\/tr>$/, '</tr></thead><tbody>');
+        }
+        continue;
+      }
+      if (!inTable) {
+        inTable = true;
+        tableHtml = `<table style="width:100%;border-collapse:collapse;margin:6px 0;font-size:10pt;${WB}"><tbody>`;
+      }
+      const isHeader = !tableHtml.includes('<thead>');
+      const tag = isHeader ? 'td' : 'td';
+      tableHtml += '<tr>' + cells.map(c =>
+        `<${tag} style="border:1px solid #ddd;padding:4px 8px;text-align:left">${inlineHtml(c)}</${tag}>`
+      ).join('') + '</tr>';
+      continue;
+    }
+
+    flushTable();
+
+    if (line.trim() === '{{FOTO_PERFIL}}') {
+      if (profileImageUrl) {
+        html += `<div style="margin:8px 0"><img src="${profileImageUrl}" style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:2px solid #ddd" crossorigin="anonymous"/></div>`;
+      }
+    } else if (line.startsWith('# ')) {
+      html += `<h1 style="font-size:20pt;font-weight:700;margin:0 0 4px;padding:0;color:#111;border:0;${WB}">${inlineHtml(line.slice(2))}</h1>`;
     } else if (line.startsWith('## ')) {
-      html += `<h2 style="font-size:13pt;font-weight:700;border-bottom:1.5px solid #ccc;padding-bottom:3px;margin:14px 0 7px;color:#111">${esc(line.slice(3))}</h2>`;
+      html += `<h2 style="font-size:13pt;font-weight:700;border-bottom:1.5px solid #6D28D9;padding-bottom:3px;margin:14px 0 6px;color:#1a1a1a;${WB}">${inlineHtml(line.slice(3))}</h2>`;
     } else if (line.startsWith('### ')) {
-      html += `<h3 style="font-size:11pt;font-weight:700;margin:10px 0 4px;color:#222">${esc(line.slice(4))}</h3>`;
+      html += `<h3 style="font-size:11pt;font-weight:700;margin:10px 0 3px;color:#222;${WB}">${inlineHtml(line.slice(4))}</h3>`;
     } else if (line.startsWith('- ') || line.startsWith('* ')) {
-      html += `<div style="padding-left:18px;margin:2px 0;color:#333">• ${inlineHtml(line.slice(2))}</div>`;
+      html += `<div style="padding-left:18px;margin:2px 0;color:#333;${WB}">• ${inlineHtml(line.slice(2))}</div>`;
+    } else if (/^\d+\. /.test(line)) {
+      const num = line.match(/^(\d+)\. /)?.[1] ?? '';
+      html += `<div style="padding-left:18px;margin:2px 0;color:#333;${WB}">${num}. ${inlineHtml(line.replace(/^\d+\. /, ''))}</div>`;
     } else if (line === '---' || line === '***' || line === '___') {
       html += `<hr style="border:0;border-top:1px solid #ccc;margin:10px 0"/>`;
     } else if (line.trim() === '') {
       html += `<div style="height:5px"></div>`;
-    } else if (line.startsWith('```')) {
-      html += `<code style="display:block;font-family:monospace;font-size:9pt;background:#f4f4f4;border:1px solid #ddd;padding:8px 10px;border-radius:4px;margin:6px 0;white-space:pre-wrap">${esc(line.slice(3))}</code>`;
     } else {
-      html += `<p style="margin:2px 0;color:#333">${inlineHtml(line)}</p>`;
+      html += `<p style="margin:2px 0;color:#333;${WB}">${inlineHtml(line)}</p>`;
     }
   }
 
+  flushTable();
+  if (inCodeBlock) html += '</pre>';
   html += '</div>';
   return html;
 }
@@ -1678,7 +2059,14 @@ function esc(s: string): string {
 }
 
 function inlineHtml(text: string): string {
-  return esc(text)
+  // Links first (before esc so we can add href)
+  const withLinks = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) =>
+    `\x00LINK\x00${label}\x00${url}\x00`
+  );
+  const escaped = esc(withLinks);
+  return escaped
+    .replace(/\x00LINK\x00([^\x00]+)\x00([^\x00]+)\x00/g,
+      (_, label, url) => `<a href="${url}" style="color:#6D28D9;text-decoration:none">${esc(label)}</a>`)
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/\*([^*]+)\*/g, '<em>$1</em>')
     .replace(/`([^`]+)`/g,
@@ -1702,7 +2090,7 @@ function LaTeXPreview({ content, isDark }: { content: string; isDark: boolean })
           <p className="text-xs font-semibold text-amber-600 dark:text-amber-400">Documento LaTeX</p>
         </div>
         <p className="text-[11px] text-muted-foreground">
-          Usa el botón Exportar PDF para compilar con Tectonic, o descarga el .tex para editar en Overleaf.
+          Usa el botón Exportar PDF para compilar con pdflatex, o descarga el .tex para editar en Overleaf.
         </p>
       </div>
 

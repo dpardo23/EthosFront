@@ -125,10 +125,17 @@ function getExtension(name: string): string {
   return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';
 }
 
+function isServableUrl(url: string): boolean {
+  try {
+    const { protocol } = new URL(url);
+    return protocol === 'https:' || protocol === 'http:';
+  } catch { return false; }
+}
+
 function DocumentViewer({ file }: { file: ProjectFile }) {
   const [open, setOpen] = useState(false);
   const ext = getExtension(file.name);
-  const canView = VIEWABLE_EXTS.has(ext);
+  const canView = VIEWABLE_EXTS.has(ext) && isServableUrl(file.url);
   const isCode  = CODE_EXTS.has(ext);
 
   return (
@@ -146,15 +153,17 @@ function DocumentViewer({ file }: { file: ProjectFile }) {
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          <a
-            href={file.url}
-            download={file.name}
-            onClick={e => e.stopPropagation()}
-            title="Descargar"
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          >
-            <Download className="h-3.5 w-3.5" />
-          </a>
+          {isServableUrl(file.url) && (
+            <a
+              href={file.url}
+              download={file.name}
+              onClick={e => e.stopPropagation()}
+              title="Descargar"
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            >
+              <Download className="h-3.5 w-3.5" />
+            </a>
+          )}
           {canView && (
             <button
               onClick={() => setOpen(v => !v)}

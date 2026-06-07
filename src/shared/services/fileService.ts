@@ -15,8 +15,10 @@ export const fileService = {
   uploadFile: async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append('file', file);
+    // Content-Type must be undefined so axios doesn't send the instance default
+    // 'application/json' — the browser then sets multipart/form-data with the correct boundary.
     const response = await apiClient.post<{ data: UploadResult }>('/uploads', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      headers: { 'Content-Type': undefined },
     });
     return response.data.data.url;
   },

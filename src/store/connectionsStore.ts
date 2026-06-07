@@ -20,9 +20,12 @@ interface ConnectionsStore {
   syncing: boolean;
   error: string | null;
   fetchConnections: (profileId: string) => Promise<void>;
+  addConnection: (provider: string, profileHandle?: string, providerUrl?: string) => Promise<void>;
   syncAll: (profileId: string) => Promise<void>;
+  syncConnection: (connectionId: string) => Promise<void>;
   disconnect: (connectionId: string) => Promise<void>;
   reconnect: (connectionId: string) => Promise<void>;
+  deleteConnection: (connectionId: string) => Promise<void>;
   fetchGithubRepos: () => Promise<void>;
   fetchGithubHeatmap: () => Promise<void>;
   importGithubRepos: (repoIds: string[]) => Promise<void>;
@@ -53,6 +56,22 @@ export const useConnectionsStore = create<ConnectionsStore>((set, get) => ({
     }
   },
 
+  addConnection: async (provider: string, profileHandle?: string, providerUrl?: string) => {
+    set({ loading: true, error: null });
+    try {
+      const created = await connectionsService.addConnection(provider, profileHandle, providerUrl);
+      set((state) => ({
+        connections: state.connections.some((c) => c.id === created.id)
+          ? state.connections.map((c) => (c.id === created.id ? created : c))
+          : [...state.connections, created],
+        loading: false,
+      }));
+    } catch {
+      set({ error: 'Error al agregar conexión', loading: false });
+      throw new Error('Error al agregar conexión');
+    }
+  },
+
   syncAll: async (profileId: string) => {
     set({ syncing: true, error: null });
     try {
@@ -64,33 +83,59 @@ export const useConnectionsStore = create<ConnectionsStore>((set, get) => ({
     }
   },
 
+  syncConnection: async (connectionId: string) => {
+    set({ loading: true, error: null });
+    try {
+      const updated = await connectionsService.sync(connectionId);
+      set((state) => ({
+        connections: state.connections.map((c) => (c.id === connectionId ? updated : c)),
+        loading: false,
+      }));
+    } catch {
+      set({ error: 'Error al sincronizar', loading: false });
+    }
+  },
+
   disconnect: async (connectionId: string) => {
     set({ loading: true, error: null });
     try {
       await connectionsService.disconnect(connectionId);
       set((state) => ({
         connections: state.connections.map((c) =>
-          c.id === connectionId ? { ...c, status: 'disconnected' as const } : c
+          c.id === connectionId ? { ...c, status: 'disconnected' as const, apiHealth: 'down' as const } : c
         ),
         loading: false,
       }));
     } catch {
       set({ error: 'Error al desconectar', loading: false });
+      throw new Error('Error al desconectar');
     }
   },
 
   reconnect: async (connectionId: string) => {
     set({ loading: true, error: null });
     try {
-      const updatedConnection = await connectionsService.reconnect(connectionId);
+      const updated = await connectionsService.reconnect(connectionId);
       set((state) => ({
-        connections: state.connections.map((c) =>
-          c.id === connectionId ? updatedConnection : c
-        ),
+        connections: state.connections.map((c) => (c.id === connectionId ? updated : c)),
         loading: false,
       }));
     } catch {
       set({ error: 'Error al reconectar', loading: false });
+      throw new Error('Error al reconectar');
+    }
+  },
+
+  deleteConnection: async (connectionId: string) => {
+    set({ loading: true, error: null });
+    try {
+      await connectionsService.deleteConnection(connectionId);
+      set((state) => ({
+        connections: state.connections.filter((c) => c.id !== connectionId),
+        loading: false,
+      }));
+    } catch {
+      set({ error: 'Error al eliminar conexión', loading: false });
     }
   },
 
@@ -107,7 +152,7 @@ export const useConnectionsStore = create<ConnectionsStore>((set, get) => ({
   fetchGithubHeatmap: async () => {
     set({ loading: true, error: null });
     try {
-      const githubHeatmap = await connectionsService.getGithubHeatmap();
+      const githubHeatmap = await connectionsService.getGithubHeatmap() as GithubHeatmapDay[];
       set({ githubHeatmap, loading: false });
     } catch {
       set({ error: 'Error al cargar heatmap', loading: false });
@@ -133,14 +178,10 @@ export const useConnectionsStore = create<ConnectionsStore>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const [experiences, educations] = await Promise.all([
-        connectionsService.getLinkedinExperiences(),
-        connectionsService.getLinkedinEducations(),
+        connectionsService.getLinkedinExperiences() as Promise<LinkedinExperience[]>,
+        connectionsService.getLinkedinEducations() as Promise<LinkedinEducation[]>,
       ]);
-      set({
-        linkedinExperiences: experiences,
-        linkedinEducations: educations,
-        loading: false,
-      });
+      set({ linkedinExperiences: experiences, linkedinEducations: educations, loading: false });
     } catch {
       set({ error: 'Error al cargar datos de LinkedIn', loading: false });
     }
@@ -149,7 +190,7 @@ export const useConnectionsStore = create<ConnectionsStore>((set, get) => ({
   fetchRecommendations: async () => {
     set({ loading: true, error: null });
     try {
-      const recommendations = await connectionsService.getRecommendations();
+      const recommendations = await connectionsService.getRecommendations() as Recommendation[];
       set({ recommendations, loading: false });
     } catch {
       set({ error: 'Error al cargar recomendaciones', loading: false });

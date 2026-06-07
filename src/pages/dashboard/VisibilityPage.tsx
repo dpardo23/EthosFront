@@ -44,13 +44,11 @@ export default function VisibilityPage() {
     updateSlug,
     updateSectionVisibility,
     updateSeoSettings,
-    updatePasswordProtection,
   } = useVisibilityStore();
 
   const [slugDraft, setSlugDraft] = useState('');
   const [seoTitle, setSeoTitle] = useState('');
   const [seoDescription, setSeoDescription] = useState('');
-  const [password, setPassword] = useState('');
 
   useEffect(() => {
     if (profile?.id) {
@@ -66,12 +64,14 @@ export default function VisibilityPage() {
     setSlugDraft(settings.slug);
     setSeoTitle(settings.seo.title);
     setSeoDescription(settings.seo.description);
-    setPassword(settings.password ?? '');
   }, [settings]);
 
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+
   const publicUrl = useMemo(() => {
-    return settings ? `https://ethoshub.com/p/${settings.slug}` : 'https://ethoshub.com/p/usuario';
-  }, [settings]);
+    const slug = slugDraft.trim() || settings?.slug || 'tu-usuario';
+    return `${baseUrl}/p/${slug}`;
+  }, [baseUrl, slugDraft, settings?.slug]);
 
   const handleCopyUrl = async () => {
     try {
@@ -109,40 +109,6 @@ export default function VisibilityPage() {
       addToast({ type: 'success', title: 'SEO actualizado' });
     } catch {
       addToast({ type: 'error', title: 'No se pudo actualizar el SEO' });
-    }
-  };
-
-  const handlePasswordMode = async (enabled: boolean) => {
-    if (!profile?.id) {
-      return;
-    }
-
-    try {
-      await updatePasswordProtection(profile.id, enabled, enabled ? password : undefined);
-      addToast({
-        type: 'success',
-        title: enabled ? 'Proteccion activada' : 'Proteccion desactivada',
-      });
-    } catch {
-      addToast({ type: 'error', title: 'No se pudo actualizar la proteccion' });
-    }
-  };
-
-  const handleSavePassword = async () => {
-    if (!profile?.id || !settings?.isPasswordProtected) {
-      return;
-    }
-
-    if (!password.trim()) {
-      addToast({ type: 'error', title: 'Ingresa una contrasena antes de guardar' });
-      return;
-    }
-
-    try {
-      await updatePasswordProtection(profile.id, true, password);
-      addToast({ type: 'success', title: 'Contrasena actualizada' });
-    } catch {
-      addToast({ type: 'error', title: 'No se pudo guardar la contrasena' });
     }
   };
 
@@ -252,40 +218,7 @@ export default function VisibilityPage() {
           <h2 className="text-lg font-semibold text-foreground">Privacidad</h2>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div className="rounded-2xl border border-border p-4">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="font-medium text-foreground">Proteccion por contrasena</p>
-                <p className="text-sm text-muted-foreground">
-                  Restringe el acceso al portafolio publico.
-                </p>
-              </div>
-              <Button
-                variant={settings.isPasswordProtected ? 'destructive' : 'outline'}
-                onClick={() => handlePasswordMode(!settings.isPasswordProtected)}
-              >
-                {settings.isPasswordProtected ? 'Desactivar' : 'Activar'}
-              </Button>
-            </div>
-
-            {settings.isPasswordProtected && (
-              <div className="mt-4 space-y-3">
-                <Input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Nueva contrasena"
-                />
-                <Button onClick={handleSavePassword}>
-                  <Lock className="mr-2 h-4 w-4" />
-                  Guardar contrasena
-                </Button>
-              </div>
-            )}
-          </div>
-
-          <div className="rounded-2xl border border-border p-4">
+        <div className="rounded-2xl border border-border p-4">
             <p className="font-medium text-foreground">Estado actual</p>
             <div className="mt-3 space-y-2 text-sm">
               <div className="flex items-center gap-2 text-muted-foreground">
@@ -294,15 +227,8 @@ export default function VisibilityPage() {
                   Perfil: {settings.isPublicProfileEnabled ? 'publicado' : 'oculto'}
                 </span>
               </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Lock className="h-4 w-4" />
-                <span>
-                  Proteccion: {settings.isPasswordProtected ? 'con contrasena' : 'sin contrasena'}
-                </span>
-              </div>
             </div>
           </div>
-        </div>
       </Card>
 
       <Card className="p-5 sm:p-6">

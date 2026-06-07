@@ -24,3 +24,5 @@ export {
 } from './Feedback';
 
 export { Tabs, SectionHeader, Tooltip, Dropdown, ToggleSwitch, Switch } from './Layout';
+
+export { LanguageSelector } from './LanguageSelector';

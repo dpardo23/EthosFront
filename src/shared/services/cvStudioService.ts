@@ -17,6 +17,11 @@ export interface CvDocumentRequest {
   templateId?: string | null;
 }
 
+export interface ChatMessage {
+  role: 'user' | 'model';
+  text: string;
+}
+
 // ── CRUD ──────────────────────────────────────────────────────────────────────
 
 export async function listDocuments(): Promise<CvDocument[]> {
@@ -38,96 +43,55 @@ export async function deleteDocument(id: string): Promise<void> {
   await api.delete(`/v1/cv-documents/${id}`);
 }
 
-// ── LaTeX → PDF (via backend Tectonic) ───────────────────────────────────────
+// ── LaTeX → PDF (via backend pdflatex) ───────────────────────────────────────
 
-export async function compileLatexToPdf(latexCode: string): Promise<Blob> {
-  const res = await api.post('/v1/cv-documents/compile-latex', latexCode, {
-    headers: { 'Content-Type': 'text/plain' },
-    responseType: 'blob',
-    timeout: 35_000,
-  });
-  return res.data as Blob;
+export async function compileLatexToPdf(latexCode: string, profileImageUrl?: string): Promise<Blob> {
+  let errorMessage: string | null = null;
+  try {
+    const res = await api.post('/v1/cv-documents/compile-latex',
+      { code: latexCode, profileImageUrl: profileImageUrl ?? null },
+      { responseType: 'blob', timeout: 150_000 },
+    );
+    const blob = res.data as Blob;
+    if (blob.type === 'application/json' || blob.type?.includes('json')) {
+      const text = await blob.text();
+      const parsed = JSON.parse(text);
+      errorMessage = parsed.message ?? 'Error de compilación LaTeX';
+    } else {
+      return blob;
+    }
+  } catch (err: unknown) {
+    const axiosErr = err as { response?: { data?: Blob } };
+    if (axiosErr.response?.data instanceof Blob) {
+      try {
+        const text = await axiosErr.response.data.text();
+        const parsed = JSON.parse(text);
+        errorMessage = parsed.message ?? 'Error de compilación LaTeX';
+      } catch {
+        errorMessage = 'Error de compilación LaTeX';
+      }
+    } else {
+      errorMessage = (err as Error).message ?? 'Error de compilación LaTeX';
+    }
+  }
+  throw new Error(errorMessage ?? 'Error de compilación LaTeX');
 }
 
-// ── AI Assist (SSE stream) ────────────────────────────────────────────────────
+// ── AI Assist (single REST call, no streaming) ────────────────────────────────
 
-export interface AiStreamOptions {
+export interface AiCallOptions {
   prompt: string;
   content: string;
   mode: string;
-  onToken: (token: string) => void;
-  onDone: () => void;
-  onError: (msg: string) => void;
-  signal?: AbortSignal;
+  history?: ChatMessage[];
 }
 
-export async function streamAiAssist(opts: AiStreamOptions): Promise<void> {
-  const token = localStorage.getItem('ethoshub_access_token');
-  const tokenType = localStorage.getItem('ethoshub_token_type') ?? 'Bearer';
-
-  const baseUrl = import.meta.env.VITE_API_URL ?? '/api';
-
-  let response: Response;
-  try {
-    response = await fetch(`${baseUrl}/v1/cv-documents/ai-assist`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `${tokenType} ${token}` } : {}),
-      },
-      body: JSON.stringify({ prompt: opts.prompt, content: opts.content, mode: opts.mode }),
-      signal: opts.signal,
-    });
-  } catch (err) {
-    if ((err as Error).name !== 'AbortError') {
-      opts.onError('No se pudo conectar con el asistente IA. Verifica que el servidor esté activo.');
-    }
-    return;
-  }
-
-  if (!response.ok || !response.body) {
-    opts.onError(`Error ${response.status}: no se pudo conectar con el asistente IA`);
-    return;
-  }
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let lastEventName = '';
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = decoder.decode(value, { stream: true });
-      for (const line of chunk.split('\n')) {
-        const trimmed = line.trim();
-        if (trimmed.startsWith('event:')) {
-          lastEventName = trimmed.slice(6).trim();
-          continue;
-        }
-        if (trimmed.startsWith('data: ')) {
-          const data = trimmed.slice(6);
-          if (data === '[DONE]') { opts.onDone(); return; }
-          if (lastEventName === 'error') {
-            opts.onError(data);
-            return;
-          }
-          // Tokens are JSON-encoded by the backend to preserve newlines through SSE.
-          // JSON.parse('"hello\\nworld"') → "hello\nworld" (with real newline).
-          let token: string;
-          try { token = JSON.parse(data); } catch { token = data; }
-          opts.onToken(token);
-          lastEventName = '';
-        }
-      }
-    }
-    opts.onDone();
-  } catch (err) {
-    if ((err as Error).name !== 'AbortError') {
-      opts.onError('La conexión con el asistente IA fue interrumpida');
-    }
-  } finally {
-    reader.releaseLock();
-  }
+export async function callAiAssist(opts: AiCallOptions): Promise<string> {
+  const res = await api.post<{ data: { text: string } }>('/v1/cv-documents/ai-assist', {
+    prompt: opts.prompt,
+    content: opts.content,
+    mode: opts.mode,
+    history: opts.history ?? [],
+  }, { timeout: 120_000 });
+  return res.data.data.text;
 }

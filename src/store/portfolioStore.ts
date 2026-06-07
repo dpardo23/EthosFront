@@ -50,36 +50,46 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 
   updateSettings: async (req) => {
     const prev = get().settings;
-    // Optimistic update
-    set({ saving: true, settings: prev ? { ...prev, ...req } : prev });
+    // Optimistic update solo para campos no-slug (el slug se confirma desde el servidor)
+    const optimistic = req.slug !== undefined
+      ? prev  // para slug, esperar respuesta del servidor
+      : prev ? { ...prev, ...req } : prev;
+    set({ saving: true, settings: optimistic, error: null });
     try {
       await portfolioService.updateSettings(req);
       const fresh = await portfolioService.getSettings();
       set({ settings: fresh });
-    } catch {
-      set({ settings: prev, error: 'No se pudieron guardar los ajustes' });
+    } catch (e: unknown) {
+      const msg = (e as any)?.response?.data?.message
+        ?? (e as any)?.message
+        ?? 'No se pudieron guardar los ajustes';
+      set({ settings: prev, error: msg });
+      throw e;
     } finally {
       set({ saving: false });
     }
   },
 
   fetchAvailableItems: async () => {
+    // No resetear availableItems a null para evitar parpadeo en refrescos
     set({ loadingItems: true, error: null });
     try {
       const availableItems = await portfolioService.getAvailableItems();
-      set({ availableItems });
-    } catch {
-      set({ error: 'No se pudieron cargar los elementos disponibles' });
+      set({ availableItems, error: null });
+    } catch (e: unknown) {
+      const msg = (e as any)?.response?.data?.message
+        ?? (e as any)?.message
+        ?? 'No se pudieron cargar los elementos disponibles';
+      set({ error: msg });
     } finally {
       set({ loadingItems: false });
     }
   },
 
   toggleItem: async (itemType, itemId) => {
-    const { availableItems, settings } = get();
+    const { availableItems } = get();
     if (!availableItems) return;
 
-    // Compute new selected ids for this type
     const typeKey = itemType === 'project' ? 'projects'
       : itemType === 'experience' ? 'experiences'
       : itemType === 'education' ? 'education'
@@ -89,12 +99,25 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
     const items = availableItems[typeKey] as Array<{ id: string; isSelected: boolean; displayOrder: number }>;
     const wasSelected = items.find(i => i.id === itemId)?.isSelected ?? false;
 
-    // Optimistic update on availableItems
+    // Optimistic update — marcar inmediatamente sin esperar al servidor
     const updatedItems = items.map(i =>
       i.id === itemId ? { ...i, isSelected: !wasSelected } : i
     );
     const newAvailable = { ...availableItems, [typeKey]: updatedItems };
-    set({ availableItems: newAvailable });
+
+    // Actualizar el contador en settings también de forma optimista
+    const { settings } = get();
+    let newSettings = settings;
+    if (settings) {
+      const newCount = updatedItems.filter(i => i.isSelected).length;
+      const updatedSelectedItems = updatedItems
+        .filter(i => i.isSelected)
+        .map(i => ({ itemType, itemId: i.id, displayOrder: i.displayOrder }));
+      const otherItems = settings.selectedItems.filter(s => s.itemType !== itemType);
+      newSettings = { ...settings, selectedItems: [...otherItems, ...updatedSelectedItems] };
+    }
+
+    set({ availableItems: newAvailable, settings: newSettings });
 
     // All currently selected ids in order
     const selectedIds = updatedItems
@@ -104,14 +127,9 @@ export const usePortfolioStore = create<PortfolioState>((set, get) => ({
 
     try {
       await portfolioService.updateItems({ itemType, itemIds: selectedIds });
-      // Refresh settings (for selectedItems count)
-      if (settings) {
-        const fresh = await portfolioService.getSettings();
-        set({ settings: fresh });
-      }
     } catch {
-      // Revert optimistic update
-      set({ availableItems, error: 'No se pudo actualizar la selección' });
+      // Revertir en caso de error
+      set({ availableItems, settings, error: 'No se pudo actualizar la selección' });
     }
   },
 
