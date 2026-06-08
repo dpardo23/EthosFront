@@ -4,6 +4,7 @@ import type { Profile, ProfileRole } from '@/shared/types';
 import { authService, ROLE_DISPLAY_NAMES, ROLE_REDIRECT_PATHS, type ProfileUpdatePayload } from '@/shared/services/authService';
 import { setSupabaseAuth, supabase } from '@/lib/supabase';
 import { findMockProfile } from '@/features/auth';
+import { resetAllStores } from './resetAllStores';
 
 /**
  * Zustand store for authentication state: holds the current user session, profile id, role, and exposes login/logout actions used across the app.
@@ -214,13 +215,20 @@ export const useAuthStore = create<AuthStore>()(
         try {
           await authService.logout();
         } finally {
+          // 1. Limpiar storage de tokens
           for (const s of [sessionStorage, localStorage]) {
             s.removeItem(ACCESS_TOKEN_KEY);
             s.removeItem(TOKEN_TYPE_KEY);
             s.removeItem(EXPIRES_AT_KEY);
           }
+          // 2. Limpiar toda la clave persist del auth store
+          try { localStorage.removeItem('ethoshub_auth'); } catch { /* ignore */ }
+          // 3. Cerrar sesión en Supabase Realtime
           supabase?.auth.signOut({ scope: 'local' });
-          set({ profile: null, isAuthenticated: false, loading: false, error: null });
+          // 4. Resetear todos los stores de datos de usuario
+          resetAllStores();
+          // 5. Resetear el estado propio al final
+          set({ profile: null, isAuthenticated: false, isAuthResolved: true, loading: false, error: null });
         }
       },
 

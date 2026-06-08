@@ -279,7 +279,9 @@ function resolveAssetUrl(url: string | null | undefined): string | undefined {
 function normalizeUploadedUrl(url: string | null | undefined): string | null {
   if (!url) return null;
   try {
-    const parsed = new URL(url, API_BASE_URL);
+    // API_BASE_URL puede ser '' en modo monolito → usar origin como base de resolución
+    const base = API_BASE_URL || window.location.origin;
+    const parsed = new URL(url, base);
     const isHttp = parsed.protocol === 'http:' || parsed.protocol === 'https:';
     const host = parsed.hostname;
     if (isHttp && (host === 'localhost' || url.includes('/uploads/'))) {

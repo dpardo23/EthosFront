@@ -294,7 +294,7 @@ export default function TalentDiscoveryPage() {
         () => { fetchTalents(); }
       )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => { supabase?.removeChannel(channel); };
   }, [fetchTalents]);
 
   

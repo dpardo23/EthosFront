@@ -3,13 +3,38 @@
 
 <head>
   <meta charset="UTF-8" />
+
+  <!-- Viewport: sin zoom forzado para no romper inputs en iOS -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+  <!-- PWA: Web App Manifest -->
+  <link rel="manifest" href="/manifest.webmanifest" />
+
+  <!-- Theme color: sincronizado con --primary de la paleta -->
+  <meta name="theme-color" content="#A855F7" />
+
+  <!-- iOS Safari: comportamiento nativo -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="EthosHub" />
+
+  <!-- iOS Safari: iconos para pantalla de inicio -->
+  <link rel="apple-touch-icon" href="/apple-icon.png" />
+
+  <!-- SEO / Open Graph básico -->
+  <meta name="description" content="Portafolios profesionales y descubrimiento de talento" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <!-- Favicons -->
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="alternate icon" href="/icon.svg" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>EthosHub - Portafolios Profesionales</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Fuentes: preconnect antes del stylesheet para reducir latencia -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 </head>
 
 <body class="bg-background text-foreground font-sans antialiased">

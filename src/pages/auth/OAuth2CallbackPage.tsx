@@ -180,7 +180,7 @@ export default function OAuth2CallbackPage() {
 
         
         if (status !== undefined) {
-          await supabase.auth.signOut();
+          await supabase?.auth.signOut();
           toast.error('Error al iniciar sesión', {
             description: error.response?.data?.message ?? 'No se pudo completar el registro. Por favor inténtalo de nuevo.',
           });

@@ -1,10 +1,8 @@
 import axios, { AxiosError, isCancel } from 'axios';
 import { useAuthStore } from '@/store/authStore';
 
-/**
- * Typed API client wrapping the Axios instance; provides strongly-typed request helpers used by all service modules.
- */
-const baseURL = (import.meta.env.VITE_API_URL as string) || '/api';
+const ACCESS_TOKEN_KEY = 'ethoshub_access_token';
+const EXPIRES_AT_KEY   = 'ethoshub_access_expires_at';
 
 function isJwtExpired(token: string): boolean {
   try {
@@ -16,25 +14,30 @@ function isJwtExpired(token: string): boolean {
   }
 }
 
+function readToken(): string | null {
+  return sessionStorage.getItem(ACCESS_TOKEN_KEY) ?? localStorage.getItem(ACCESS_TOKEN_KEY);
+}
+
+const baseURL = (import.meta.env.VITE_API_URL as string | undefined) || '/api';
+
 export const apiClient = axios.create({
   baseURL,
   timeout: 8000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 });
 
 export const createAbortController = () => new AbortController();
 
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('ethoshub_access_token');
+    const token = readToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 apiClient.interceptors.response.use(
@@ -52,8 +55,8 @@ apiClient.interceptors.response.use(
     }
 
     if (status === 401 || status === 403) {
-      const token     = localStorage.getItem('ethoshub_access_token');
-      const expiresAt = localStorage.getItem('ethoshub_access_expires_at');
+      const token     = readToken();
+      const expiresAt = sessionStorage.getItem(EXPIRES_AT_KEY) ?? localStorage.getItem(EXPIRES_AT_KEY);
       const isExpiredByStore = !token || (!!expiresAt && Date.now() > Number(expiresAt) * 1000);
       const isExpiredByJwt   = token ? isJwtExpired(token) : true;
       if (isExpiredByStore || isExpiredByJwt) {
@@ -62,5 +65,5 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );

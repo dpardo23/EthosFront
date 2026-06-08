@@ -116,7 +116,6 @@ export function RecruiterProfileEditorModal({ isOpen, onClose }: RecruiterProfil
       lastName: formData.lastName,
       photoUrl: formData.avatarPreview,
       country: formData.country,
-      countryId: countryId,
       phone: formData.phone,
     });
     onClose();

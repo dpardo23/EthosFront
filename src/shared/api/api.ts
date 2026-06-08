@@ -1,11 +1,8 @@
 import axios, { type AxiosError } from 'axios';
 
-/**
- * Axios instance pre-configured with the backend base URL and a request interceptor that attaches the Supabase JWT bearer token to every request.
- */
-const ACCESS_TOKEN_KEY  = 'ethoshub_access_token';
-const TOKEN_TYPE_KEY    = 'ethoshub_token_type';
-const EXPIRES_AT_KEY    = 'ethoshub_access_expires_at';
+const ACCESS_TOKEN_KEY = 'ethoshub_access_token';
+const TOKEN_TYPE_KEY   = 'ethoshub_token_type';
+const EXPIRES_AT_KEY   = 'ethoshub_access_expires_at';
 
 function readToken(): string | null {
   return sessionStorage.getItem(ACCESS_TOKEN_KEY) ?? localStorage.getItem(ACCESS_TOKEN_KEY);
@@ -27,21 +24,24 @@ function isJwtExpired(token: string): boolean {
   }
 }
 
+// En dev Vite proxea /api → localhost:8080.
+// En prod el JAR sirve /api directamente. VITE_API_URL queda como escape hatch opcional.
+const baseURL = (import.meta.env.VITE_API_URL as string | undefined) || '/api';
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL,
   timeout: 10000,
   headers: {
-    'Content-Type':  'application/json',
+    'Content-Type': 'application/json',
     'Cache-Control': 'no-cache',
     'Pragma':        'no-cache',
   },
+  // Envía cookies HttpOnly automáticamente en modo monolito same-origin
+  withCredentials: true,
 });
 
 api.interceptors.request.use(
   (config) => {
-    
-    
-    
     if (!config.headers.Authorization) {
       const token     = readToken();
       const tokenType = readTokenType();
@@ -63,22 +63,15 @@ api.interceptors.response.use(
       const token     = readToken();
       const expiresAt = readExpiresAt();
 
-      
-      
-      
-      
-      
-      
       const isExpiredByStore = !token || (!!expiresAt && Date.now() > Number(expiresAt) * 1000);
       const isExpiredByJwt   = token ? isJwtExpired(token) : true;
 
       if (isExpiredByStore || isExpiredByJwt) {
-        sessionStorage.removeItem(ACCESS_TOKEN_KEY);
-        sessionStorage.removeItem(TOKEN_TYPE_KEY);
-        sessionStorage.removeItem(EXPIRES_AT_KEY);
-        localStorage.removeItem(ACCESS_TOKEN_KEY);
-        localStorage.removeItem(TOKEN_TYPE_KEY);
-        localStorage.removeItem(EXPIRES_AT_KEY);
+        for (const s of [sessionStorage, localStorage]) {
+          s.removeItem(ACCESS_TOKEN_KEY);
+          s.removeItem(TOKEN_TYPE_KEY);
+          s.removeItem(EXPIRES_AT_KEY);
+        }
         window.dispatchEvent(new CustomEvent('auth:unauthorized'));
       }
     }

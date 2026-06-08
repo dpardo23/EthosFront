@@ -27,6 +27,7 @@ import {
   Modal,
   LoadingSpinner,
   LanguageSelector,
+  Switch,
 } from '@/shared/ui';
 import { useAuthStore } from '@/store/authStore';
 import { usePreferencesStore } from '@/store/preferencesStore';
@@ -495,7 +496,7 @@ export default function SettingsPage() {
                         <span className="text-foreground">{item.label}</span>
                         <Switch
                           checked={safeNotifications[item.key as keyof ProfilePreferences['notifications']] ?? true}
-                          onChange={(checked) =>
+                          onChange={(checked: boolean) =>
                             updatePreferences({
                               notifications: {
                                 ...safeNotifications,

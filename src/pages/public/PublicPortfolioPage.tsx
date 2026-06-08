@@ -425,7 +425,7 @@ function PublicProjectDetailModal({
                             </div>
                           </div>
                           {isHttpUrl(f.url) && (
-                            <a href={f.url} target="_blank" rel="noopener noreferrer"
+                            <a href={f.url ?? undefined} target="_blank" rel="noopener noreferrer"
                               className="flex h-8 items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-3 text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors shrink-0 ml-3">
                               <ExternalLink className="h-3.5 w-3.5" />Abrir
                             </a>

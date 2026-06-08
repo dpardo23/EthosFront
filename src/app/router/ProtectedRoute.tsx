@@ -11,13 +11,23 @@ const EXPIRES_AT_KEY = 'ethoshub_access_expires_at';
 const ACCESS_TOKEN_KEY = 'ethoshub_access_token';
 
 function isTokenExpired(): boolean {
-  const token = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+  const token = sessionStorage.getItem(ACCESS_TOKEN_KEY) ?? localStorage.getItem(ACCESS_TOKEN_KEY);
   if (!token) return true;
 
-  const expiresAt = sessionStorage.getItem(EXPIRES_AT_KEY);
-  if (!expiresAt) return false;
+  // Verificación por exp claim del JWT
+  try {
+    const payload = token.split('.')[1];
+    if (payload) {
+      const { exp } = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+      if (typeof exp === 'number' && Math.floor(Date.now() / 1000) > exp) return true;
+    }
+  } catch { /* token no-JWT (mock) → ignorar */ }
 
-  return Date.now() > Number(expiresAt) * 1000;
+  // Verificación secundaria por timestamp almacenado
+  const expiresAt = sessionStorage.getItem(EXPIRES_AT_KEY) ?? localStorage.getItem(EXPIRES_AT_KEY);
+  if (expiresAt) return Date.now() > Number(expiresAt) * 1000;
+
+  return false;
 }
 
 function AuthLoadingScreen() {
