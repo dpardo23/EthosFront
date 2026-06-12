@@ -10,7 +10,7 @@ import { ACCESS_TOKEN_KEY, EXPIRES_AT_KEY } from '@/shared/lib/sessionKeys';
  */
 
 function isTokenExpired(): boolean {
-  const token = sessionStorage.getItem(ACCESS_TOKEN_KEY) ?? localStorage.getItem(ACCESS_TOKEN_KEY);
+  const token = sessionStorage.getItem(ACCESS_TOKEN_KEY);
   if (!token) return true;
 
   // Verificación por exp claim del JWT
@@ -23,7 +23,7 @@ function isTokenExpired(): boolean {
   } catch { /* token malformado → tratar como válido y validar por timestamp */ }
 
   // Verificación secundaria por timestamp almacenado
-  const expiresAt = sessionStorage.getItem(EXPIRES_AT_KEY) ?? localStorage.getItem(EXPIRES_AT_KEY);
+  const expiresAt = sessionStorage.getItem(EXPIRES_AT_KEY);
   if (expiresAt) return Date.now() > Number(expiresAt) * 1000;
 
   return false;

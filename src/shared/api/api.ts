@@ -2,13 +2,13 @@ import axios, { type AxiosError } from 'axios';
 import { ACCESS_TOKEN_KEY, TOKEN_TYPE_KEY, EXPIRES_AT_KEY } from '@/shared/lib/sessionKeys';
 
 function readToken(): string | null {
-  return sessionStorage.getItem(ACCESS_TOKEN_KEY) ?? localStorage.getItem(ACCESS_TOKEN_KEY);
+  return sessionStorage.getItem(ACCESS_TOKEN_KEY);
 }
 function readTokenType(): string {
-  return sessionStorage.getItem(TOKEN_TYPE_KEY) ?? localStorage.getItem(TOKEN_TYPE_KEY) ?? 'Bearer';
+  return sessionStorage.getItem(TOKEN_TYPE_KEY) ?? 'Bearer';
 }
 function readExpiresAt(): string | null {
-  return sessionStorage.getItem(EXPIRES_AT_KEY) ?? localStorage.getItem(EXPIRES_AT_KEY);
+  return sessionStorage.getItem(EXPIRES_AT_KEY);
 }
 
 function isJwtExpired(token: string): boolean {
@@ -56,7 +56,7 @@ api.interceptors.response.use(
   (error: AxiosError) => {
     const status = error.response?.status;
 
-    if (status === 401 || status === 403) {
+    if (status === 401) {
       const token     = readToken();
       const expiresAt = readExpiresAt();
 
@@ -64,11 +64,9 @@ api.interceptors.response.use(
       const isExpiredByJwt   = token ? isJwtExpired(token) : true;
 
       if (isExpiredByStore || isExpiredByJwt) {
-        for (const s of [sessionStorage, localStorage]) {
-          s.removeItem(ACCESS_TOKEN_KEY);
-          s.removeItem(TOKEN_TYPE_KEY);
-          s.removeItem(EXPIRES_AT_KEY);
-        }
+        sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+        sessionStorage.removeItem(TOKEN_TYPE_KEY);
+        sessionStorage.removeItem(EXPIRES_AT_KEY);
         window.dispatchEvent(new CustomEvent('auth:unauthorized'));
       }
     }

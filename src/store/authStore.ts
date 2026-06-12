@@ -54,29 +54,23 @@ export const useAuthStore = create<AuthStore>()(
 
         try {
           const result = await authService.login(email, password, role);
-          
+
           const rawRole = (result.profile?.role || '').toLowerCase();
-          const normalizedRole: ProfileRole = rawRole.includes('admin') ? 'admin' 
-                                         : rawRole.includes('rec') || rawRole.includes('reclutador') ? 'recruiter' 
+          const normalizedRole: ProfileRole = rawRole.includes('admin') ? 'admin'
+                                         : rawRole.includes('rec') || rawRole.includes('reclutador') ? 'recruiter'
                                          : 'professional';
-          
+
           const profile = { ...result.profile, role: normalizedRole };
 
-          
-          
           const expiresAtVal = typeof result.expiresIn === 'number' && Number.isFinite(result.expiresIn)
             ? String(Math.floor(Date.now() / 1000) + result.expiresIn)
             : null;
 
-          for (const s of [sessionStorage, localStorage]) {
-            s.setItem(ACCESS_TOKEN_KEY, result.token);
-            s.setItem(TOKEN_TYPE_KEY, result.tokenType || 'Bearer');
-            if (expiresAtVal) s.setItem(EXPIRES_AT_KEY, expiresAtVal);
-            else s.removeItem(EXPIRES_AT_KEY);
-          }
+          sessionStorage.setItem(ACCESS_TOKEN_KEY, result.token);
+          sessionStorage.setItem(TOKEN_TYPE_KEY, result.tokenType || 'Bearer');
+          if (expiresAtVal) sessionStorage.setItem(EXPIRES_AT_KEY, expiresAtVal);
+          else sessionStorage.removeItem(EXPIRES_AT_KEY);
 
-          
-          
           setSupabaseAuth(result.token);
 
           set({ profile, isAuthenticated: true, isAuthResolved: true, loading: false });
@@ -92,8 +86,8 @@ export const useAuthStore = create<AuthStore>()(
             error: error instanceof Error ? error.message : 'Error al iniciar sesión',
             loading: false,
           });
-          
-          throw error; 
+
+          throw error;
         }
       },
 
@@ -197,12 +191,10 @@ export const useAuthStore = create<AuthStore>()(
         try {
           await authService.logout();
         } finally {
-          // 1. Limpiar storage de tokens
-          for (const s of [sessionStorage, localStorage]) {
-            s.removeItem(ACCESS_TOKEN_KEY);
-            s.removeItem(TOKEN_TYPE_KEY);
-            s.removeItem(EXPIRES_AT_KEY);
-          }
+          // 1. Limpiar tokens de sessionStorage (solo esta tab)
+          sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+          sessionStorage.removeItem(TOKEN_TYPE_KEY);
+          sessionStorage.removeItem(EXPIRES_AT_KEY);
           // 2. Limpiar toda la clave persist del auth store
           try { localStorage.removeItem('ethoshub_auth'); } catch { /* ignore */ }
           // 3. Cerrar sesión en Supabase Realtime
@@ -215,18 +207,9 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       checkAuth: async () => {
-        
-        
-        
-        const token =
-          sessionStorage.getItem(ACCESS_TOKEN_KEY) ??
-          localStorage.getItem(ACCESS_TOKEN_KEY);
-        const expiresAt =
-          sessionStorage.getItem(EXPIRES_AT_KEY) ??
-          localStorage.getItem(EXPIRES_AT_KEY);
+        const token = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+        const expiresAt = sessionStorage.getItem(EXPIRES_AT_KEY);
 
-        
-        
         function jwtExpired(t: string): boolean {
           try {
             const payload = t.split('.')[1];
@@ -242,23 +225,10 @@ export const useAuthStore = create<AuthStore>()(
           sessionStorage.removeItem(ACCESS_TOKEN_KEY);
           sessionStorage.removeItem(TOKEN_TYPE_KEY);
           sessionStorage.removeItem(EXPIRES_AT_KEY);
-          localStorage.removeItem(ACCESS_TOKEN_KEY);
-          localStorage.removeItem(TOKEN_TYPE_KEY);
-          localStorage.removeItem(EXPIRES_AT_KEY);
           set({ profile: null, isAuthenticated: false, isAuthResolved: true });
           return;
         }
 
-        
-        
-        if (!sessionStorage.getItem(ACCESS_TOKEN_KEY) && token) {
-          sessionStorage.setItem(ACCESS_TOKEN_KEY, token);
-          const tt = localStorage.getItem(TOKEN_TYPE_KEY);
-          if (tt) sessionStorage.setItem(TOKEN_TYPE_KEY, tt);
-          if (expiresAt) sessionStorage.setItem(EXPIRES_AT_KEY, expiresAt);
-        }
-
-        
         setSupabaseAuth(token);
 
         const { profile } = get();
@@ -268,11 +238,10 @@ export const useAuthStore = create<AuthStore>()(
       completeOAuthLogin: ({ profile, token, tokenType = 'Bearer', expiresIn }) => {
         const ttl = typeof expiresIn === 'number' && expiresIn > 0 ? expiresIn : 3600;
         const expiresAtVal = String(Math.floor(Date.now() / 1000) + ttl);
-        for (const s of [sessionStorage, localStorage]) {
-          s.setItem(ACCESS_TOKEN_KEY, token);
-          s.setItem(TOKEN_TYPE_KEY, tokenType);
-          s.setItem(EXPIRES_AT_KEY, expiresAtVal);
-        }
+
+        sessionStorage.setItem(ACCESS_TOKEN_KEY, token);
+        sessionStorage.setItem(TOKEN_TYPE_KEY, tokenType);
+        sessionStorage.setItem(EXPIRES_AT_KEY, expiresAtVal);
 
         const rawRole = (profile.role || '').toLowerCase();
         const normalizedRole: ProfileRole =
@@ -280,7 +249,6 @@ export const useAuthStore = create<AuthStore>()(
           : rawRole.includes('rec') || rawRole === 'recruiter'  ? 'recruiter'
           : 'professional';
 
-        
         setSupabaseAuth(token);
 
         set({ profile: { ...profile, role: normalizedRole }, isAuthenticated: true, isAuthResolved: true, error: null, loading: false });
