@@ -43,7 +43,7 @@ function mapRoleToBackend(role: ProfileRole): RegisterRole {
 
 function sanitizeSlug(value: string): string {
   const base = value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-  return base || `usuario-${Date.now()}`;
+  return base || `perfil-${Date.now()}`;
 }
 
 export const ROLE_DISPLAY_NAMES: Record<ProfileRole, string> = {
@@ -124,7 +124,7 @@ async function login(email: string, password: string, role?: ProfileRole): Promi
 
 export type RegisterAuthResult = {
   token: string | null;
-  profileId: string;
+  profileId: string | null;
   email: string;
   role: string;
 };
@@ -290,6 +290,30 @@ async function updateRecruiterIdentity(
   return response.data.data;
 }
 
+async function forgotPasswordRequest(email: string): Promise<void> {
+  await api.post('/auth/forgot-password/request', { email: email.toLowerCase().trim() });
+}
+
+async function forgotPasswordVerify(email: string, otpCode: string): Promise<boolean> {
+  try {
+    const res = await api.post<BackendApiResponse<boolean>>('/auth/forgot-password/verify', {
+      email: email.toLowerCase().trim(),
+      otpCode,
+    });
+    return res.data.data === true;
+  } catch {
+    return false;
+  }
+}
+
+async function forgotPasswordReset(email: string, otpCode: string, newPassword: string): Promise<void> {
+  await api.post('/auth/forgot-password/reset', {
+    email: email.toLowerCase().trim(),
+    otpCode,
+    newPassword,
+  });
+}
+
 export const authService = {
   login,
   registerLocal,
@@ -301,6 +325,9 @@ export const authService = {
   getCompanyProfile,
   updateCompanyProfile,
   updateRecruiterIdentity,
+  forgotPasswordRequest,
+  forgotPasswordVerify,
+  forgotPasswordReset,
   ROLE_DISPLAY_NAMES,
   ROLE_REDIRECT_PATHS,
 };

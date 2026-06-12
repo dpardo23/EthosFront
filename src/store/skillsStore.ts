@@ -16,7 +16,7 @@ interface SkillsStore {
   fetchSoftSkills: (profileId: string) => Promise<void>;
   searchTags: (query: string) => Promise<void>;
   addHardSkill: (profileId: string, tagId: string, level: SkillLevel) => Promise<void>;
-  updateHardSkill: (profileId: string, skillId: string, level: SkillLevel) => Promise<void>;
+  updateHardSkill: (profileId: string, skillId: string, level: SkillLevel, tagId: string) => Promise<void>;
   removeHardSkill: (profileId: string, skillId: string) => Promise<void>;
   createTag: (name: string, category: SkillCategory) => Promise<GlobalSkillTag>;
   addSoftSkill: (profileId: string, title: string, description?: string) => Promise<void>;
@@ -84,10 +84,10 @@ export const useSkillsStore = create<SkillsStore>((set, get) => ({
     }
   },
 
-  updateHardSkill: async (_profileId: string, skillId: string, level: SkillLevel) => {
+  updateHardSkill: async (_profileId: string, skillId: string, level: SkillLevel, tagId: string) => {
     const { toast } = await import('sonner');
     try {
-      const updated = await skillsService.updateHardSkill(skillId, level);
+      const updated = await skillsService.updateHardSkill(skillId, level, tagId);
       set(s => ({
         hardSkills: s.hardSkills.map(h => h.id === skillId ? { ...h, ...updated } : h),
       }));

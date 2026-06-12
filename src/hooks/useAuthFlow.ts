@@ -9,7 +9,27 @@ import type { ProfileRole } from '@/shared/types';
 /**
  * Custom hook encapsulating the multi-step registration and login flows, including OAuth callback handling and post-auth routing by role.
  */
-const PENDING_OAUTH_ROLE_KEY = 'ethoshub_pending_oauth_role';
+const PENDING_OAUTH_ROLE_KEY  = 'ethoshub_pending_oauth_role';
+const OAUTH_STATE_KEY         = 'ethoshub_oauth_state';
+
+function generateOAuthState(): string {
+  const arr = new Uint8Array(24);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+export function storeOAuthState(): string {
+  const state = generateOAuthState();
+  sessionStorage.setItem(OAUTH_STATE_KEY, state);
+  return state;
+}
+
+export function validateOAuthState(returnedState: string | null): boolean {
+  const stored = sessionStorage.getItem(OAUTH_STATE_KEY);
+  sessionStorage.removeItem(OAUTH_STATE_KEY);
+  if (!stored || !returnedState) return false;
+  return stored === returnedState;
+}
 
 export interface LoginResult {
   profile: { role: ProfileRole; email: string; [key: string]: unknown };
@@ -59,9 +79,15 @@ export function useAuthFlow() {
         return;
       }
 
+      const csrfState = storeOAuthState();
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
-        options: { redirectTo: `${window.location.origin}/oauth-success` },
+        options: {
+          redirectTo: `${window.location.origin}/oauth-success`,
+          queryParams: { state: csrfState },
+          scopes: provider === 'google' ? 'email profile' : 'read:user user:email',
+        },
       });
 
       if (error) {

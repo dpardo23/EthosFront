@@ -538,7 +538,7 @@ export default function ProfessionalChatPage() {
     if (!activeChatId || !supabase || !isAuthResolved) return;
     const sb = supabase;
     const token = sessionStorage.getItem('ethoshub_access_token');
-    if (token && !token.startsWith('mock-')) setSupabaseAuth(token);
+    if (token) setSupabaseAuth(token);
 
     const isFresh = deletedChatsRef.current.has(activeChatId);
     loadMessages(activeChatId, isFresh);

@@ -5,9 +5,10 @@ import type { ProfileRole } from '@/shared/types';
  */
 export const ROUTES = {
   
-  HOME:           '/',
-  LOGIN:          '/login',
-  REGISTER:       '/register',
+  HOME:             '/',
+  LOGIN:            '/login',
+  REGISTER:         '/register',
+  FORGOT_PASSWORD:  '/forgot-password',
   OAUTH_CALLBACK: '/oauth2/callback',
   OAUTH_SUCCESS:  '/oauth-success',
   EXPLORE:        '/explorar',
@@ -24,7 +25,6 @@ export const ROUTES = {
   PROFESSIONAL_CV:           '/dashboard/cv-studio',
   PROFESSIONAL_CONNECTIONS:  '/dashboard/connections',
   PROFESSIONAL_CHAT:         '/dashboard/chat',
-  PROFESSIONAL_VISIBILITY:   '/dashboard/visibility',
   
   PROFESSIONAL_SETTINGS:     '/dashboard/profesional/configuracion',
 
@@ -41,8 +41,7 @@ export const ROUTES = {
   ADMIN_PROFILES:            '/admin/profiles',
   ADMIN_MODERATION:          '/admin/moderation',
   ADMIN_SKILLS:              '/admin/skills',
-  ADMIN_PORTFOLIOS:          '/admin/portfolios',
-  ADMIN_DOMAINS:             '/admin/domains',
+  ADMIN_EMAIL:               '/admin/email',
 } as const;
 
 export const ROLE_INITIAL_PATHS: Record<ProfileRole, string> = {

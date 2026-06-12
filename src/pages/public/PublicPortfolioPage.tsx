@@ -307,7 +307,7 @@ function PublicProjectDetailModal({
                       </div>
                       <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">Resultados e impacto</span>
                     </div>
-                    <p className="text-[13px] leading-relaxed text-foreground/80">{project.results}</p>
+                    <p className="text-[13px] leading-relaxed text-foreground/80 break-all whitespace-pre-wrap">{project.results}</p>
                   </div>
                 )}
                 {project.isFeatured && (
@@ -348,7 +348,7 @@ function PublicProjectDetailModal({
                   <div>
                     <PublicSectionLabel icon={BarChart3}>Resultados obtenidos</PublicSectionLabel>
                     <div className="rounded-xl border border-border bg-muted/20 p-4">
-                      <p className="text-[13px] leading-relaxed text-foreground/80">{project.results}</p>
+                      <p className="text-[13px] leading-relaxed text-foreground/80 break-all whitespace-pre-wrap">{project.results}</p>
                     </div>
                   </div>
                 )}

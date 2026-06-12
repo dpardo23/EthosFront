@@ -1,34 +1,54 @@
-import { ArrowUpRight, Briefcase, MapPin, Search, Shield, Sparkles, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowUpRight, Briefcase, Eye, MapPin, Search, Shield, Sparkles, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Badge, Button } from '@/shared/ui';
+import { Badge, Button, Skeleton, EmptyState } from '@/shared/ui';
 import { useAuthStore } from '@/store/authStore';
-import { mockProfiles } from '@/shared/mocks/data';
+import { apiClient } from '@/shared/services/apiClient';
 
 /**
- * Public explore page listing published professional portfolios for unauthenticated visitors.
+ * Public explore page listing real published portfolios of active
+ * professional profiles (core.get_explore_portfolios via the backend).
  */
-const featuredProfiles = mockProfiles
-  .filter((profile) => profile.role === 'professional')
-  .slice(0, 3)
-  .map((profile, index) => ({
-    ...profile,
-    headline:
-      index === 0
-        ? 'Construyendo productos web escalables con foco en performance y claridad.'
-        : index === 1
-        ? 'Interfaces y experiencias de producto con criterio visual y accesibilidad.'
-        : 'Arquitecturas backend limpias, servicios confiables y despliegues sostenibles.',
-    stats:
-      index === 0
-        ? ['18k vistas', '12 proyectos', '3 recomendaciones']
-        : index === 1
-        ? ['9.6k vistas', '8 casos destacados', 'Sistema de diseno']
-        : ['7.2k vistas', 'APIs y microservicios', 'Alta disponibilidad'],
-  }));
+interface ExploreCard {
+  slug: string;
+  fullName: string | null;
+  headline: string | null;
+  location: string | null;
+  avatarUrl: string | null;
+  seniority: string | null;
+  viewsCount: number;
+  topSkills: string[];
+}
+
+interface ApiEnvelope<T> {
+  success: boolean;
+  data: T;
+}
 
 export default function ExplorePage() {
   const { isAuthenticated } = useAuthStore();
   const isGuest = !isAuthenticated;
+
+  const [portfolios, setPortfolios] = useState<ExploreCard[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    apiClient
+      .get<ApiEnvelope<ExploreCard[]>>('/v1/portfolio/public/explore', { params: { limit: 24 } })
+      .then((response) => {
+        if (active) setPortfolios(response.data.data ?? []);
+      })
+      .catch(() => {
+        if (active) setPortfolios([]);
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
@@ -54,7 +74,7 @@ export default function ExplorePage() {
               <div className="flex flex-wrap gap-2">
                 <Badge variant="secondary" className="bg-primary/10 text-primary">
                   <Users className="mr-1 h-3 w-3" />
-                  Preview de perfiles
+                  {isLoading ? 'Cargando portafolios…' : `${portfolios.length} portafolios publicados`}
                 </Badge>
                 <Badge variant="outline">Modo invitado protegido</Badge>
               </div>
@@ -111,85 +131,119 @@ export default function ExplorePage() {
         </div>
       )}
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-3">
-        {featuredProfiles.map((profile) => (
-          <div key={profile.id} className="relative overflow-hidden rounded-[1.75rem]">
-            <div
-              className={
-                isGuest
-                  ? 'pointer-events-none select-none blur-[7px] saturate-[0.85] opacity-80'
-                  : ''
-              }
-            >
-              <article className="h-full rounded-[1.75rem] border border-border bg-card p-5 shadow-sm sm:p-6">
-                <div className="flex items-start gap-4">
-                  <img
-                    src={profile.avatar}
-                    alt={profile.name}
-                    className="h-16 w-16 rounded-2xl object-cover"
-                  />
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="text-xl font-semibold text-foreground">{profile.name}</h2>
-                      <Badge variant="outline" className="border-primary/30 bg-primary/5 text-primary">
-                        Profesional
-                      </Badge>
-                    </div>
-                    <p className="mt-1 text-sm font-medium text-primary">{profile.profession}</p>
-                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                      <span className="inline-flex items-center gap-1.5">
-                        <MapPin className="h-4 w-4" />
-                        {profile.location}
-                      </span>
-                      <span className="inline-flex items-center gap-1.5">
-                        <Briefcase className="h-4 w-4" />
-                        Portafolio publico
-                      </span>
+      {isLoading ? (
+        <div className="mt-8 grid gap-6 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-72 w-full rounded-[1.75rem]" />
+          ))}
+        </div>
+      ) : portfolios.length === 0 ? (
+        <div className="mt-8 rounded-[1.75rem] border border-border bg-card p-8">
+          <EmptyState
+            icon={Briefcase}
+            title="Aún no hay portafolios publicados"
+            description="Cuando los profiles profesionales publiquen sus portafolios, aparecerán aquí."
+          />
+        </div>
+      ) : (
+        <div className="mt-8 grid gap-6 lg:grid-cols-3">
+          {portfolios.map((portfolio) => (
+            <div key={portfolio.slug} className="relative overflow-hidden rounded-[1.75rem]">
+              <div
+                className={
+                  isGuest
+                    ? 'pointer-events-none select-none blur-[7px] saturate-[0.85] opacity-80'
+                    : ''
+                }
+              >
+                <article className="h-full rounded-[1.75rem] border border-border bg-card p-5 shadow-sm sm:p-6">
+                  <div className="flex items-start gap-4">
+                    <img
+                      src={
+                        portfolio.avatarUrl ||
+                        `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(portfolio.slug)}`
+                      }
+                      alt={portfolio.fullName ?? portfolio.slug}
+                      className="h-16 w-16 rounded-2xl object-cover"
+                    />
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="text-xl font-semibold text-foreground">
+                          {portfolio.fullName || portfolio.slug}
+                        </h2>
+                        <Badge variant="outline" className="border-primary/30 bg-primary/5 text-primary">
+                          Profesional
+                        </Badge>
+                      </div>
+                      {portfolio.seniority && (
+                        <p className="mt-1 text-sm font-medium text-primary">{portfolio.seniority}</p>
+                      )}
+                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                        {portfolio.location && (
+                          <span className="inline-flex items-center gap-1.5">
+                            <MapPin className="h-4 w-4" />
+                            {portfolio.location}
+                          </span>
+                        )}
+                        <span className="inline-flex items-center gap-1.5">
+                          <Eye className="h-4 w-4" />
+                          {portfolio.viewsCount.toLocaleString()} vistas
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <p className="mt-5 text-sm leading-6 text-muted-foreground">{profile.headline}</p>
+                  {portfolio.headline && (
+                    <p className="mt-5 line-clamp-3 text-sm leading-6 text-muted-foreground">
+                      {portfolio.headline}
+                    </p>
+                  )}
 
-                <div className="mt-5 grid gap-2">
-                  {profile.stats.map((item) => (
-                    <div key={item} className="rounded-2xl bg-muted/60 px-4 py-3 text-sm text-foreground">
-                      {item}
+                  {portfolio.topSkills.length > 0 && (
+                    <div className="mt-5 flex flex-wrap gap-1.5">
+                      {portfolio.topSkills.map((skill) => (
+                        <span
+                          key={skill}
+                          className="rounded-full bg-muted/60 px-3 py-1 text-xs text-foreground"
+                        >
+                          {skill}
+                        </span>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  )}
 
-                <div className="mt-6 flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Perfil disponible</span>
-                  <Link to={`/p/${profile.slug}`}>
-                    <Button variant="outline" size="sm">
-                      {isGuest ? 'Ver preview' : 'Ver perfil'}
-                      <ArrowUpRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </Link>
-                </div>
-              </article>
-            </div>
-
-            {isGuest && (
-              <div className="absolute inset-0 flex items-center justify-center bg-background/38 p-4">
-                <div className="w-full max-w-xs rounded-[1.5rem] border border-border bg-card/95 p-5 text-center shadow-xl backdrop-blur">
-                  <p className="text-base font-semibold text-foreground">
-                    Perfil bloqueado para invitados
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    Crea tu cuenta o inicia sesión para ver la informacion completa del perfil y
-                    navegarlo sin sombreado.
-                  </p>
-                  <Link to="/login" className="mt-4 inline-flex">
-                    <Button>Crear cuenta para desbloquear</Button>
-                  </Link>
-                </div>
+                  <div className="mt-6 flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Portafolio público</span>
+                    <Link to={`/p/${portfolio.slug}`}>
+                      <Button variant="outline" size="sm">
+                        {isGuest ? 'Ver preview' : 'Ver perfil'}
+                        <ArrowUpRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </div>
+                </article>
               </div>
-            )}
-          </div>
-        ))}
-      </div>
+
+              {isGuest && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/38 p-4">
+                  <div className="w-full max-w-xs rounded-[1.5rem] border border-border bg-card/95 p-5 text-center shadow-xl backdrop-blur">
+                    <p className="text-base font-semibold text-foreground">
+                      Perfil bloqueado para invitados
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      Crea tu cuenta o inicia sesión para ver la informacion completa del perfil y
+                      navegarlo sin sombreado.
+                    </p>
+                    <Link to="/login" className="mt-4 inline-flex">
+                      <Button>Crear cuenta para desbloquear</Button>
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

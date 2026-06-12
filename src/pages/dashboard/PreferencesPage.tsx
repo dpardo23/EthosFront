@@ -39,7 +39,7 @@ import { EthosOwlMascot } from '@/components/brand/EthosCoreLogo';
 import { Button, LoadingSpinner } from '@/shared/ui';
 import { useAuthStore } from '@/store/authStore';
 import { usePreferencesStore } from '@/store/preferencesStore';
-import { useVisibilityStore } from '@/store/visibilityStore';
+import { usePortfolioStore } from '@/store/portfolioStore';
 import { useConnectionsStore } from '@/store/connectionsStore';
 import { useUiStore } from '@/store/uiStore';
 import { cn } from '@/shared/lib/utils';
@@ -424,8 +424,8 @@ function MapPickerModal({ initialLat, initialLng, initialLocation, onConfirm, on
 
 export default function PreferencesPage() {
   const { profile: authProfile } = useAuthStore();
-  const { preferences, updatePreferences } = usePreferencesStore();
-  const { settings: visibility, fetchSettings } = useVisibilityStore();
+  const { preferences, updatePreferences, fetchPreferences } = usePreferencesStore();
+  const { settings: portfolioSettings, fetchSettings } = usePortfolioStore();
   const { connections, fetchConnections } = useConnectionsStore();
   const { addToast, resolvedTheme, setTheme, theme: activeTheme } = useUiStore();
   const isDark = resolvedTheme === 'dark';
@@ -490,7 +490,8 @@ export default function PreferencesPage() {
 
   useEffect(() => {
     if (authProfile?.id) {
-      fetchSettings(authProfile.id);
+      fetchSettings();
+      fetchPreferences();
       fetchConnections(authProfile.id);
       api
         .get('/v1/profile/basic')
@@ -976,9 +977,9 @@ export default function PreferencesPage() {
                   <p className="truncate text-xs text-violet-600 dark:text-violet-400">
                     {authProfile.profession || authProfile.role}
                   </p>
-                  {visibility?.slug && (
+                  {portfolioSettings?.slug && (
                     <p className="mt-0.5 truncate text-xs text-gray-400 dark:text-gray-500">
-                      bytebusters.tis.cs.umss.edu.bo/p/{visibility.slug}
+                      bytebusters.tis.cs.umss.edu.bo/p/{portfolioSettings.slug}
                     </p>
                   )}
                 </div>

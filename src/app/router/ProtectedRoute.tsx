@@ -3,12 +3,11 @@ import { useEffect } from 'react';
 import { useAuthStore } from '@/store';
 import type { ProfileRole } from '@/shared/types';
 import type { ReactNode } from 'react';
+import { ACCESS_TOKEN_KEY, EXPIRES_AT_KEY } from '@/shared/lib/sessionKeys';
 
 /**
  * Route guard component that redirects unauthenticated users to login and enforces role-based access.
  */
-const EXPIRES_AT_KEY = 'ethoshub_access_expires_at';
-const ACCESS_TOKEN_KEY = 'ethoshub_access_token';
 
 function isTokenExpired(): boolean {
   const token = sessionStorage.getItem(ACCESS_TOKEN_KEY) ?? localStorage.getItem(ACCESS_TOKEN_KEY);
@@ -21,7 +20,7 @@ function isTokenExpired(): boolean {
       const { exp } = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
       if (typeof exp === 'number' && Math.floor(Date.now() / 1000) > exp) return true;
     }
-  } catch { /* token no-JWT (mock) → ignorar */ }
+  } catch { /* token malformado → tratar como válido y validar por timestamp */ }
 
   // Verificación secundaria por timestamp almacenado
   const expiresAt = sessionStorage.getItem(EXPIRES_AT_KEY) ?? localStorage.getItem(EXPIRES_AT_KEY);

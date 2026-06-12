@@ -59,9 +59,13 @@ const COMPANY_SIZES = [
 export default function RecruiterSettingsPage() {
   const { t } = useTranslation();
   const { profile, logout } = useAuthStore();
-  const { preferences, updatePreferences } = usePreferencesStore();
+  const { preferences, updatePreferences, fetchPreferences } = usePreferencesStore();
   const { addToast, setTheme, theme: activeTheme } = useUiStore();
   const { updateSettings: updatePortfolioSettings } = usePortfolioStore();
+
+  useEffect(() => {
+    fetchPreferences();
+  }, [fetchPreferences]);
 
   const [activeTab, setActiveTab] = useState<SettingsTab>('company');
   const [loading, setLoading] = useState(false);

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { ACCESS_TOKEN_KEY } from '@/shared/lib/sessionKeys';
 
 /**
  * Initialises and exports the Supabase browser client used for auth session management and Realtime subscriptions.
@@ -18,12 +19,10 @@ export const supabase = isSupabaseConfigured
         detectSessionInUrl: false,
       },
       global: {
-        
-        
         fetch: (url, options = {}) => {
-          const token = sessionStorage.getItem('ethoshub_access_token');
+          const token = sessionStorage.getItem(ACCESS_TOKEN_KEY);
           const headers = new Headers((options as RequestInit).headers);
-          if (token && !token.startsWith('mock-')) {
+          if (token) {
             headers.set('Authorization', `Bearer ${token}`);
           }
           return fetch(url, { ...(options as RequestInit), headers });
@@ -34,7 +33,7 @@ export const supabase = isSupabaseConfigured
 
 export function setSupabaseAuth(accessToken: string | null): void {
   if (!supabase) return;
-  if (accessToken && !accessToken.startsWith('mock-')) {
+  if (accessToken) {
     supabase.realtime.setAuth(accessToken);
   }
 }

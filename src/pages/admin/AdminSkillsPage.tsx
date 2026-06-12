@@ -1,432 +1,417 @@
-import { motion } from 'framer-motion';
+import { useCallback, useEffect, useState } from 'react';
 import {
-  ArrowUpRight,
-  Bot,
-  Brain,
-  CheckCircle2,
-  Clock3,
-  Code2,
-  Eye,
-  Filter,
-  Flame,
-  Layers3,
-  Link2,
-  Search,
-  ShieldCheck,
-  Sparkles,
-  XCircle,
-  Wand2,
+  Code2, Plus, Trash2, Pencil, Search, RefreshCw, ChevronLeft, ChevronRight,
+  CheckCircle2, CircleSlash, Layers3, Tags,
 } from 'lucide-react';
-import { Badge, Button, Card, Progress } from '@/shared/ui';
+import {
+  Badge, Button, Modal, ConfirmDialog, Select, Skeleton, EmptyState, ErrorState,
+} from '@/shared/ui';
 import { cn } from '@/shared/lib/utils';
+import {
+  adminSkillService,
+  type AdminSkillFilters,
+  type AdminSkillMetrics,
+  type AdminSkillPage,
+  type AdminSkillTag,
+} from '@/shared/services/adminService';
 
 /**
- * Admin page for managing the global skill tag taxonomy used across all professional profiles.
+ * Skill catalog normalization view: real catalog CRUD with usage metrics,
+ * multi-select deletion of unused tags and add/edit dialogs.
  */
-type SkillStatus = 'Aprobada' | 'Observacion';
-type QueueSeverity = 'Alta' | 'Media' | 'Baja';
+const PAGE_SIZE = 10;
+const SEARCH_DEBOUNCE_MS = 400;
 
-const overviewStats = [
-  {
-    label: 'Skills catalogadas',
-    value: '148',
-    change: '+12 este mes',
-    icon: Layers3,
-    accent: 'from-sky-500/20 to-cyan-500/10 text-sky-600 dark:text-sky-500',
-  },
-  {
-    label: 'Pendientes de revision',
-    value: '19',
-    change: '4 prioritarias',
-    icon: Clock3,
-    accent: 'from-amber-500/20 to-orange-500/10 text-amber-600 dark:text-amber-500',
-  },
-  {
-    label: 'Aprobacion automatica',
-    value: '87%',
-    change: 'Reglas activas',
-    icon: ShieldCheck,
-    accent: 'from-emerald-500/20 to-green-500/10 text-emerald-600 dark:text-emerald-500',
-  },
-  {
-    label: 'Uso semanal',
-    value: '32.4k',
-    change: '+18.2%',
-    icon: Flame,
-    accent: 'from-fuchsia-500/20 to-pink-500/10 text-fuchsia-600 dark:text-fuchsia-500',
-  },
+const CATEGORIES = ['Backend', 'Frontend', 'Data', 'Infrastructure', 'Design', 'Mobile', 'Other'];
+
+const categoryOptions = [
+  { value: '', label: 'Todas las categorías' },
+  ...CATEGORIES.map((category) => ({ value: category, label: category })),
 ];
 
-const featuredSkills: {
+const usageOptions = [
+  { value: '', label: 'Todo el catálogo' },
+  { value: 'used', label: 'En uso' },
+  { value: 'unused', label: 'En desuso' },
+];
+
+interface EditorState {
+  tag: AdminSkillTag | null;
   name: string;
   category: string;
-  status: SkillStatus;
-  trust: number;
-  usage: string;
-  description: string;
-  tags: string[];
-}[] = [
-  {
-    name: 'AI Writing Assistant',
-    category: 'Contenido',
-    status: 'Aprobada',
-    trust: 96,
-    usage: '8.9k ejecuciones',
-    description: 'Genera borradores de posteos, resuemenes y copies cortos para perfiles profesionales.',
-    tags: ['GPT', 'Copy', 'Templates'],
-  },
-  {
-    name: 'Portfolio SEO Optimizer',
-    category: 'Descubrimiento',
-    status: 'Observacion',
-    trust: 74,
-    usage: '5.2k ejecuciones',
-    description: 'Propone meta titles, FAQs y estructura de headings para mejorar indexacion publica.',
-    tags: ['SEO', 'Schema', 'Audit'],
-  },
-  {
-    name: 'Talent Match Signals',
-    category: 'Matching',
-    status: 'Aprobada',
-    trust: 91,
-    usage: '11.7k ejecuciones',
-    description: 'Calcula afinidad entre perfil, vacante y evidencias del portfolio con pesos predefinidos.',
-    tags: ['Scoring', 'Recruiting', 'Insights'],
-  },
-];
-
-const moderationQueue: {
-  name: string;
-  author: string;
-  reason: string;
-  severity: QueueSeverity;
-  eta: string;
-}[] = [
-  {
-    name: 'Freelance Proposal Builder',
-    author: 'Studio Norte',
-    reason: 'Validar claims de conversion y tono comercial',
-    severity: 'Media',
-    eta: 'Hoy, 14:30',
-  },
-  {
-    name: 'Auto Portfolio Translator',
-    author: 'Open Lingo',
-    reason: 'Revisar placeholders no traducidos en portugues',
-    severity: 'Baja',
-    eta: 'Hoy, 16:00',
-  },
-  {
-    name: 'Resume Keyword Injector',
-    author: 'CareerStack',
-    reason: 'Ajustar guardrails para evitar keyword stuffing',
-    severity: 'Alta',
-    eta: 'Manana, 09:15',
-  },
-];
-
-const healthSignals = [
-  { label: 'Consistencia de taxonomia', value: 92, note: '18 categorias activas' },
-  { label: 'Cobertura de metadata', value: 84, note: 'Faltan previews en 23 skills' },
-  { label: 'Cumplimiento de prompts seguros', value: 97, note: 'Solo 3 revisiones manuales' },
-  { label: 'Claridad de descripcion publica', value: 76, note: '11 fichas necesitan copy nuevo' },
-];
-
-const recentActivity = [
-  {
-    title: 'Skill aprobada',
-    detail: 'Creative Brief Generator paso a produccion con score 94/100.',
-    icon: CheckCircle2,
-    tone: 'text-emerald-600 bg-emerald-100 dark:text-emerald-500 dark:bg-emerald-500/10',
-  },
-  {
-    title: 'Revision abierta',
-    detail: 'Lead Enrichment Helper quedo pausada por falta de fuente declarada.',
-    icon: Eye,
-    tone: 'text-sky-600 bg-sky-100 dark:text-sky-500 dark:bg-sky-500/10',
-  },
-  {
-    title: 'Bloqueo preventivo',
-    detail: 'Sales Outreach Turbo fue despublicada hasta corregir mensajes agresivos.',
-    icon: XCircle,
-    tone: 'text-rose-600 bg-rose-100 dark:text-rose-500 dark:bg-rose-500/10',
-  },
-  {
-    title: 'Nuevo trigger',
-    detail: 'Se activo auto-review para skills con integraciones externas.',
-    icon: Wand2,
-    tone: 'text-violet-600 bg-violet-100 dark:text-violet-500 dark:bg-violet-500/10',
-  },
-];
-
-const statusClassNames = {
-  Aprobada: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-500',
-  Observacion: 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-500',
-} as const;
-
-const severityClassNames = {
-  Alta: 'bg-red-100 text-red-700 dark:bg-rose-500/10 dark:text-rose-500',
-  Media: 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-500',
-  Baja: 'bg-sky-100 text-sky-700 dark:bg-sky-500/10 dark:text-sky-500',
-} as const;
+  isNormalized: boolean;
+}
 
 export default function AdminSkillsPage() {
-  return (
-    <div className="max-w-full space-y-4 overflow-x-hidden bg-gray-50 p-4 md:space-y-6 md:p-6 dark:bg-black min-h-screen">
-      <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white md:rounded-3xl dark:border-white/10 dark:bg-zinc-950">
-        <div className="relative">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.18),_transparent_28%),radial-gradient(circle_at_80%_20%,_rgba(251,191,36,0.18),_transparent_24%),linear-gradient(135deg,rgba(15,23,42,0.05),transparent_55%)]" />
-          <div className="relative flex flex-col gap-4 p-4 md:gap-6 md:p-6 lg:flex-row lg:items-end lg:justify-between lg:p-8">
-            <div className="max-w-2xl">
-              <Badge variant="outline" className="border-sky-500/30 bg-sky-50 text-sky-600 dark:bg-sky-500/5 dark:text-sky-400">
-                <Sparkles className="mr-1 h-3 w-3" />
-                Centro de Curacion
-              </Badge>
-              <h1 className="mt-3 text-2xl font-bold tracking-tight text-black md:mt-4 md:text-3xl dark:text-white">
-                Administracion de Skills
-              </h1>
-              <p className="mt-3 text-sm leading-6 text-gray-600 sm:text-base dark:text-gray-400">
-                Armé una vista estatica con contenido de muestra para que esta seccion ya se vea
-                viva: resumen del catalogo, cola de moderacion, calidad de metadata y las skills
-                destacadas que podrian promocionarse dentro de EthosHub.
-              </p>
-            </div>
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('');
+  const [usage, setUsage] = useState('');
+  const [page, setPage] = useState(0);
+  const [result, setResult] = useState<AdminSkillPage | null>(null);
+  const [metrics, setMetrics] = useState<AdminSkillMetrics | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-            <div className="grid gap-2 sm:grid-cols-3 sm:gap-3">
-              <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 backdrop-blur sm:rounded-2xl sm:p-4 dark:border-white/10 dark:bg-zinc-900">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-gray-500 sm:text-xs dark:text-gray-400">
-                  Revision activa
-                </p>
-                <p className="mt-1.5 text-xl font-semibold text-black sm:mt-2 sm:text-2xl dark:text-white">07</p>
-                <p className="mt-0.5 text-xs text-gray-500 sm:mt-1 sm:text-sm dark:text-gray-400">skills con seguimiento manual</p>
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [editor, setEditor] = useState<EditorState | null>(null);
+  const [editorError, setEditorError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput.trim());
+      setPage(0);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const filters: AdminSkillFilters = {
+        search: search || undefined,
+        category: category || undefined,
+        usage: (usage || undefined) as AdminSkillFilters['usage'],
+      };
+      const [pageData, metricsData] = await Promise.all([
+        adminSkillService.search(filters, page, PAGE_SIZE),
+        adminSkillService.getMetrics(),
+      ]);
+      setResult(pageData);
+      setMetrics(metricsData);
+      setSelectedIds(new Set());
+    } catch {
+      setError('No se pudo cargar el catálogo de skills.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [search, category, usage, page]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const items = result?.items ?? [];
+  const totalPages = result ? Math.max(1, Math.ceil(result.total / PAGE_SIZE)) : 1;
+  const deletableSelected = items.filter((item) => selectedIds.has(item.id) && item.usageCount === 0);
+
+  const toggleSelect = (tagId: string) => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(tagId)) next.delete(tagId);
+      else next.add(tagId);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    setSelectedIds((current) =>
+      current.size === items.length ? new Set() : new Set(items.map((item) => item.id)),
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    setActionLoading(true);
+    try {
+      const outcome = await adminSkillService.deleteUnused([...selectedIds]);
+      setNotice(`${outcome.deleted} eliminados · ${outcome.skipped} omitidos por estar en uso`);
+      setConfirmDelete(false);
+      await load();
+    } catch {
+      setError('No se pudieron eliminar los skills seleccionados.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const openCreate = () =>
+    setEditor({ tag: null, name: '', category: CATEGORIES[0], isNormalized: true });
+
+  const openEdit = (tag: AdminSkillTag) =>
+    setEditor({ tag, name: tag.name, category: tag.category, isNormalized: tag.isNormalized });
+
+  const handleEditorSave = async () => {
+    if (!editor || !editor.name.trim()) return;
+    setActionLoading(true);
+    setEditorError(null);
+    try {
+      const payload = { name: editor.name.trim(), category: editor.category, isNormalized: editor.isNormalized };
+      if (editor.tag) {
+        await adminSkillService.update(editor.tag.id, payload);
+      } else {
+        await adminSkillService.create(payload);
+      }
+      setEditor(null);
+      await load();
+    } catch {
+      setEditorError(editor.tag ? 'No se pudo actualizar el skill.' : 'Ya existe un skill con ese nombre.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const metricCards = metrics
+    ? [
+        { label: 'Total de skills', value: metrics.totalTags, icon: Tags },
+        { label: 'Normalizados', value: metrics.normalizedTags, icon: CheckCircle2 },
+        { label: 'En uso', value: metrics.usedTags, icon: Code2 },
+        { label: 'En desuso', value: metrics.unusedTags, icon: CircleSlash },
+        { label: 'Categorías', value: metrics.categories, icon: Layers3 },
+      ]
+    : [];
+
+  return (
+    <div className="flex h-full max-w-full flex-col gap-4 overflow-x-hidden p-4 md:p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="font-sans text-2xl font-bold tracking-tight text-black dark:text-white md:text-3xl">
+            Normalización de Skills
+          </h1>
+          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+            Catálogo global de hard skills · core.global_skill_tags
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={load}
+            disabled={isLoading}
+            className="border-gray-200 bg-transparent text-violet-600 hover:bg-violet-50 dark:border-violet-500/30 dark:text-violet-400 dark:hover:bg-violet-500/10"
+          >
+            <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
+          </Button>
+          <Button
+            size="sm"
+            onClick={openCreate}
+            className="bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-lg shadow-violet-500/25 hover:from-violet-700 hover:to-purple-700"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Agregar skill
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {metricCards.length === 0
+          ? Array.from({ length: 5 }).map((_, index) => <Skeleton key={index} className="h-20 w-full rounded-xl" />)
+          : metricCards.map((card) => (
+              <div key={card.label} className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 dark:border-white/10 dark:bg-zinc-950">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-500/20 dark:to-purple-500/20">
+                  <card.icon className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-sans text-lg font-bold leading-tight text-black dark:text-white">{card.value}</p>
+                  <p className="truncate text-[11px] text-gray-500 dark:text-gray-400">{card.label}</p>
+                </div>
               </div>
-              <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 backdrop-blur sm:rounded-2xl sm:p-4 dark:border-white/10 dark:bg-zinc-900">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-gray-500 sm:text-xs dark:text-gray-400">
-                  Con integraciones
-                </p>
-                <p className="mt-1.5 text-xl font-semibold text-black sm:mt-2 sm:text-2xl dark:text-white">41</p>
-                <p className="mt-0.5 text-xs text-gray-500 sm:mt-1 sm:text-sm dark:text-gray-400">Slack, GitHub, Notion y CRM</p>
-              </div>
-              <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 backdrop-blur sm:rounded-2xl sm:p-4 dark:border-white/10 dark:bg-zinc-900">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-gray-500 sm:text-xs dark:text-gray-400">
-                  Ultimo refresh
-                </p>
-                <p className="mt-1.5 text-xl font-semibold text-black sm:mt-2 sm:text-2xl dark:text-white">09:42</p>
-                <p className="mt-0.5 text-xs text-gray-500 sm:mt-1 sm:text-sm dark:text-gray-400">snapshot de datos mock</p>
-              </div>
-            </div>
+            ))}
+      </div>
+
+      <div className="flex flex-col gap-2 rounded-xl border border-gray-200 bg-white p-3 sm:flex-row sm:items-center dark:border-white/10 dark:bg-zinc-950">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            placeholder="Buscar skill por nombre…"
+            className="h-10 w-full rounded-lg border border-gray-200 bg-transparent pl-9 pr-3 text-sm text-black outline-none transition-colors focus:border-violet-500 dark:border-white/10 dark:text-white"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Select value={category} onChange={(event) => { setCategory(event.target.value); setPage(0); }} options={categoryOptions} className="h-10 min-w-[170px]" />
+          <Select value={usage} onChange={(event) => { setUsage(event.target.value); setPage(0); }} options={usageOptions} className="h-10 min-w-[150px]" />
+          {selectedIds.size > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setConfirmDelete(true)}
+              className="border-red-200 bg-transparent text-red-600 hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
+            >
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+              Eliminar ({selectedIds.size})
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {notice && (
+        <div className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-2 text-xs text-violet-700 dark:border-violet-500/20 dark:bg-violet-500/10 dark:text-violet-300">
+          {notice}
+        </div>
+      )}
+
+      <div className="flex min-h-0 flex-1 flex-col rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-zinc-950">
+        {error && !result ? (
+          <div className="flex flex-1 items-center justify-center p-6">
+            <ErrorState title="Error" message={error} onRetry={load} />
+          </div>
+        ) : isLoading && !result ? (
+          <div className="space-y-2 p-4">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <Skeleton key={index} className="h-12 w-full rounded-lg" />
+            ))}
+          </div>
+        ) : items.length === 0 ? (
+          <div className="flex flex-1 items-center justify-center p-6">
+            <EmptyState icon={Code2} title="Sin skills" description="Ningún skill coincide con los filtros actuales." />
+          </div>
+        ) : (
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="sticky top-0 z-10 bg-gray-50 text-xs uppercase tracking-wide text-gray-500 dark:bg-zinc-900 dark:text-gray-400">
+                <tr>
+                  <th className="w-10 px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={items.length > 0 && selectedIds.size === items.length}
+                      onChange={toggleSelectAll}
+                      className="h-4 w-4 accent-violet-600"
+                      aria-label="Seleccionar todos"
+                    />
+                  </th>
+                  <th className="px-4 py-3 font-medium">Skill</th>
+                  <th className="hidden px-4 py-3 font-medium sm:table-cell">Categoría</th>
+                  <th className="px-4 py-3 font-medium">Uso</th>
+                  <th className="hidden px-4 py-3 font-medium md:table-cell">Estado</th>
+                  <th className="w-16 px-4 py-3" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-white/5">
+                {items.map((item) => (
+                  <tr key={item.id} className="transition-colors hover:bg-violet-50/50 dark:hover:bg-violet-500/5">
+                    <td className="px-4 py-2.5">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(item.id)}
+                        onChange={() => toggleSelect(item.id)}
+                        className="h-4 w-4 accent-violet-600"
+                        aria-label={`Seleccionar ${item.name}`}
+                      />
+                    </td>
+                    <td className="px-4 py-2.5 font-medium text-black dark:text-white">{item.name}</td>
+                    <td className="hidden px-4 py-2.5 sm:table-cell">
+                      <Badge variant="secondary" className="border-0 bg-violet-100 text-[10px] text-violet-700 dark:bg-violet-500/15 dark:text-violet-400">
+                        {item.category}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <span className={cn('text-xs', item.usageCount > 0 ? 'font-medium text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500')}>
+                        {item.usageCount > 0 ? `${item.usageCount} profiles` : 'Sin uso'}
+                      </span>
+                    </td>
+                    <td className="hidden px-4 py-2.5 md:table-cell">
+                      <Badge
+                        variant="secondary"
+                        className={cn(
+                          'border-0 text-[10px]',
+                          item.isNormalized
+                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400'
+                            : 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
+                        )}
+                      >
+                        {item.isNormalized ? 'Normalizado' : 'Pendiente'}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <button
+                        onClick={() => openEdit(item)}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-violet-100 hover:text-violet-600 dark:hover:bg-violet-500/10 dark:hover:text-violet-400"
+                        aria-label={`Editar ${item.name}`}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between border-t border-gray-200 px-4 py-3 dark:border-white/10">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Página {page + 1} de {totalPages}
+            {result ? ` · ${result.total.toLocaleString()} skills` : ''}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" disabled={page === 0 || isLoading} onClick={() => setPage((current) => Math.max(0, current - 1))} className="border-gray-200 bg-transparent dark:border-white/10">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="sm" disabled={page + 1 >= totalPages || isLoading} onClick={() => setPage((current) => current + 1)} className="border-gray-200 bg-transparent dark:border-white/10">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
         </div>
-      </section>
+      </div>
 
-      <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        {overviewStats.map((item, index) => (
-          <motion.div
-            key={item.label}
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.08 }}
-          >
-            <Card className="relative overflow-hidden border-gray-200 bg-white p-0 dark:border-white/10 dark:bg-zinc-950">
-              <div className={cn('absolute inset-x-0 top-0 h-16 bg-gradient-to-br sm:h-24', item.accent)} />
-              <div className="relative p-3 sm:p-6">
-                <div className="flex items-start justify-between">
-                  <div className="rounded-xl border border-gray-200 bg-white p-2 sm:rounded-2xl sm:p-3 dark:border-white/10 dark:bg-zinc-900">
-                    <item.icon className="h-4 w-4 text-black sm:h-5 sm:w-5 dark:text-white" />
-                  </div>
-                  <span className="inline-flex items-center gap-0.5 rounded-full bg-white px-1.5 py-0.5 text-[10px] font-medium text-gray-600 sm:gap-1 sm:px-2.5 sm:py-1 sm:text-xs dark:bg-zinc-800 dark:text-gray-300">
-                    <ArrowUpRight className="h-2.5 w-2.5 text-emerald-500 sm:h-3 sm:w-3" />
-                    <span className="hidden sm:inline">{item.change}</span>
-                  </span>
-                </div>
-                <p className="mt-4 text-xl font-bold text-black sm:mt-8 sm:text-3xl dark:text-white">{item.value}</p>
-                <p className="mt-0.5 text-xs text-gray-500 sm:mt-1 sm:text-sm dark:text-gray-400">{item.label}</p>
-              </div>
-            </Card>
-          </motion.div>
-        ))}
-      </section>
-
-      <section className="grid grid-cols-1 gap-4 md:gap-6 xl:grid-cols-[1.6fr_1fr]">
-        <Card className="border-gray-200 bg-white p-4 md:p-6 dark:border-white/10 dark:bg-zinc-950">
-          <div className="flex flex-col gap-3 border-b border-gray-200 pb-4 sm:flex-row sm:items-center sm:justify-between sm:pb-5 dark:border-white/10">
+      <Modal
+        isOpen={editor != null}
+        onClose={() => { setEditor(null); setEditorError(null); }}
+        title={editor?.tag ? `Editar skill · ${editor.tag.name}` : 'Agregar skill'}
+        size="sm"
+      >
+        {editor && (
+          <div className="flex flex-col gap-4">
             <div>
-              <h2 className="text-base font-semibold text-black md:text-lg dark:text-white">Catalogo destacado</h2>
-              <p className="mt-0.5 text-xs text-gray-500 sm:mt-1 sm:text-sm dark:text-gray-400">
-                Skills listas para exhibicion, demo interna o promocion editorial.
-              </p>
+              <label className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Nombre</label>
+              <input
+                value={editor.name}
+                onChange={(event) => setEditor({ ...editor, name: event.target.value })}
+                placeholder="Ej. GraphQL"
+                className="h-10 w-full rounded-lg border border-gray-200 bg-transparent px-3 text-sm text-black outline-none transition-colors focus:border-violet-500 dark:border-white/10 dark:text-white"
+              />
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button variant="outline" size="sm" className="h-8 border-gray-200 px-2 text-black sm:px-3 dark:border-white/20 dark:text-white">
-                <Search className="h-4 w-4" />
-                <span className="ml-1 hidden sm:inline">Buscar</span>
-              </Button>
-              <Button variant="outline" size="sm" className="h-8 border-gray-200 px-2 text-black sm:px-3 dark:border-white/20 dark:text-white">
-                <Filter className="h-4 w-4" />
-                <span className="ml-1 hidden sm:inline">Filtrar</span>
-              </Button>
-              <Button size="sm" className="h-8 bg-violet-600 px-2 text-white hover:bg-violet-700 sm:px-3">
-                <Code2 className="h-4 w-4" />
-                <span className="ml-1 hidden sm:inline">Nueva ficha</span>
-              </Button>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Categoría</label>
+              <Select
+                value={editor.category}
+                onChange={(event) => setEditor({ ...editor, category: event.target.value })}
+                options={CATEGORIES.map((value) => ({ value, label: value }))}
+                className="h-10 w-full"
+              />
             </div>
-          </div>
-
-          <div className="mt-5 space-y-4">
-            {featuredSkills.map((skill) => (
-              <div
-                key={skill.name}
-                className="rounded-2xl border border-gray-200 bg-gray-50 p-5 transition-colors hover:bg-gray-100 dark:border-white/10 dark:bg-black/60 dark:hover:bg-black"
+            <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <input
+                type="checkbox"
+                checked={editor.isNormalized}
+                onChange={(event) => setEditor({ ...editor, isNormalized: event.target.checked })}
+                className="h-4 w-4 accent-violet-600"
+              />
+              Skill normalizado (catálogo oficial)
+            </label>
+            {editorError && <p className="text-xs text-red-600 dark:text-red-400">{editorError}</p>}
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setEditor(null)} className="border-gray-200 bg-transparent dark:border-white/10">
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                disabled={actionLoading || !editor.name.trim()}
+                onClick={handleEditorSave}
+                className="bg-gradient-to-r from-violet-600 to-purple-600 text-white"
               >
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="max-w-2xl">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-base font-semibold text-black dark:text-white">{skill.name}</h3>
-                      <Badge variant="secondary" className={statusClassNames[skill.status]}>
-                        {skill.status}
-                      </Badge>
-                      <Badge variant="outline" className="border-gray-300 text-gray-600 dark:border-white/20 dark:text-gray-300">{skill.category}</Badge>
-                    </div>
-                    <p className="mt-3 text-sm leading-6 text-gray-600 dark:text-gray-400">
-                      {skill.description}
-                    </p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {skill.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-500 dark:border-white/10 dark:text-gray-400"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="grid min-w-[220px] gap-3 rounded-2xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-zinc-900">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500 dark:text-gray-400">Confianza</span>
-                      <span className="font-medium text-black dark:text-white">{skill.trust}%</span>
-                    </div>
-                    <Progress value={skill.trust} />
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500 dark:text-gray-400">Uso</span>
-                      <span className="font-medium text-black dark:text-white">{skill.usage}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        <Card className="border-gray-200 bg-white p-6 dark:border-white/10 dark:bg-zinc-950">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-black dark:text-white">Actividad reciente</h2>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Eventos sinteticos para poblar la vista.
-              </p>
-            </div>
-            <Brain className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-          </div>
-
-          <div className="mt-5 space-y-4">
-            {recentActivity.map((item) => (
-              <div key={item.title} className="flex gap-3 rounded-2xl border border-gray-200 p-4 dark:border-white/10">
-                <div className={cn('flex h-10 w-10 items-center justify-center rounded-2xl', item.tone)}>
-                  <item.icon className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-black dark:text-white">{item.title}</p>
-                  <p className="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">{item.detail}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </section>
-
-      <section className="grid grid-cols-1 gap-4 md:gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <Card className="border-gray-200 bg-white p-4 md:p-6 dark:border-white/10 dark:bg-zinc-950">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-black dark:text-white">Cola de moderacion</h2>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Solicitudes simuladas con prioridad y motivo de revision.
-              </p>
-            </div>
-            <Badge variant="outline" className="border-gray-300 text-black dark:border-white/20 dark:text-white">
-              3 items visibles
-            </Badge>
-          </div>
-
-          <div className="mt-4 overflow-x-auto rounded-xl border border-gray-200 md:mt-5 md:rounded-2xl dark:border-white/10">
-            <div className="min-w-[600px]">
-              <div className="grid grid-cols-[1.3fr_1fr_1fr_0.8fr] gap-3 bg-gray-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-gray-500 dark:bg-black/50 dark:text-gray-400">
-                <span>Skill</span>
-                <span>Autor</span>
-                <span>Motivo</span>
-                <span>ETA</span>
-              </div>
-              {moderationQueue.map((item) => (
-                <div
-                  key={item.name}
-                  className="grid grid-cols-[1.3fr_1fr_1fr_0.8fr] gap-3 border-t border-gray-200 px-4 py-4 text-sm dark:border-white/10"
-                >
-                  <div>
-                    <p className="font-medium text-black dark:text-white">{item.name}</p>
-                    <Badge variant="secondary" className={severityClassNames[item.severity]}>
-                      {item.severity}
-                    </Badge>
-                  </div>
-                  <p className="text-gray-500 dark:text-gray-400">{item.author}</p>
-                  <p className="text-gray-500 dark:text-gray-400">{item.reason}</p>
-                  <p className="text-black dark:text-white">{item.eta}</p>
-                </div>
-              ))}
+                {actionLoading ? 'Guardando…' : 'Guardar'}
+              </Button>
             </div>
           </div>
-        </Card>
+        )}
+      </Modal>
 
-        <Card className="border-gray-200 bg-white p-4 md:p-6 dark:border-white/10 dark:bg-zinc-950">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-black dark:text-white">Salud del ecosistema</h2>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Indicadores mock para que la seccion tenga lectura rapida.
-              </p>
-            </div>
-            <Bot className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-          </div>
-
-          <div className="mt-4 space-y-4 md:mt-5 md:space-y-5">
-            {healthSignals.map((signal) => (
-              <div key={signal.label} className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium text-black dark:text-white">{signal.label}</span>
-                  <span className="text-gray-500 dark:text-gray-400">{signal.value}%</span>
-                </div>
-                <Progress value={signal.value} />
-                <p className="text-xs text-gray-500 dark:text-gray-400">{signal.note}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-6 grid gap-3 rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-black/40">
-            <div className="flex items-center gap-3">
-              <div className="rounded-2xl bg-violet-100 p-2 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400">
-                <Link2 className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-black dark:text-white">Integraciones observadas</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  12 skills consumen servicios externos y pasan por doble control.
-                </p>
-              </div>
-            </div>
-          </div>
-        </Card>
-      </section>
+      <ConfirmDialog
+        isOpen={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={handleBulkDelete}
+        loading={actionLoading}
+        variant="destructive"
+        title="Eliminar skills seleccionados"
+        message={`Se eliminarán ${selectedIds.size} skills del catálogo. ${selectedIds.size - deletableSelected.length > 0 ? `${selectedIds.size - deletableSelected.length} están en uso por profiles y serán omitidos automáticamente.` : 'Ninguno está en uso por profiles.'}`}
+        confirmLabel="Eliminar"
+      />
     </div>
   );
 }

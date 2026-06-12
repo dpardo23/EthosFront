@@ -540,14 +540,23 @@ export default function EducationPage() {
     if (!validate()) return;
     setIsSaving(true);
     try {
-      const payload: any = {
-        ...form,
+      const resolvedEducationType = form.educationType === 'other'
+        ? (form.educationTypeCustom.trim() || 'other')
+        : form.educationType;
+      const payload = {
         profileId: profile.id,
+        institutionName: form.institutionName,
+        degree: form.degree,
+        fieldOfStudy: form.fieldOfStudy || null,
+        educationType: resolvedEducationType,
+        startDate: form.startDate,
+        endDate: form.isCurrent ? null : (form.endDate || null),
+        isCurrent: form.isCurrent,
         gpa: form.gpa ? parseFloat(form.gpa) : null,
-        endDate: form.endDate || null,
-        educationType: form.educationType === 'other'
-          ? (form.educationTypeCustom.trim() || 'other')
-          : form.educationType,
+        credentialUrl: form.credentialUrl || null,
+        verificationUrl: form.verificationUrl || null,
+        institutionLogoUrl: form.institutionLogoUrl || null,
+        isVisible: form.isVisible,
       };
       if (editingRec?.academicRecordId) {
         await educationService.updateRecord(profile.id, editingRec.academicRecordId, payload);

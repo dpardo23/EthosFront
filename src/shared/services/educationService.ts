@@ -22,13 +22,13 @@ export const educationService = {
     return toRecordArray(response.data);
   },
   
-  addRecord: async (profileId: string, data: Partial<AcademicRecord>): Promise<string> => {
-    const response = await apiClient.post(ROUTE, { ...data, profileId });
+  addRecord: async (_profileId: string, data: Record<string, unknown>): Promise<string> => {
+    const response = await apiClient.post(ROUTE, data);
     return response.data;
   },
 
-  updateRecord: async (profileId: string, id: string, data: Partial<AcademicRecord>): Promise<void> => {
-    await apiClient.put(`${ROUTE}/${id}`, { ...data, profileId });
+  updateRecord: async (_profileId: string, id: string, data: Record<string, unknown>): Promise<void> => {
+    await apiClient.put(`${ROUTE}/${id}`, data);
   },
 
   deleteRecord: async (profileId: string, id: string): Promise<void> => {

@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, ChevronRight, ChevronLeft, Check, Upload, Plus, Trash2,
-  Github, Video, FileText, Image as ImageIcon, Link2,
+  Github, FileText, Image as ImageIcon, Link2, HardDrive,
 } from 'lucide-react';
 
 import { useAuthStore, useProjectsStore, useUiStore } from '@/store';
@@ -363,23 +363,26 @@ function TagInput({ tags, setTags }: {
   );
 }
 
-function UrlListInput({ items, setItems, placeholder }: {
+function UrlListInput({ items, setItems, placeholder, maxItems = Infinity }: {
   items: string[];
   setItems: React.Dispatch<React.SetStateAction<string[]>>;
   placeholder: string;
+  maxItems?: number;
 }) {
   const [val, setVal] = useState('');
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   const add = () => {
     const v = val.trim();
-    if (v) { setItems([...items, v]); setVal(''); }
+    if (v && items.length < maxItems) { setItems([...items, v]); setVal(''); }
   };
 
   const moveItem = (fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex) return;
     setItems((currentItems) => reorderList(currentItems, fromIndex, toIndex));
   };
+
+  const atLimit = items.length >= maxItems;
 
   return (
     <div>
@@ -389,14 +392,16 @@ function UrlListInput({ items, setItems, placeholder }: {
           value={val}
           onChange={(e) => setVal(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), add())}
-          placeholder={placeholder}
+          placeholder={atLimit ? `Límite de ${maxItems} enlaces alcanzado` : placeholder}
+          disabled={atLimit}
         />
         <button
           type="button"
           onClick={add}
+          disabled={atLimit}
           className="flex items-center gap-1.5 px-3 h-10 rounded-xl border border-input bg-muted/40
             text-[12px] font-semibold text-muted-foreground hover:border-violet-500/50 hover:text-violet-500 dark:hover:text-violet-400
-            hover:bg-violet-500/10 transition-all shrink-0"
+            hover:bg-violet-500/10 transition-all shrink-0 disabled:opacity-40 disabled:pointer-events-none"
         >
           <Plus size={13} /> Añadir
         </button>
@@ -608,14 +613,20 @@ function FileUpload({ files, setFiles }: {
     setFiles((currentFiles) => reorderList(currentFiles, fromIndex, toIndex));
   };
 
+  const MAX_FILES = 5;
+
   const handle = async (file: File | null | undefined) => {
     if (!file) return;
+    if (files.length >= MAX_FILES) {
+      addToast({ type: 'error', title: 'Límite alcanzado', message: `Máximo ${MAX_FILES} archivos por proyecto.` });
+      return;
+    }
     const MAX_BYTES = 5 * 1024 * 1024;
     if (file.size > MAX_BYTES) {
       addToast({ type: 'error', title: 'Archivo demasiado grande', message: 'El tamaño máximo es 5 MB.' });
       return;
     }
-    
+
     setPendingFile({ name: file.name, size: file.size });
     try {
       setIsUploading(true);
@@ -631,6 +642,7 @@ function FileUpload({ files, setFiles }: {
   };
 
   const hasItems = files.length > 0 || pendingFile !== null;
+  const limitReached = files.length >= MAX_FILES;
 
   return (
     <div>
@@ -678,23 +690,29 @@ function FileUpload({ files, setFiles }: {
           )}
         </div>
       )}
-      <div
-        onClick={() => !isUploading && ref.current?.click()}
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => { e.preventDefault(); handle(e.dataTransfer.files[0]); }}
-        className={`border-2 border-dashed border-muted-foreground/20 rounded-xl p-6 text-center cursor-pointer
-          hover:border-violet-500/50 hover:bg-violet-500/5 transition-all group ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
-      >
-        <div className="w-10 h-10 rounded-lg bg-violet-500/10 flex items-center justify-center mx-auto mb-2
-          group-hover:bg-violet-500/20 transition-colors">
-          <Upload size={18} className="text-violet-500 dark:text-violet-400" strokeWidth={1.8} />
+      {limitReached ? (
+        <div className="rounded-xl border border-dashed border-muted-foreground/20 p-4 text-center">
+          <p className="text-[12px] text-muted-foreground/60">Límite de {MAX_FILES} archivos alcanzado</p>
         </div>
-        <p className="text-[13px] font-medium text-muted-foreground">
-          {isUploading ? 'Subiendo archivo...' : <><span className="text-violet-500 dark:text-violet-400">Selecciona un archivo</span> o arrástralo</>}
-        </p>
-        <p className="text-[11px] text-muted-foreground/60 mt-1">Imágenes y PDF · máx 5 MB</p>
-      </div>
-      <input ref={ref} type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => { void handle(e.target.files?.[0]); e.target.value = ''; }} />
+      ) : (
+        <div
+          onClick={() => !isUploading && ref.current?.click()}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => { e.preventDefault(); handle(e.dataTransfer.files[0]); }}
+          className={`border-2 border-dashed border-muted-foreground/20 rounded-xl p-6 text-center cursor-pointer
+            hover:border-violet-500/50 hover:bg-violet-500/5 transition-all group ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+        >
+          <div className="w-10 h-10 rounded-lg bg-violet-500/10 flex items-center justify-center mx-auto mb-2
+            group-hover:bg-violet-500/20 transition-colors">
+            <Upload size={18} className="text-violet-500 dark:text-violet-400" strokeWidth={1.8} />
+          </div>
+          <p className="text-[13px] font-medium text-muted-foreground">
+            {isUploading ? 'Subiendo archivo...' : <><span className="text-violet-500 dark:text-violet-400">Selecciona un archivo</span> o arrástralo</>}
+          </p>
+          <p className="text-[11px] text-muted-foreground/60 mt-1">PDF · máx 5 MB · {files.length}/{MAX_FILES} archivos</p>
+        </div>
+      )}
+      <input ref={ref} type="file" accept="application/pdf" className="hidden" onChange={(e) => { void handle(e.target.files?.[0]); e.target.value = ''; }} />
     </div>
   );
 }
@@ -920,6 +938,40 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
   useEffect(() => {
     if (docs.length > 0) setErrors((prev) => ({ ...prev, docs: '' }));
   }, [docs.length]);
+
+  // ── Google Drive Picker (estructura base — integración futura) ────────────
+  // Para activar: cargar la Google Picker API con el clientId y scope de Drive,
+  // abrir el picker y capturar el documento seleccionado como enlace al proyecto.
+  const openDrivePicker = () => {
+    const DRIVE_PICKER_ORIGIN = 'https://docs.google.com';
+    if (typeof window === 'undefined') return;
+
+    // Intenta usar la Picker API si ya está cargada (se cargará en una futura integración)
+    const google = (window as any).google;
+    if (!google?.picker) {
+      // Fallback: abre Google Drive en nueva pestaña para que el usuario copie el enlace
+      window.open(`${DRIVE_PICKER_ORIGIN}/picker`, '_blank', 'noopener,noreferrer');
+      addToast({
+        type: 'info',
+        title: 'Google Drive Picker',
+        message: 'Copia el enlace del documento de Drive y pégalo en "Enlaces y Recursos".',
+      });
+      return;
+    }
+
+    // Integración completa cuando esté disponible la API key de Picker
+    // const picker = new google.picker.PickerBuilder()
+    //   .addView(google.picker.ViewId.DOCS)
+    //   .setOAuthToken('<OAUTH_TOKEN>')
+    //   .setCallback((data: any) => {
+    //     if (data.action === google.picker.Action.PICKED) {
+    //       const doc = data.docs[0];
+    //       setVideos((prev) => [...prev, doc.url].slice(0, 10));
+    //     }
+    //   })
+    //   .build();
+    // picker.setVisible(true);
+  };
 
   // ── Validation ───────────────────────────────
 
@@ -1161,18 +1213,20 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
                 <Label>Descripción <Req /></Label>
                 <DarkTextarea value={description}
                   onChange={(e) => {
-                    setDescription(e.target.value); if (errors.description) {
-                      setErrors((prev) => ({ ...prev, description: '', }));
-                    }
+                    if (e.target.value.length > MAX_DESC) return;
+                    setDescription(e.target.value);
+                    if (errors.description) setErrors((prev) => ({ ...prev, description: '' }));
                   }}
                   placeholder="Describe brevemente tu proyecto..."
-                  maxLength={500} />
-
-                {errors.description && (
-                  <p className="text-[11px] text-red-400 mt-1">
-                    {errors.description}
+                  maxLength={MAX_DESC} />
+                <div className="flex items-center justify-between mt-0.5">
+                  {errors.description
+                    ? <p className="text-[11px] text-red-400">{errors.description}</p>
+                    : <span />}
+                  <p className={`text-[11px] tabular-nums ${description.length >= MAX_DESC ? 'text-red-400 font-semibold' : 'text-muted-foreground/60'}`}>
+                    {description.length}/{MAX_DESC}
                   </p>
-                )}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1243,8 +1297,15 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
 
               <div className="flex flex-col gap-1.5">
                 <Label>Resultados obtenidos</Label>
-                <DarkTextarea value={results} onChange={(e) => setResults(e.target.value)}
-                  placeholder="Métricas de impacto, logros, resultados clave..." />
+                <DarkTextarea value={results} onChange={(e) => {
+                  if (e.target.value.length > MAX_DESC) return;
+                  setResults(e.target.value);
+                }}
+                  placeholder="Métricas de impacto, logros, resultados clave..."
+                  maxLength={MAX_DESC} />
+                <p className={`text-[11px] tabular-nums text-right ${results.length >= MAX_DESC ? 'text-red-400 font-semibold' : 'text-muted-foreground/60'}`}>
+                  {results.length}/{MAX_DESC}
+                </p>
               </div>
             </div>
           )}
@@ -1328,13 +1389,14 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
                 )}
               </SectionCard>
 
-              <SectionCard icon={Video} title={<>Videos <Req /></>}>
+              <SectionCard icon={Link2} title={<>Enlaces y Recursos <Req /></>}>
                 <UrlListInput
                   items={videos}
                   setItems={setVideos}
-                  placeholder="https://youtube.com/watch?v=..."
+                  placeholder="https://youtube.com, figma.com, docs.google.com..."
+                  maxItems={10}
                 />
-                <p className="text-[11px] text-muted-foreground/60 mt-2">YouTube, Vimeo, Figma o Google Slides</p>
+                <p className="text-[11px] text-muted-foreground/60 mt-2">YouTube, Vimeo, Figma, Google Docs/Slides u otros · {videos.length}/10</p>
                 {errors.videos && (
                   <p className="mt-1 text-[11px] text-red-400">{errors.videos}</p>
                 )}
@@ -1345,6 +1407,16 @@ export function CreateProjectModal({ isOpen, onClose, project }: CreateProjectMo
                   files={docs}
                   setFiles={setDocs}
                 />
+                <button
+                  type="button"
+                  onClick={openDrivePicker}
+                  className="mt-3 flex items-center gap-2 rounded-xl border border-dashed border-blue-400/40 bg-blue-500/5
+                    px-4 py-2.5 text-[12px] font-medium text-blue-600 dark:text-blue-400
+                    hover:border-blue-400/70 hover:bg-blue-500/10 transition-all w-full justify-center"
+                >
+                  <HardDrive size={14} />
+                  Añadir desde Drive
+                </button>
                 {errors.docs && (
                   <p className="mt-2 text-[11px] text-red-400">{errors.docs}</p>
                 )}

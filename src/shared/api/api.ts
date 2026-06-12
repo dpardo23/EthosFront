@@ -1,8 +1,5 @@
 import axios, { type AxiosError } from 'axios';
-
-const ACCESS_TOKEN_KEY = 'ethoshub_access_token';
-const TOKEN_TYPE_KEY   = 'ethoshub_token_type';
-const EXPIRES_AT_KEY   = 'ethoshub_access_expires_at';
+import { ACCESS_TOKEN_KEY, TOKEN_TYPE_KEY, EXPIRES_AT_KEY } from '@/shared/lib/sessionKeys';
 
 function readToken(): string | null {
   return sessionStorage.getItem(ACCESS_TOKEN_KEY) ?? localStorage.getItem(ACCESS_TOKEN_KEY);

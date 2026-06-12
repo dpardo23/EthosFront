@@ -16,6 +16,7 @@ import {
 import { PasswordStrengthIndicator, usePasswordValidation } from '@/components/auth/PasswordStrengthIndicator';
 import { TermsModal } from '@/components/auth/TermsModal';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { storeOAuthState } from '@/hooks/useAuthFlow';
 
 /**
  * Registration page collecting name, email, password, role, and optional contact details.
@@ -341,10 +342,15 @@ export default function RegisterPage() {
     const oauthRole = selectedRole === 'Estandar' ? 'PROFESSIONAL' : 'RECRUITER';
 
     if (isSupabaseConfigured && supabase) {
+      const csrfState = storeOAuthState();
       localStorage.setItem('ethoshub_pending_oauth_role', oauthRole);
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
-        options: { redirectTo: `${window.location.origin}/oauth-success` },
+        options: {
+          redirectTo: `${window.location.origin}/oauth-success`,
+          queryParams: { state: csrfState },
+          scopes: provider === 'google' ? 'email profile' : 'read:user user:email',
+        },
       });
       if (error) {
         localStorage.removeItem('ethoshub_pending_oauth_role');
@@ -397,14 +403,24 @@ export default function RegisterPage() {
 
       const { ROLE_INITIAL_PATHS } = await import('@/app/router/routes');
 
+      // Blind flow: backend returns token=null when email already existed.
+      // Show the same generic success message regardless — never reveal if
+      // the address is registered.
+      if (!authData?.token && authData?.profileId === null) {
+        toast.success('Revisa tu bandeja de entrada para completar el registro', {
+          description: 'Si el correo ya está registrado, intenta iniciar sesión.',
+        });
+        navigate('/login', { replace: false });
+        return;
+      }
+
       if (authData?.token) {
-        
         const rawRole = (authData.role || '').toLowerCase();
         const normalizedRole: ProfileRole = rawRole.includes('rec') ? 'recruiter' : 'professional';
         completeOAuthLogin({
           profile: {
-            id: authData.profileId,
-            profile_id: authData.profileId,
+            id: authData.profileId ?? '',
+            profile_id: authData.profileId ?? undefined,
             email: authData.email,
             name: `${firstName} ${lastName}`.trim() || authData.email.split('@')[0],
             role: normalizedRole,
@@ -414,7 +430,7 @@ export default function RegisterPage() {
           token: authData.token,
           expiresIn: 3600,
         });
-        toast.success('Cuenta creada e iniciada correctamente', {
+        toast.success('Perfil creado e iniciado correctamente', {
           description: `Accediendo como ${normalizedRole === 'recruiter' ? 'Reclutador' : 'Profesional'}.`,
         });
         navigate(ROLE_INITIAL_PATHS[normalizedRole] ?? '/dashboard', { replace: true });
@@ -442,18 +458,16 @@ export default function RegisterPage() {
     } catch (error: any) {
       const status = error?.response?.status;
       const errorMessage: string = error?.response?.data?.message || error?.message || '';
-      if (status === 409 || errorMessage.toLowerCase().includes('already exists')) {
-        toast.error('Este correo ya está registrado', {
-          description: 'Ya existe una cuenta con este correo. Intenta iniciar sesión.',
-        });
-      } else if (status === 403 || errorMessage.toLowerCase().includes('dominio no autorizado')) {
+      if (status === 403 || errorMessage.toLowerCase().includes('dominio no autorizado')) {
         toast.error('Dominio de correo no autorizado', {
           description: 'El dominio de tu correo institucional no está en la lista de instituciones permitidas.',
         });
       } else {
-        toast.error('No se pudo crear la cuenta', {
-          description: errorMessage || 'Intenta nuevamente.',
+        // Generic message — never reveal whether a specific email is registered
+        toast.success('Revisa tu bandeja de entrada para completar el registro', {
+          description: 'Si el correo ya está registrado, intenta iniciar sesión.',
         });
+        navigate('/login', { replace: false });
       }
     } finally {
       setSubmitting(false);

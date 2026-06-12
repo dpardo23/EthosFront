@@ -3,8 +3,6 @@ export { useUiStore } from './uiStore';
 export { useSkillsStore } from './skillsStore';
 export { useProjectsStore } from './projectsStore';
 export { useConnectionsStore } from './connectionsStore';
-export { useVisibilityStore } from './visibilityStore';
-export { useAnalyticsStore } from './analyticsStore';
 export { usePreferencesStore } from './preferencesStore';
 export { useNotificationsStore } from './notificationsStore';
 export { useCvStudioStore } from './cvStudioStore';

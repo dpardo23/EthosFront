@@ -1,9 +1,12 @@
 import { create } from 'zustand';
 import type { Notification } from '@/shared/types';
-import { notificationsService } from '@/shared/services';
+import { notificationsService } from '@/shared/services/notificationsService';
 
 /**
- * Zustand store for in-app notifications list and unread count.
+ * Zustand store for in-app notifications. Persisted notifications come from
+ * core.notifications (fed by database triggers on real platform events);
+ * addNotification additionally surfaces ephemeral client-side events
+ * (e.g. realtime chat) without persisting them.
  */
 interface NotificationsStore {
   notifications: Notification[];
@@ -11,10 +14,12 @@ interface NotificationsStore {
   loading: boolean;
   error: string | null;
   addNotification: (notification: Omit<Notification, 'id' | 'isRead' | 'createdAt' | 'profileId'> & { type: Notification['type'] }) => void;
-  fetchNotifications: (profileId: string) => Promise<void>;
+  fetchNotifications: () => Promise<void>;
   markAsRead: (notificationId: string) => Promise<void>;
-  markAllAsRead: (profileId: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
 }
+
+const LOCAL_ID_PREFIX = 'local-';
 
 export const useNotificationsStore = create<NotificationsStore>((set) => ({
   notifications: [],
@@ -24,7 +29,7 @@ export const useNotificationsStore = create<NotificationsStore>((set) => ({
 
   addNotification: (notification) => {
     const nextNotification: Notification = {
-      id: crypto.randomUUID(),
+      id: `${LOCAL_ID_PREFIX}${crypto.randomUUID()}`,
       profileId: 'local-profile',
       isRead: false,
       createdAt: new Date().toISOString(),
@@ -37,10 +42,10 @@ export const useNotificationsStore = create<NotificationsStore>((set) => ({
     }));
   },
 
-  fetchNotifications: async (profileId: string) => {
+  fetchNotifications: async () => {
     set({ loading: true, error: null });
     try {
-      const notifications = await notificationsService.getNotifications(profileId);
+      const notifications = await notificationsService.getNotifications();
       const unreadCount = notifications.filter((n) => !n.isRead).length;
       set({ notifications, unreadCount, loading: false });
     } catch {
@@ -50,7 +55,9 @@ export const useNotificationsStore = create<NotificationsStore>((set) => ({
 
   markAsRead: async (notificationId: string) => {
     try {
-      await notificationsService.markAsRead(notificationId);
+      if (!notificationId.startsWith(LOCAL_ID_PREFIX)) {
+        await notificationsService.markAsRead(notificationId);
+      }
       set((state) => ({
         notifications: state.notifications.map((n) =>
           n.id === notificationId ? { ...n, isRead: true } : n
@@ -62,9 +69,9 @@ export const useNotificationsStore = create<NotificationsStore>((set) => ({
     }
   },
 
-  markAllAsRead: async (profileId: string) => {
+  markAllAsRead: async () => {
     try {
-      await notificationsService.markAllAsRead(profileId);
+      await notificationsService.markAllAsRead();
       set((state) => ({
         notifications: state.notifications.map((n) => ({ ...n, isRead: true })),
         unreadCount: 0,

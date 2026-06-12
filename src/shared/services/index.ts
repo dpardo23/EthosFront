@@ -1,47 +1,28 @@
-import { delay, generateId } from '../lib/utils';
-import {
-  mockProfiles,
-  mockSoftSkills,
-  mockVisibilitySettings,
-  mockModerationHistory,
-  mockPlatformMetrics,
-  mockActivityLogs,
-  mockTimeSeriesData,
-  mockProfilePreferences,
-  mockNotifications,
-  reservedSlugs,
-  takenSlugs,
-} from '../mocks/data';
+import { generateId } from '../lib/utils';
 import type {
-  Profile,
-  ProfileRole,
-  HardSkill,
-  SoftSkill,
-  GlobalSkillTag,
-  SkillLevel,
   Project,
   ProjectMedia,
   ProjectCategory,
   ProjectStatus,
+  HardSkill,
+  SoftSkill,
+  GlobalSkillTag,
+  SkillLevel,
   OAuthConnection,
   GithubRepository,
-  VisibilitySettings,
-  SectionVisibility,
-  PortfolioSection,
-  ModerationAction,
-  PlatformMetrics,
-  ActivityLog,
-  TimeSeriesData,
-  ProfilePreferences,
-  Language,
-  Notification,
 } from '../types';
 
 /**
- * Barrel re-export and legacy mock-backed service adapters used during development before real endpoints were available.
+ * Real API service adapters (skills, projects, connections) backed by the
+ * Spring backend. Auth, portfolio, preferences and notifications live in
+ * their own dedicated service modules.
  */
-const DELAY_MS = 500;
-const API_BASE_URL = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '') as string;
+// Misma convención que el cliente axios (src/shared/api/api.ts): la base SIEMPRE
+// incluye /api. En dev VITE_API_URL apunta a .../api; en prod queda vacío y se usa
+// la ruta relativa '/api' (el JAR sirve /api y Vite proxea /api en dev).
+// Por tanto, las rutas de las funciones de este archivo NO deben incluir /api.
+const API_BASE_URL = ((import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '/api') as string)
+  .replace(/\/$/, '');
 
 function getAuthHeaders(extraHeaders: Record<string, string> = {}): Record<string, string> {
   const headers: Record<string, string> = { ...extraHeaders };
@@ -86,52 +67,17 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   }
 }
 
-export const authService = {
-  async login(email: string, _password: string, role: ProfileRole): Promise<Profile> {
-    await delay(DELAY_MS);
-    const profile = mockProfiles.find((u) => u.role === role) || mockProfiles[0];
-    return { ...profile, email };
-  },
-
-  async logout(): Promise<void> {
-    await delay(300);
-  },
-
-  async getCurrentProfile(): Promise<Profile | null> {
-    await delay(300);
-    const stored = localStorage.getItem('ethoshub_profile');
-    if (stored) {
-      return JSON.parse(stored);
-    }
-    return null;
-  },
-
-  async updateProfile(profileId: string, data: Partial<Profile>): Promise<Profile> {
-    await delay(DELAY_MS);
-    const profile = mockProfiles.find((entry) => entry.id === profileId);
-    if (!profile) {
-      throw new Error('Profile not found');
-    }
-
-    Object.assign(profile, data);
-    localStorage.setItem('ethoshub_profile', JSON.stringify(profile));
-    return { ...profile };
-  },
-};
-
 // =============================================
 // SKILLS SERVICE
 
-let softSkillsData = [...mockSoftSkills];
-
 export const skillsService = {
   async searchTags(query: string): Promise<GlobalSkillTag[]> {
-    const path = query ? `/api/skills/tags?query=${encodeURIComponent(query)}` : '/api/skills/tags';
+    const path = query ? `/skills/tags?query=${encodeURIComponent(query)}` : '/skills/tags';
     return apiRequest<GlobalSkillTag[]>(path);
   },
 
   async getHardSkills(profileId: string): Promise<HardSkill[]> {
-    return apiRequest<HardSkill[]>(`/api/profiles/${profileId}/skills/hard`);
+    return apiRequest<HardSkill[]>(`/profiles/${profileId}/skills/hard`);
   },
 
   async addHardSkill(
@@ -139,84 +85,78 @@ export const skillsService = {
     tagId: string,
     level: SkillLevel
   ): Promise<HardSkill> {
-    return apiRequest<HardSkill>(`/api/profiles/${profileId}/skills/hard`, {
+    return apiRequest<HardSkill>(`/profiles/${profileId}/skills/hard`, {
       method: 'POST',
       body: JSON.stringify({ tagId, level }),
     });
   },
 
   async createTag(name: string, category: string): Promise<GlobalSkillTag> {
-    return apiRequest<GlobalSkillTag>('/api/skills/tags', {
+    return apiRequest<GlobalSkillTag>('/skills/tags', {
       method: 'POST',
       body: JSON.stringify({ name, category }),
     });
   },
 
-  async updateHardSkill(skillId: string, level: SkillLevel): Promise<HardSkill> {
-    return apiRequest<HardSkill>(`/api/skills/hard/${skillId}`, {
+  async updateHardSkill(skillId: string, level: SkillLevel, tagId: string): Promise<HardSkill> {
+    return apiRequest<HardSkill>(`/skills/hard/${skillId}`, {
       method: 'PUT',
-      body: JSON.stringify({ level }),
+      body: JSON.stringify({ tagId, level }),
     });
   },
 
   async removeHardSkill(skillId: string): Promise<void> {
-    await apiRequest<void>(`/api/skills/hard/${skillId}`, {
+    await apiRequest<void>(`/skills/hard/${skillId}`, {
       method: 'DELETE',
     });
   },
 
   async toggleTopSkill(skillId: string): Promise<HardSkill> {
-    return apiRequest<HardSkill>(`/api/skills/hard/${skillId}/top`, {
+    return apiRequest<HardSkill>(`/skills/hard/${skillId}/top`, {
       method: 'PATCH',
     });
   },
 
   async toggleEndorsement(skillId: string, endorserId: string, endorserName: string, endorserAvatar: string): Promise<void> {
-    await apiRequest<HardSkill>(`/api/skills/hard/${skillId}/endorsements/toggle`, {
+    await apiRequest<HardSkill>(`/skills/hard/${skillId}/endorsements/toggle`, {
       method: 'PATCH',
       body: JSON.stringify({ endorserId, endorserName, endorserAvatar }),
     });
   },
 
   async reorderTopSkills(profileId: string, skillIds: string[]): Promise<HardSkill[]> {
-    return apiRequest<HardSkill[]>(`/api/profiles/${profileId}/skills/hard/top-order`, {
+    return apiRequest<HardSkill[]>(`/profiles/${profileId}/skills/hard/top-order`, {
       method: 'PATCH',
       body: JSON.stringify({ skillIds }),
     });
   },
 
   async getSoftSkills(profileId: string): Promise<SoftSkill[]> {
-    return apiRequest<SoftSkill[]>(`/api/profiles/${profileId}/skills/soft`);
+    return apiRequest<SoftSkill[]>(`/profiles/${profileId}/skills/soft`);
   },
 
   async addSoftSkill(profileId: string, title: string, description?: string): Promise<SoftSkill> {
-    return apiRequest<SoftSkill>(`/api/profiles/${profileId}/skills/soft`, {
+    return apiRequest<SoftSkill>(`/profiles/${profileId}/skills/soft`, {
       method: 'POST',
       body: JSON.stringify({ title, description }),
     });
   },
 
   async updateSoftSkill(skillId: string, title: string, description?: string): Promise<SoftSkill> {
-    return apiRequest<SoftSkill>(`/api/skills/soft/${skillId}`, {
+    return apiRequest<SoftSkill>(`/skills/soft/${skillId}`, {
       method: 'PUT',
       body: JSON.stringify({ title, description }),
     });
   },
 
   async removeSoftSkill(skillId: string): Promise<void> {
-    await apiRequest<void>(`/api/skills/soft/${skillId}`, {
+    await apiRequest<void>(`/skills/soft/${skillId}`, {
       method: 'DELETE',
     });
   },
 
   async getAllTags(): Promise<GlobalSkillTag[]> {
-    return apiRequest<GlobalSkillTag[]>('/api/skills/tags/all');
-  },
-
-  async mergeTags(sourceIds: string[], targetId: string): Promise<void> {
-    await delay(DELAY_MS);
-    void sourceIds;
-    void targetId;
+    return apiRequest<GlobalSkillTag[]>('/skills/tags/all');
   },
 };
 
@@ -366,7 +306,7 @@ export const projectsService = {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 30_000);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/projects/profile/${profileId}`, {
+      const response = await fetch(`${API_BASE_URL}/projects/profile/${profileId}`, {
         signal: controller.signal,
         headers: getAuthHeaders(),
       });
@@ -384,7 +324,7 @@ export const projectsService = {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 30_000);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}`, {
+      const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
         signal: controller.signal,
         headers: getAuthHeaders(),
       });
@@ -407,7 +347,7 @@ export const projectsService = {
     const timer = setTimeout(() => controller.abort(), 30_000);
     let response: Response;
     try {
-      response = await fetch(`${API_BASE_URL}/api/projects`, {
+      response = await fetch(`${API_BASE_URL}/projects`, {
         method: 'POST',
         signal: controller.signal,
         headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
@@ -456,7 +396,7 @@ export const projectsService = {
     if (!profileId) throw new Error('No se encontró profileId para actualizar el proyecto');
 
     const payload = buildPayload(projectId, profileId, data, currentProject);
-    const response = await fetch(`${API_BASE_URL}/api/projects`, {
+    const response = await fetch(`${API_BASE_URL}/projects`, {
       method: 'POST',
       headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(payload),
@@ -474,7 +414,7 @@ export const projectsService = {
   },
 
   async deleteProject(projectId: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}`, {
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
     });
@@ -598,178 +538,5 @@ export const connectionsService = {
 
   async syncAll(_profileId: string): Promise<void> {
     await apiRequest<void>('/v1/connections/sync-all', { method: 'POST' });
-  },
-};
-
-// =============================================
-// VISIBILITY SERVICE
-
-export const visibilityService = {
-  async getSettings(profileId: string): Promise<VisibilitySettings | null> {
-    await delay(DELAY_MS);
-    return mockVisibilitySettings.find((v) => v.profileId === profileId) || null;
-  },
-
-  async checkSlugAvailability(slug: string): Promise<{ available: boolean; reason?: string }> {
-    await delay(300);
-    if (reservedSlugs.includes(slug)) {
-      return { available: false, reason: 'reserved' };
-    }
-    if (takenSlugs.includes(slug)) {
-      return { available: false, reason: 'taken' };
-    }
-    return { available: true };
-  },
-
-  async updateSlug(_profileId: string, slug: string): Promise<void> {
-    await apiRequest<void>('/v1/portfolio/settings', { method: 'PUT', body: JSON.stringify({ slug }) });
-  },
-
-  async updateSectionVisibility(
-    profileId: string,
-    section: PortfolioSection,
-    visibility: SectionVisibility
-  ): Promise<void> {
-    await delay(DELAY_MS);
-    const settings = mockVisibilitySettings.find((v) => v.profileId === profileId);
-    if (settings) {
-      settings.sections[section] = visibility;
-    }
-  },
-
-  async updateSeoSettings(_profileId: string, seo: { title: string; description: string }): Promise<void> {
-    await apiRequest<void>('/v1/portfolio/settings', {
-      method: 'PUT',
-      body: JSON.stringify({ seoTitle: seo.title, seoDescription: seo.description }),
-    });
-  },
-
-  // updatePasswordProtection removed — password-based access control no longer used
-  
-
-  async getPublicPortfolio(slug: string): Promise<{ profile: Profile; settings: VisibilitySettings } | null> {
-    await delay(DELAY_MS);
-    const settings = mockVisibilitySettings.find((v) => v.slug === slug);
-    if (!settings) return null;
-    const profile = mockProfiles.find((u) => u.id === settings.profileId);
-    if (!profile) return null;
-    return { profile, settings };
-  },
-
-  async verifyPassword(slug: string, password: string): Promise<boolean> {
-    await delay(DELAY_MS);
-    const settings = mockVisibilitySettings.find((v) => v.slug === slug);
-    return settings?.password === password;
-  },
-
-  async getPublicPortfolios(): Promise<{ profile: Profile; settings: VisibilitySettings }[]> {
-    await delay(DELAY_MS);
-    return mockVisibilitySettings
-      .filter((v) => v.isPublicProfileEnabled && !v.isPasswordProtected)
-      .map((settings) => {
-        const profile = mockProfiles.find((u) => u.id === settings.profileId)!;
-        return { profile, settings };
-      });
-  },
-
-  async getModerationHistory(portfolioId: string): Promise<ModerationAction[]> {
-    await delay(DELAY_MS);
-    return mockModerationHistory.filter((m) => m.portfolioId === portfolioId);
-  },
-
-  async moderatePortfolio(
-    portfolioId: string,
-    action: ModerationAction['actionType'],
-    reason?: string
-  ): Promise<void> {
-    await delay(DELAY_MS);
-    mockModerationHistory.push({
-      id: generateId(),
-      portfolioId,
-      adminId: '3',
-      adminName: 'Admin EthosHub',
-      actionType: action,
-      previousState: 'active',
-      newState: action === 'deactivate' ? 'deactivated' : 'active',
-      reason,
-      createdAt: new Date().toISOString(),
-    });
-  },
-};
-
-// =============================================
-// ANALYTICS SERVICE
-
-export const analyticsService = {
-  async getPlatformMetrics(): Promise<PlatformMetrics> {
-    await delay(DELAY_MS);
-    return mockPlatformMetrics;
-  },
-
-  async getRecentActivity(limit: number = 10): Promise<ActivityLog[]> {
-    await delay(DELAY_MS);
-    return mockActivityLogs.slice(0, limit);
-  },
-
-  async getTimeSeriesData(days: number = 30): Promise<TimeSeriesData[]> {
-    await delay(DELAY_MS);
-    return mockTimeSeriesData.slice(-days);
-  },
-};
-
-// =============================================
-// PREFERENCES SERVICE
-
-let profilePreferencesData = { ...mockProfilePreferences };
-
-export const preferencesService = {
-  async getPreferences(profileId: string): Promise<ProfilePreferences> {
-    await delay(DELAY_MS);
-    return { ...profilePreferencesData, profileId };
-  },
-
-  async updateLanguage(language: Language): Promise<void> {
-    await delay(300);
-    profilePreferencesData.language = language;
-    localStorage.setItem('ethoshub_language', language);
-  },
-
-  async updateSectionOrder(order: PortfolioSection[]): Promise<void> {
-    await delay(DELAY_MS);
-    profilePreferencesData.sectionOrder = order;
-  },
-
-  async updatePreference(key: keyof ProfilePreferences, value: unknown): Promise<void> {
-    await delay(DELAY_MS);
-    (profilePreferencesData as Record<string, unknown>)[key] = value;
-  },
-};
-
-// =============================================
-// NOTIFICATIONS SERVICE
-
-let notificationsData = [...mockNotifications];
-
-export const notificationsService = {
-  async getNotifications(profileId: string): Promise<Notification[]> {
-    await delay(DELAY_MS);
-    return notificationsData.filter((n) => n.profileId === profileId);
-  },
-
-  async markAsRead(notificationId: string): Promise<void> {
-    await delay(300);
-    const notification = notificationsData.find((n) => n.id === notificationId);
-    if (notification) {
-      notification.isRead = true;
-    }
-  },
-
-  async markAllAsRead(profileId: string): Promise<void> {
-    await delay(300);
-    notificationsData
-      .filter((n) => n.profileId === profileId)
-      .forEach((n) => {
-        n.isRead = true;
-      });
   },
 };

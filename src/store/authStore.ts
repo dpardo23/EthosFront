@@ -3,17 +3,12 @@ import { persist } from 'zustand/middleware';
 import type { Profile, ProfileRole } from '@/shared/types';
 import { authService, ROLE_DISPLAY_NAMES, ROLE_REDIRECT_PATHS, type ProfileUpdatePayload } from '@/shared/services/authService';
 import { setSupabaseAuth, supabase } from '@/lib/supabase';
-import { findMockProfile } from '@/features/auth';
 import { resetAllStores } from './resetAllStores';
+import { ACCESS_TOKEN_KEY, TOKEN_TYPE_KEY, EXPIRES_AT_KEY } from '@/shared/lib/sessionKeys';
 
 /**
  * Zustand store for authentication state: holds the current user session, profile id, role, and exposes login/logout actions used across the app.
  */
-const ACCESS_TOKEN_KEY = 'ethoshub_access_token';
-const TOKEN_TYPE_KEY = 'ethoshub_token_type';
-const EXPIRES_AT_KEY = 'ethoshub_access_expires_at';
-
-const storage = sessionStorage;
 
 interface LoginResult {
   profile: Profile;
@@ -56,19 +51,6 @@ export const useAuthStore = create<AuthStore>()(
 
       login: async (email: string, password: string, role?: ProfileRole): Promise<LoginResult | null> => {
         set({ loading: true, error: null });
-
-        const mockProfile = findMockProfile(email);
-        if (mockProfile) {
-          const token = `mock-token-${mockProfile.role}-${Date.now()}`;
-          storage.setItem(ACCESS_TOKEN_KEY, token);
-          storage.setItem(TOKEN_TYPE_KEY, 'Bearer');
-          set({ profile: mockProfile, isAuthenticated: true, isAuthResolved: true, loading: false, error: null });
-          return {
-            profile: mockProfile,
-            roleDisplayName: ROLE_DISPLAY_NAMES[mockProfile.role] ?? 'Usuario',
-            redirectPath: ROLE_REDIRECT_PATHS[mockProfile.role] ?? '/dashboard',
-          };
-        }
 
         try {
           const result = await authService.login(email, password, role);
@@ -254,7 +236,7 @@ export const useAuthStore = create<AuthStore>()(
         }
 
         const expiredByStore = !!expiresAt && Date.now() > Number(expiresAt) * 1000;
-        const expiredByJwt   = token && !token.startsWith('mock-') ? jwtExpired(token) : false;
+        const expiredByJwt   = token ? jwtExpired(token) : false;
 
         if (!token || expiredByStore || expiredByJwt) {
           sessionStorage.removeItem(ACCESS_TOKEN_KEY);
@@ -277,7 +259,7 @@ export const useAuthStore = create<AuthStore>()(
         }
 
         
-        if (!token.startsWith('mock-')) setSupabaseAuth(token);
+        setSupabaseAuth(token);
 
         const { profile } = get();
         set({ isAuthenticated: !!profile, isAuthResolved: true });

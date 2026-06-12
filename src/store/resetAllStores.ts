@@ -1,4 +1,3 @@
-import { useAnalyticsStore }    from './analyticsStore';
 import { useConnectionsStore }  from './connectionsStore';
 import { useCvStudioStore }     from './cvStudioStore';
 import { useNotificationsStore } from './notificationsStore';
@@ -6,7 +5,6 @@ import { usePortfolioStore }    from './portfolioStore';
 import { usePreferencesStore }  from './preferencesStore';
 import { useProjectsStore }     from './projectsStore';
 import { useSkillsStore }       from './skillsStore';
-import { useVisibilityStore }   from './visibilityStore';
 
 /**
  * Limpia atómicamente todos los stores de Zustand al estado inicial vacío.
@@ -14,15 +12,6 @@ import { useVisibilityStore }   from './visibilityStore';
  * uiStore y authStore se resetean por separado (authStore lo llama explícitamente).
  */
 export function resetAllStores(): void {
-  useAnalyticsStore.setState({
-    metrics: null,
-    activityLogs: [],
-    timeSeriesData: [],
-    selectedPeriod: 30,
-    loading: false,
-    error: null,
-  });
-
   useConnectionsStore.setState({
     connections: [],
     githubRepos: [],
@@ -73,16 +62,6 @@ export function resetAllStores(): void {
     hardSkills: [],
     softSkills: [],
     searchResults: [],
-    loading: false,
-    error: null,
-  });
-
-  useVisibilityStore.setState({
-    settings: null,
-    publicPortfolio: null,
-    publicPortfolios: [],
-    moderationHistory: [],
-    slugAvailability: null,
     loading: false,
     error: null,
   });

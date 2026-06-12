@@ -253,7 +253,7 @@ export default function ProjectsPage() {
           ))}
         </motion.div>
       ) : (
-        <MockEmptyState onAdd={() => setShowCreateModal(true)} />
+        <ProjectsEmptyState onAdd={() => setShowCreateModal(true)} />
       )}
 
       {}
@@ -683,7 +683,7 @@ function ProjectDetailModal({
                         Resultados e impacto
                       </span>
                     </div>
-                    <p className="text-[13px] leading-relaxed text-foreground/80">
+                    <p className="text-[13px] leading-relaxed text-foreground/80 break-all whitespace-pre-wrap">
                       {project.technicalInfo.results}
                     </p>
                   </div>
@@ -773,7 +773,7 @@ function ProjectDetailModal({
                   <div>
                     <SectionLabel icon={BarChart3}>Resultados obtenidos</SectionLabel>
                     <div className="rounded-xl border border-border bg-muted/20 p-4">
-                      <p className="text-[13px] leading-relaxed text-foreground/80">
+                      <p className="text-[13px] leading-relaxed text-foreground/80 break-all whitespace-pre-wrap">
                         {project.technicalInfo.results}
                       </p>
                     </div>
@@ -1055,7 +1055,7 @@ function DeleteProjectConfirmModal({
   );
 }
 
-function MockEmptyState({ onAdd }: { onAdd: () => void }) {
+function ProjectsEmptyState({ onAdd }: { onAdd: () => void }) {
   return (
     <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-10 text-center">
       <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-muted/50">

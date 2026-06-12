@@ -178,7 +178,7 @@ export default function SkillsPage() {
     if (!profile) return;
 
     if (editingHardSkill) {
-      await updateHardSkill(profile.id, editingHardSkill.id, selectedLevel);
+      await updateHardSkill(profile.id, editingHardSkill.id, selectedLevel, editingHardSkill.skillTag.id);
       addToast({ type: 'success', title: 'Nivel de habilidad actualizado' });
       closeAddModal();
       return;

@@ -1,20 +1,20 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { ProfilePreferences, Language, PortfolioSection } from '@/shared/types';
-import { preferencesService } from '@/shared/services';
+import { preferencesService } from '@/shared/services/preferencesService';
 
 /**
- * Zustand store for user preferences page state including education, connections, and recruiter profile data.
+ * Zustand store for profile preferences persisted in core.profile_preferences
+ * through the backend. Updates are optimistic with rollback on failure.
  */
 interface PreferencesStore {
   preferences: ProfilePreferences | null;
   loading: boolean;
   error: string | null;
-  fetchPreferences: (profileId: string) => Promise<void>;
+  fetchPreferences: () => Promise<void>;
   updatePreferences: (updates: Partial<ProfilePreferences>) => Promise<void>;
   updateLanguage: (language: Language) => Promise<void>;
   updateSectionOrder: (order: PortfolioSection[]) => Promise<void>;
-  updatePreference: (key: keyof ProfilePreferences, value: unknown) => Promise<void>;
 }
 
 export const usePreferencesStore = create<PreferencesStore>()(
@@ -24,10 +24,10 @@ export const usePreferencesStore = create<PreferencesStore>()(
       loading: false,
       error: null,
 
-      fetchPreferences: async (profileId: string) => {
+      fetchPreferences: async () => {
         set({ loading: true, error: null });
         try {
-          const preferences = await preferencesService.getPreferences(profileId);
+          const preferences = await preferencesService.getPreferences();
           set({ preferences, loading: false });
         } catch {
           set({ error: 'Error al cargar preferencias', loading: false });
@@ -36,73 +36,29 @@ export const usePreferencesStore = create<PreferencesStore>()(
 
       updatePreferences: async (updates: Partial<ProfilePreferences>) => {
         const currentPreferences = get().preferences;
-        
         set({
           preferences: currentPreferences ? { ...currentPreferences, ...updates } : null,
           loading: true,
           error: null,
         });
         try {
-          await Promise.all(
-            Object.entries(updates).map(([key, value]) =>
-              preferencesService.updatePreference(key as keyof ProfilePreferences, value)
-            )
-          );
-          set({ loading: false });
+          const preferences = await preferencesService.updatePreferences(updates);
+          set({ preferences, loading: false });
         } catch {
-          
-          if (currentPreferences) {
-            set({ preferences: currentPreferences, error: 'Error al actualizar preferencias', loading: false });
-          } else {
-            set({ error: 'Error al actualizar preferencias', loading: false });
-          }
+          set({
+            preferences: currentPreferences,
+            error: 'Error al actualizar preferencias',
+            loading: false,
+          });
         }
       },
 
       updateLanguage: async (language: Language) => {
-        set({ loading: true, error: null });
-        try {
-          await preferencesService.updateLanguage(language);
-          set((state) => ({
-            preferences: state.preferences
-              ? { ...state.preferences, language }
-              : null,
-            loading: false,
-          }));
-        } catch {
-          set({ error: 'Error al actualizar idioma', loading: false });
-        }
+        await get().updatePreferences({ language });
       },
 
       updateSectionOrder: async (order: PortfolioSection[]) => {
-        set({ loading: true, error: null });
-        try {
-          await preferencesService.updateSectionOrder(order);
-          set((state) => ({
-            preferences: state.preferences
-              ? { ...state.preferences, sectionOrder: order }
-              : null,
-            loading: false,
-          }));
-        } catch {
-          set({ error: 'Error al actualizar orden', loading: false });
-        }
-      },
-
-      updatePreference: async (key: keyof ProfilePreferences, value: unknown) => {
-        set({ loading: true, error: null });
-        try {
-          await preferencesService.updatePreference(key, value);
-          const { preferences } = get();
-          if (preferences) {
-            set({
-              preferences: { ...preferences, [key]: value },
-              loading: false,
-            });
-          }
-        } catch {
-          set({ error: 'Error al actualizar preferencia', loading: false });
-        }
+        await get().updatePreferences({ sectionOrder: order });
       },
     }),
     {

@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store';
 import type { Profile, ProfileRole } from '@/shared/types';
 import { ROLE_INITIAL_PATHS } from '@/app/router/routes';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { validateOAuthState } from '@/hooks/useAuthFlow';
 import api from '@/shared/api/api';
 
 /**
@@ -59,7 +60,7 @@ function mapRoleStringToProfileRole(roleStr?: string): ProfileRole {
 
 function sanitizeSlug(value: string): string {
   const base = value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-  return base || `usuario-${Date.now()}`;
+  return base || `perfil-${Date.now()}`;
 }
 
 function buildProfileFromToken(payload: JwtPayload): Profile {
@@ -86,8 +87,10 @@ function buildProfileFromSession(
 ): Profile {
   const email       = user.email || '';
   const fullName    = user.user_metadata?.full_name || user.user_metadata?.name || '';
-  const displayName = fullName || (email.includes('@') ? email.split('@')[0] : 'usuario');
-  const avatarUrl   = user.user_metadata?.avatar_url || user.user_metadata?.picture || '';
+  const displayName = fullName || (email.includes('@') ? email.split('@')[0] : 'perfil');
+  const rawAvatar   = user.user_metadata?.avatar_url || user.user_metadata?.picture || '';
+  // Only accept https:// avatar URLs — reject data: / javascript: / http: payloads
+  const avatarUrl   = rawAvatar.startsWith('https://') ? rawAvatar : '';
   return {
     id: profileId, profile_id: profileId,
     email, name: displayName,
@@ -99,6 +102,7 @@ function buildProfileFromSession(
     location: '', website: '', createdAt: new Date().toISOString(),
   };
 }
+
 
 export default function OAuth2CallbackPage() {
   const navigate          = useNavigate();
@@ -135,9 +139,23 @@ export default function OAuth2CallbackPage() {
       return;
     }
 
-    
     if (!isSupabaseConfigured || !supabase) {
       toast.error('Respuesta OAuth incompleta');
+      navigate('/login', { replace: true });
+      return;
+    }
+
+    // CSRF: Supabase embeds the state in the URL fragment and validates it
+    // internally before exchangeCodeForSession completes. We verify that the
+    // flow was initiated from this browser session by checking our stored state
+    // token. The state value itself arrives in the hash, not in searchParams,
+    // so we parse it manually from window.location.hash.
+    const hashParams     = new URLSearchParams(window.location.hash.replace('#', ''));
+    const returnedState  = hashParams.get('state') ?? searchParams.get('state');
+    if (!validateOAuthState(returnedState)) {
+      toast.error('Solicitud OAuth inválida', {
+        description: 'El parámetro de estado no coincide. Intenta iniciar sesión nuevamente.',
+      });
       navigate('/login', { replace: true });
       return;
     }

@@ -307,7 +307,7 @@ export function DashboardLayout() {
 
     
     const token = sessionStorage.getItem('ethoshub_access_token');
-    if (token && !token.startsWith('mock-')) sb.realtime.setAuth(token);
+    if (token) sb.realtime.setAuth(token);
 
     if (globalChatChannelRef.current) sb.removeChannel(globalChatChannelRef.current);
 

@@ -3,6 +3,7 @@ import { Suspense, lazy } from 'react';
 import { ROUTES } from './routes';
 import { DashboardLayout, AdminLayout, AuthLayout, PublicPortfolioLayout, RecruiterLayout } from '../layouts';
 import { ProtectedRoute } from './ProtectedRoute';
+import { RoleScopeGuard } from './RoleScopeGuard';
 import RouteErrorBoundary from './RouteErrorBoundary';
 import { Skeleton } from '@/shared/ui';
 
@@ -11,14 +12,13 @@ import { Skeleton } from '@/shared/ui';
  */
 const LoginPage                  = lazy(() => import('@/pages/auth/LoginPage'));
 const RegisterPage               = lazy(() => import('@/pages/auth/RegisterPage'));
+const ForgotPasswordPage         = lazy(() => import('@/pages/auth/ForgotPasswordPage'));
 const OAuth2CallbackPage         = lazy(() => import('@/pages/auth/OAuth2CallbackPage'));
 const HomePage                   = lazy(() => import('@/pages/public/HomePage'));
-const DashboardHomePage          = lazy(() => import('@/pages/dashboard/DashboardHomePage'));
 const SkillsPage                 = lazy(() => import('@/pages/dashboard/SkillsPage'));
 const ProjectsPage               = lazy(() => import('@/pages/dashboard/ProjectsPage'));
 const ProjectDetailPage          = lazy(() => import('@/pages/dashboard/ProjectDetailPage'));
 const ConnectionsPage            = lazy(() => import('@/pages/dashboard/ConnectionsPage'));
-const VisibilityPage             = lazy(() => import('@/pages/dashboard/VisibilityPage'));
 const ExperiencePage             = lazy(() => import('@/pages/dashboard/ExperiencePage'));
 const EducationPage              = lazy(() => import('@/pages/dashboard/EducationPage'));
 const PreferencesPage            = lazy(() => import('@/pages/dashboard/PreferencesPage'));
@@ -28,8 +28,7 @@ const AdminDashboardPage         = lazy(() => import('@/pages/admin/AdminDashboa
 const AdminProfilesPage          = lazy(() => import('@/pages/admin/AdminProfilesPage'));
 const AdminModerationPage        = lazy(() => import('@/pages/admin/AdminModerationPage'));
 const AdminSkillsPage            = lazy(() => import('@/pages/admin/AdminSkillsPage'));
-const AdminPortfoliosPage        = lazy(() => import('@/pages/admin/AdminPortfoliosPage'));
-const AdminDomainsPage           = lazy(() => import('@/pages/admin/AdminDomainsPage'));
+const AdminEmailPage             = lazy(() => import('@/pages/admin/AdminEmailPage'));
 const ExplorePage                = lazy(() => import('@/pages/public/ExplorePage'));
 const PublicPortfolioPage        = lazy(() => import('@/pages/public/PublicPortfolioPage'));
 const PasswordPortfolioPage      = lazy(() => import('@/pages/public/PasswordPortfolioPage'));
@@ -62,13 +61,18 @@ function S({ page: Page }: { page: React.ComponentType }) {
 }
 
 export const router = createBrowserRouter([
-  
+  {
+  element: <RoleScopeGuard />,
+  errorElement: <RouteErrorBoundary />,
+  children: [
+
   {
     element: <AuthLayout />,
     errorElement: <RouteErrorBoundary />,
     children: [
-      { path: 'login',          element: <S page={LoginPage} /> },
-      { path: 'register',       element: <S page={RegisterPage} /> },
+      { path: 'login',            element: <S page={LoginPage} /> },
+      { path: 'register',         element: <S page={RegisterPage} /> },
+      { path: 'forgot-password',  element: <S page={ForgotPasswordPage} /> },
       { path: 'oauth2/callback', element: <S page={OAuth2CallbackPage} /> },
       { path: 'oauth-success',  element: <S page={OAuth2CallbackPage} /> },
     ],
@@ -77,7 +81,7 @@ export const router = createBrowserRouter([
   
   {
     element: (
-      <ProtectedRoute allowedRoles={['professional', 'admin']}>
+      <ProtectedRoute allowedRoles={['professional']}>
         <DashboardLayout />
       </ProtectedRoute>
     ),
@@ -92,7 +96,6 @@ export const router = createBrowserRouter([
       { path: 'dashboard/connections',                                  element: <S page={ConnectionsPage} /> },
       { path: 'dashboard/chat',                                         element: <S page={ProfessionalChatPage} /> },
       { path: 'dashboard/chat/:chatId',                                 element: <S page={ProfessionalChatPage} /> },
-      { path: 'dashboard/visibility',                                   element: <S page={VisibilityPage} /> },
       { path: 'dashboard/experience',                                   element: <S page={ExperiencePage} /> },
       { path: 'dashboard/education',                                    element: <S page={EducationPage} /> },
       
@@ -105,7 +108,7 @@ export const router = createBrowserRouter([
   
   {
     element: (
-      <ProtectedRoute allowedRoles={['recruiter', 'admin']}>
+      <ProtectedRoute allowedRoles={['recruiter']}>
         <RecruiterLayout />
       </ProtectedRoute>
     ),
@@ -134,8 +137,7 @@ export const router = createBrowserRouter([
       { path: 'admin/profiles',   element: <S page={AdminProfilesPage} /> },
       { path: 'admin/moderation', element: <S page={AdminModerationPage} /> },
       { path: 'admin/skills',     element: <S page={AdminSkillsPage} /> },
-      { path: 'admin/portfolios', element: <S page={AdminPortfoliosPage} /> },
-      { path: 'admin/domains',    element: <S page={AdminDomainsPage} /> },
+      { path: 'admin/email',      element: <S page={AdminEmailPage} /> },
     ],
   },
 
@@ -166,6 +168,9 @@ export const router = createBrowserRouter([
     path: '*',
     errorElement: <RouteErrorBoundary />,
     element: <S page={NotFoundPage} />,
+  },
+
+  ],
   },
 ], {
   
