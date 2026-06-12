@@ -27,7 +27,7 @@ interface AuthStore {
   updateRecruiterIdentity: (data: { firstName: string; lastName: string; country?: string; phone?: string; photoUrl?: string }) => Promise<void>;
   syncProfile: (data: Partial<Profile>) => void;
   fetchProfile: () => Promise<void>;
-  logout: () => Promise<void>;
+  logout: (options?: { scope?: 'local' | 'global' }) => Promise<void>;
   checkAuth: () => Promise<void>;
   completeOAuthLogin: (args: {
     profile: Profile;
@@ -186,7 +186,7 @@ export const useAuthStore = create<AuthStore>()(
         }));
       },
 
-      logout: async () => {
+      logout: async (options?: { scope?: 'local' | 'global' }) => {
         set({ loading: true });
         try {
           await authService.logout();
@@ -203,6 +203,14 @@ export const useAuthStore = create<AuthStore>()(
           resetAllStores();
           // 5. Resetear el estado propio al final
           set({ profile: null, isAuthenticated: false, isAuthResolved: true, loading: false, error: null });
+          // 6. Si es logout global, notificar a otras tabs
+          if (options?.scope === 'global') {
+            try {
+              const channel = new BroadcastChannel('ethoshub_auth');
+              channel.postMessage('logout:global');
+              channel.close();
+            } catch { /* BroadcastChannel no disponible */ }
+          }
         }
       },
 
